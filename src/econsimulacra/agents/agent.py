@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 
+
 class Agent(ABC):
     def __init__(
         self,
@@ -22,9 +23,12 @@ class Agent(ABC):
         give_item_amount: float | int,
     ) -> None:
         if get_item_name not in self.inventory_dic:
-            raise ValueError(f"Agent {self.agent_name} does not have {get_item_name} in inventory.")
+            raise ValueError(
+                f"Agent {self.agent_name} does not have {get_item_name} in inventory."
+            )
         if give_item_name not in self.inventory_dic:
-            raise ValueError(f"Agent {self.agent_name} does not have {give_item_name} in inventory.")
+            raise ValueError(
+                f"Agent {self.agent_name} does not have {give_item_name} in inventory."
+            )
         self.inventory_dic[get_item_name] += get_item_amount
         self.inventory_dic[give_item_name] -= give_item_amount
-
