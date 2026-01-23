@@ -46,3 +46,11 @@ class TestAgent:
                 give_item_name="bread",
                 give_item_amount=10,
             )
+        with pytest.raises(ValueError):
+            agent.exchange_goods(
+                get_item_name="cash",
+            )
+        with pytest.raises(ValueError):
+            agent.exchange_goods(
+                give_item_name="rice",
+            )

@@ -33,12 +33,20 @@ class Agent(ABC, Generic[ObsT, ActT]):
         give_item_amount: Optional[float | int] = None,
     ) -> None:
         if get_item_name is not None:
+            if get_item_amount is None:
+                raise ValueError(
+                    "get_item_amount must be provided when get_item_name is provided."
+                )
             if get_item_name not in self.inventory_dic:
                 raise ValueError(
                     f"Agent {self.agent_name} does not have {get_item_name} in inventory."
                 )
             self.inventory_dic[get_item_name] += get_item_amount
         if give_item_name is not None:
+            if give_item_amount is None:
+                raise ValueError(
+                    "give_item_amount must be provided when give_item_name is provided."
+                )
             if give_item_name not in self.inventory_dic:
                 raise ValueError(
                     f"Agent {self.agent_name} does not have {give_item_name} in inventory."
