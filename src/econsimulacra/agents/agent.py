@@ -1,7 +1,11 @@
 from abc import ABC, abstractmethod
+from typing import Generic, TypeVar
 
 
-class Agent(ABC):
+ObsT = TypeVar("ObsT")
+
+
+class Agent(ABC, Generic[ObsT]):
     def __init__(
         self,
         agent_id: int,
@@ -21,6 +25,7 @@ class Agent(ABC):
         get_item_amount: float | int,
         give_item_name: str,
         give_item_amount: float | int,
+        is_consumption: bool,
     ) -> None:
         if get_item_name not in self.inventory_dic:
             raise ValueError(
@@ -30,5 +35,6 @@ class Agent(ABC):
             raise ValueError(
                 f"Agent {self.agent_name} does not have {give_item_name} in inventory."
             )
-        self.inventory_dic[get_item_name] += get_item_amount
+        if not is_consumption:
+            self.inventory_dic[get_item_name] += get_item_amount
         self.inventory_dic[give_item_name] -= give_item_amount
