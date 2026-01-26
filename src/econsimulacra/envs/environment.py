@@ -1,12 +1,11 @@
+from abc import ABC, abstractmethod
 from ..agents import Agent
-from collections import defaultdict
-from dataclasses import dataclass
 from .env_utils import find_class
 import random
 from random import Random
+from .social_network import SocialNetwork
+from .space import GridSpace
 from typing import Any
-from typing import DefaultDict
-from typing import NewType
 from typing import Optional
 from typing import Type
 from typing import Generic, TypeVar
@@ -14,68 +13,7 @@ from typing import Generic, TypeVar
 ObsT = TypeVar("ObsT")
 
 
-@dataclass
-class GridSpace:
-    def __init__(self, space_size: tuple[int, ...]) -> None:
-        self.space_size: tuple[int, ...] = space_size
-        self.pos2agent_ids: DefaultDict[tuple[int, ...], set[int]] = defaultdict(set)
-        self.agent_id2pos: dict[int, tuple[int, ...]] = {}
-
-    def _check_bounds(self, pos: tuple[int, ...]) -> None:
-        if len(pos) != len(self.space_size):
-            raise ValueError(
-                f"Position {pos} has different dimension than space size {self.space_size}."
-            )
-        for i, coord in enumerate(pos):
-            if coord < 0 or coord >= self.space_size[i]:
-                raise ValueError(
-                    f"Coordinate {coord} at dimension {i} is out of bounds for space size {self.space_size}."
-                )
-
-    def get_pos(self, agent_id: int) -> tuple[int, ...]:
-        if agent_id not in self.agent_id2pos:
-            raise ValueError(f"Agent ID {agent_id} not found in grid space.")
-        return self.agent_id2pos[agent_id]
-
-    def get_agents(self, pos: tuple[int, ...]) -> set[int]:
-        self._check_bounds(pos=pos)
-        return self.pos2agent_ids.get(pos, set())
-
-    def place_agent(self, agent_id: int, pos: tuple[int, ...]) -> None:
-        self._check_bounds(pos=pos)
-        if agent_id in self.agent_id2pos:
-            raise ValueError(
-                f"Agent ID {agent_id} is already placed in the grid space."
-            )
-        self.agent_id2pos[agent_id] = pos
-        self.pos2agent_ids[pos].add(agent_id)
-
-    def remove_agent(self, agent_id: int) -> None:
-        if agent_id not in self.agent_id2pos:
-            raise ValueError(f"Agent ID {agent_id} not found in grid space.")
-        pos: tuple[int, ...] = self.agent_id2pos[agent_id]
-        del self.agent_id2pos[agent_id]
-        self.pos2agent_ids[pos].remove(agent_id)
-        if len(self.pos2agent_ids[pos]) == 0:
-            del self.pos2agent_ids[pos]
-
-    def move_agent(self, agent_id: int, new_pos: tuple[int, ...]) -> None:
-        self._check_bounds(pos=new_pos)
-        if agent_id not in self.agent_id2pos:
-            raise ValueError(f"Agent ID {agent_id} not found in grid space.")
-        old_pos: tuple[int, ...] = self.agent_id2pos[agent_id]
-        self.pos2agent_ids[old_pos].remove(agent_id)
-        if len(self.pos2agent_ids[old_pos]) == 0:
-            del self.pos2agent_ids[old_pos]
-        self.agent_id2pos[agent_id] = new_pos
-        self.pos2agent_ids[new_pos].add(agent_id)
-
-    def move_many_agents(self, agent_id2new_pos: dict[int, tuple[int, ...]]) -> None:
-        for agent_id, new_pos in agent_id2new_pos.items():
-            self.move_agent(agent_id=agent_id, new_pos=new_pos)
-
-
-class Environment(Generic[ObsT]):
+class Environment(ABC, Generic[ObsT]):
     def __init__(self, config: dict[str, Any]) -> None:
         """Initialization.
 
@@ -87,15 +25,16 @@ class Environment(Generic[ObsT]):
                 "agents": ["Household", "Retailer", "Restaurant", ...],
             },
             "Household": {
-                isHousehold: bool,
+                "isHousehold": bool,
+                "numAgents": int, # Optional, default 1
                 ...
             },
             "Retailer": {
-                isHousehold: bool, # Optional, default False
+                "isHousehold": bool, # Optional, default False
                 ...
             },
             "Restaurant": {
-                isHousehold: bool, # Optional, default False
+                "isHousehold": bool, # Optional, default False
                 ...
             },
         }
@@ -115,6 +54,7 @@ class Environment(Generic[ObsT]):
     def reset(self, seed: int) -> None:
         self.prng.seed(seed)
         self.grid_space: GridSpace = GridSpace(space_size=self.space_size)
+        self.social_network: SocialNetwork = SocialNetwork()
         assert "simulation" in self.config, "Config must include 'simulation' key."
         assert "agents" in self.config["simulation"], (
             "Simulation config must include 'agents' key."
@@ -132,6 +72,7 @@ class Environment(Generic[ObsT]):
         self.agent_ids: list[int] = []
         self.household_ids: list[int] = []
         self.agent_id2agent: dict[int, Agent] = {}
+        self.agent_name2agent_id: dict[str, int] = {}
         for agent_type in agent_types:
             agent_config: dict[str, Any] = self.config.get(agent_type, {})
             num_agents: int = agent_config.get("numAgents", 1)
@@ -146,6 +87,12 @@ class Environment(Generic[ObsT]):
                     prng=self.prng,
                     config=agent_config,
                 )
+                agent_name: str = agent_instance.get_self_name()
+                while True:
+                    if agent_name not in self.agent_name2agent_id:
+                        break
+                    agent_name += "_"
+                self.agent_name2agent_id[agent_name] = current_agent_id
                 self.agent_ids.append(current_agent_id)
                 if is_household:
                     self.household_ids.append(current_agent_id)
@@ -154,6 +101,7 @@ class Environment(Generic[ObsT]):
                     agent_id=current_agent_id,
                     coords=agent_config.get("initialCoords", None),
                 )
+                self.social_network.add_agent(current_agent_id)
                 current_agent_id += 1
 
     def _assign_agent_to_space(
@@ -165,3 +113,17 @@ class Environment(Generic[ObsT]):
                 for dim in range(len(self.space_size))
             )
         self.grid_space.place_agent(agent_id=agent_id, pos=coords)
+
+    def step(self, action_dic: dict[int, Any]) -> None:
+        for agent_id, action in action_dic.items():
+            # move <- household側でどこに行きたいかを継続的に指定させて，stepでは1マスずつ動かす
+            # add_orders
+            # execute_orders
+            # follow/unfollow
+            # tweet
+            ...
+
+
+    @abstractmethod
+    def get_observations(self, agent_id: int) -> ObsT:
+        pass
