@@ -322,8 +322,12 @@ class Environment(ABC, Generic[ObsT]):
             self.pending_orders.append(new_order)
             self.latest_order_id += 1
         for proposal_dic in proposals:
-            responder_agent_id: Optional[int] = proposal_dic.get("responder_agent_id", None)
-            responder_agent_name: Optional[str] = proposal_dic.get("responder_agent_name", None)
+            responder_agent_id: Optional[int] = proposal_dic.get(
+                "responder_agent_id", None
+            )
+            responder_agent_name: Optional[str] = proposal_dic.get(
+                "responder_agent_name", None
+            )
             if responder_agent_id is None and responder_agent_name is not None:
                 responder_agent_id = self.agent_name2agent_id[responder_agent_name]
             elif responder_agent_id is None and responder_agent_name is None:
