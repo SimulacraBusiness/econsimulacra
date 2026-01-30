@@ -9,6 +9,7 @@ class SocialNetwork:
         if agent_id in self.nodes:
             raise ValueError(f"Agent ID {agent_id} already exists in the social network.")
         self.nodes.add(agent_id)
+        self.agent_id2tweet[agent_id] = ""
         self.agent_id2followers[agent_id] = set()
         self.agent_id2follows[agent_id] = set()
 
