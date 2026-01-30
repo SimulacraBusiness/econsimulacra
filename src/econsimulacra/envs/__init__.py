@@ -7,6 +7,11 @@ from .space import GridSpace as GridSpace
 from .social_network import SocialNetwork as SocialNetwork
 
 __all__ = [
-    "Environment", "GridSpace", "SocialNetwork", "find_class",
-    "JsonRandom", "Order", "SwapProposal"
+    "Environment",
+    "GridSpace",
+    "SocialNetwork",
+    "find_class",
+    "JsonRandom",
+    "Order",
+    "SwapProposal",
 ]

@@ -143,7 +143,9 @@ class Environment(ABC, Generic[ObsT]):
             item_class: Type[Item] = find_class(
                 name=item_name, optional_class_list=self.registered_classes
             )
-            item_instance: Item = item_class(item_id=len(self.item_name2item), item_name=item_name)
+            item_instance: Item = item_class(
+                item_id=len(self.item_name2item), item_name=item_name
+            )
             self.item_name2item[item_name] = item_instance
 
     def _assign_agent_to_space(
@@ -165,15 +167,14 @@ class Environment(ABC, Generic[ObsT]):
         """
         for agent_id, action_dic in all_actions_dic.items():
             self.apply_action_to_env(
-                agent_id=agent_id, action_dic=action_dic,
+                agent_id=agent_id,
+                action_dic=action_dic,
             )
         self._process_orders_and_proposals()
         self._update_time()
         self._remove_expired_orders_and_proposals()
 
-    def apply_action_to_env(
-        self, agent_id: int, action_dic: dict[str, Any]
-    ) -> None:
+    def apply_action_to_env(self, agent_id: int, action_dic: dict[str, Any]) -> None:
         """
         action_dic example:
         {
@@ -202,26 +203,34 @@ class Environment(ABC, Generic[ObsT]):
         """
         where_to_move: Optional[tuple[int, ...] | str] = action_dic.get("move", None)
         self._move(
-            agent_id=agent_id, where_to_move=where_to_move,
+            agent_id=agent_id,
+            where_to_move=where_to_move,
         )
         consumptions: list[dict[str, Any]] = action_dic.get("consumptions", [])
         self._consume_items(
-            agent_id=agent_id, consumptions=consumptions,
+            agent_id=agent_id,
+            consumptions=consumptions,
         )
         orders: list[dict[str, Any]] = action_dic.get("orders", [])
         proposals: list[dict[str, Any]] = action_dic.get("proposals", [])
         self._add_new_orders_and_proposals(
-            agent_id=agent_id, orders=orders, proposals=proposals,
+            agent_id=agent_id,
+            orders=orders,
+            proposals=proposals,
         )
         reactions: list[dict[str, Any]] = action_dic.get("reactions", [])
         self._process_reactions(
-            agent_id=agent_id, reactions=reactions,
+            agent_id=agent_id,
+            reactions=reactions,
         )
         tweet: Optional[str] = action_dic.get("tweet", None)
         follow_agent_id: Optional[int] = action_dic.get("follow", None)
         unfollow_agent_id: Optional[int] = action_dic.get("unfollow", None)
         self._act_in_social_network(
-            agent_id=agent_id, tweet=tweet, follow_agent_id=follow_agent_id, unfollow_agent_id=unfollow_agent_id,
+            agent_id=agent_id,
+            tweet=tweet,
+            follow_agent_id=follow_agent_id,
+            unfollow_agent_id=unfollow_agent_id,
         )
 
     def _move(
@@ -233,13 +242,16 @@ class Environment(ABC, Generic[ObsT]):
         elif isinstance(where_to_move, str):
             destination_name: str = where_to_move
             destination_id: int = self.agent_name2agent_id[destination_name]
-            destination_pos: tuple[int, ...] = self.grid_space.get_pos(agent_id=destination_id)
+            destination_pos: tuple[int, ...] = self.grid_space.get_pos(
+                agent_id=destination_id
+            )
         elif isinstance(where_to_move, tuple):
             destination_pos = where_to_move
         else:
             raise ValueError(
                 f"where_to_move must be either tuple[int, ...] or str, but got {type(where_to_move)}."
             )
+
         def calc_next_pos(
             current_pos: tuple[int, ...], destination_pos: tuple[int, ...]
         ) -> tuple[int, ...]:
@@ -250,6 +262,7 @@ class Environment(ABC, Generic[ObsT]):
                 elif current_pos[dim] > destination_pos[dim]:
                     next_pos[dim] -= 1
             return tuple(next_pos)
+
         next_pos: tuple[int, ...] = calc_next_pos(
             current_pos=current_pos, destination_pos=destination_pos
         )
@@ -261,9 +274,7 @@ class Environment(ABC, Generic[ObsT]):
             self.agent_id2is_moving[agent_id] = True
             self.agent_id2destination[agent_id] = destination_pos
 
-    def _consume_items(
-        self, agent_id: int, consumptions: list[dict[str, Any]]
-    ) -> None:
+    def _consume_items(self, agent_id: int, consumptions: list[dict[str, Any]]) -> None:
         agent: Agent = self.agent_id2agent[agent_id]
         for consumption in consumptions:
             item_name: str = consumption["item_name"]
@@ -276,7 +287,10 @@ class Environment(ABC, Generic[ObsT]):
             )
 
     def _add_new_orders_and_proposals(
-        self, agent_id, orders: list[dict[str, Any]], proposals: list[dict[str, Any]],
+        self,
+        agent_id,
+        orders: list[dict[str, Any]],
+        proposals: list[dict[str, Any]],
     ) -> None:
         for order_dic in orders:
             counterparty_id: int = order_dic.get("counterparty_id", None)
@@ -418,9 +432,7 @@ class Environment(ABC, Generic[ObsT]):
             if kind == "order":
                 order_id: int = reaction["id"]
                 if "accept_amount" not in reaction:
-                    raise ValueError(
-                        "Order reaction must include 'accept_amount' key."
-                    )
+                    raise ValueError("Order reaction must include 'accept_amount' key.")
                 accept_amount: float | int = reaction["accept_amount"]
                 for order in self.pending_orders:
                     if order.order_id == order_id:
@@ -432,9 +444,7 @@ class Environment(ABC, Generic[ObsT]):
             elif kind == "proposal":
                 proposal_id: int = reaction["id"]
                 if "accept" not in reaction:
-                    raise ValueError(
-                        "Proposal reaction must include 'accept' key."
-                    )
+                    raise ValueError("Proposal reaction must include 'accept' key.")
                 accept: bool = reaction["accept"]
                 for proposal in self.pending_swap_proposals:
                     if (

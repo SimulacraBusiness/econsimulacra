@@ -1,6 +1,7 @@
 from econsimulacra.envs import GridSpace
 import pytest
 
+
 class TestGridSpace:
     def test___init__(self) -> None:
         grid_space = GridSpace(space_size=(10, 10))

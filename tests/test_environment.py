@@ -17,16 +17,16 @@ class DummyHousehold(Agent):
         else:
             if obs["pos"] == obs["initial_coords"]:
                 if self.inventory_dic["Rice"] > 50:
-                    action_dic["consumptions"] = {
-                        "item_name": "Rice", "item_amount": 1
-                    }
+                    action_dic["consumptions"] = {"item_name": "Rice", "item_amount": 1}
                 else:
                     action_dic["move"] = obs["retailer_pos"]
             elif obs["pos"] == obs["retailer_pos"]:
                 if self.inventory_dic["Rice"] < 50:
                     action_dic["purchase"] = {
-                        "item_name": "Rice", "item_amount": 1, "rice": None,
-                        "counterparty_id": obs["retailer_id"]
+                        "item_name": "Rice",
+                        "item_amount": 1,
+                        "rice": None,
+                        "counterparty_id": obs["retailer_id"],
                     }
                 else:
                     action_dic["move"] = obs["initial_coords"]
@@ -56,9 +56,7 @@ class DummyRetailer(Agent):
         for item_name, item in obs["item_name2item"].items():
             if item_name == "Rice":
                 item.set_price(1000)
-        action_dic: dict[str, Any] = {
-            "reactions": []
-        }
+        action_dic: dict[str, Any] = {"reactions": []}
         for order in obs["orders"]:
             action_dic["reactions"].append(
                 {
@@ -95,7 +93,9 @@ class DummyEnvironment(Environment):
                 "is_moving": self.agent_id2is_moving[agent_id],
                 "destination": self.agent_id2destination[agent_id],
                 "follows": self.social_network.get_follows(agent_id),
-                "recommended_follows": [id for id in self.household_ids if id != agent_id],
+                "recommended_follows": [
+                    id for id in self.household_ids if id != agent_id
+                ],
             }
         else:
             return {
@@ -105,7 +105,7 @@ class DummyEnvironment(Environment):
 
 
 class TestEnvironment:
-    config = { # <- ここ変えた！
+    config = {  # <- ここ変えた！
         "gridSpace": (10, 10),
         "simulation": {
             "numSteps": 10,
@@ -114,7 +114,7 @@ class TestEnvironment:
             "gridSpace": (10, 10),
             "cashName": "Yen",
             "agents": ["DummyHousehold", "DummyRetailer"],
-            "items": ["Yen", "Rice"]
+            "items": ["Yen", "Rice"],
         },
         "DummyHousehold": {
             "isHousehold": True,
@@ -136,11 +136,7 @@ class TestEnvironment:
 
     def test_register_classes(self) -> None:
         env = DummyEnvironment(config=self.config)
-        env.register_classes(
-            [
-                DummyHousehold, DummyRetailer, Yen, Rice
-            ]
-        )
+        env.register_classes([DummyHousehold, DummyRetailer, Yen, Rice])
         assert DummyHousehold in env.registered_classes
         assert DummyRetailer in env.registered_classes
         assert Yen in env.registered_classes
@@ -148,11 +144,7 @@ class TestEnvironment:
 
     def test_reset(self) -> None:
         env = DummyEnvironment(config=self.config)
-        env.register_classes(
-            [
-                DummyHousehold, DummyRetailer, Yen, Rice
-            ]
-        )
+        env.register_classes([DummyHousehold, DummyRetailer, Yen, Rice])
         env.reset(seed=42)
         assert len(env.agent_ids) == 6
         assert len(env.household_ids) == 5
@@ -162,7 +154,9 @@ class TestEnvironment:
             assert agent_id in env.grid_space.agent_id2pos
             assert isinstance(env.grid_space.get_pos(agent_id), tuple)
             assert agent_id in env.agent_id2initial_coords
-            assert env.agent_id2initial_coords[agent_id] == env.grid_space.get_pos(agent_id)
+            assert env.agent_id2initial_coords[agent_id] == env.grid_space.get_pos(
+                agent_id
+            )
             assert agent_id in env.agent_id2is_moving
             assert env.agent_id2is_moving[agent_id] is False
             assert agent_id in env.agent_id2destination
@@ -184,43 +178,33 @@ class TestEnvironment:
 
     def test_move(self) -> None:
         env = DummyEnvironment(config=self.config)
-        env.register_classes(
-            [
-                DummyHousehold, DummyRetailer, Yen, Rice
-            ]
-        )
+        env.register_classes([DummyHousehold, DummyRetailer, Yen, Rice])
         env.reset(seed=42)
         household_id: int = env.household_ids[0]
         initial_pos: tuple[int, int] = env.grid_space.get_pos(household_id)
         destination_pos: tuple[int, int] = (
             min(initial_pos[0] + 2, env.space_size[0] - 1),
-            min(initial_pos[1] + 3, env.space_size[1] - 1)
+            min(initial_pos[1] + 3, env.space_size[1] - 1),
         )
-        env._move(
-            agent_id=household_id, where_to_move=destination_pos
-        )
+        env._move(agent_id=household_id, where_to_move=destination_pos)
         new_pos: tuple[int, int] = env.grid_space.get_pos(household_id)
         assert new_pos == (
             min(initial_pos[0] + 1, env.space_size[0] - 1),
-            min(initial_pos[1] + 1, env.space_size[1] - 1)
+            min(initial_pos[1] + 1, env.space_size[1] - 1),
         )
         assert env.agent_id2is_moving[household_id] is True
         assert env.agent_id2destination[household_id] == destination_pos
         destination_pos: tuple[int, int] = (
             min(initial_pos[0] + 1, env.space_size[0] - 1),
-            min(initial_pos[1] + 1, env.space_size[1] - 1)
+            min(initial_pos[1] + 1, env.space_size[1] - 1),
         )
-        env._move(
-            agent_id=household_id, where_to_move=destination_pos
-        )
+        env._move(agent_id=household_id, where_to_move=destination_pos)
         new_pos = env.grid_space.get_pos(household_id)
         assert new_pos == destination_pos
         assert env.agent_id2is_moving[household_id] is False
         assert env.agent_id2destination[household_id] is None
         destination_pos: str = "DummyRetailer5"
-        env._move(
-            agent_id=household_id, where_to_move=destination_pos
-        )
+        env._move(agent_id=household_id, where_to_move=destination_pos)
         retailer_id: int = env.agent_name2agent_id["DummyRetailer5"]
         retailer_pos: tuple[int, int] = env.grid_space.get_pos(retailer_id)
         assert env.agent_id2is_moving[household_id] is True
@@ -228,31 +212,20 @@ class TestEnvironment:
 
     def test_consume_items(self) -> None:
         env = DummyEnvironment(config=self.config)
-        env.register_classes(
-            [
-                DummyHousehold, DummyRetailer, Yen, Rice
-            ]
-        )
+        env.register_classes([DummyHousehold, DummyRetailer, Yen, Rice])
         env.reset(seed=42)
         household_id: int = env.household_ids[0]
-        initial_Rice_amount: int = env.agent_id2agent[household_id].inventory_dic["Rice"]
-        consumptions: list[dict[str, Any]] = [
-            {"item_name": "Rice", "item_amount": 5}
+        initial_Rice_amount: int = env.agent_id2agent[household_id].inventory_dic[
+            "Rice"
         ]
-        env._consume_items(
-            agent_id=household_id,
-            consumptions=consumptions
-        )
+        consumptions: list[dict[str, Any]] = [{"item_name": "Rice", "item_amount": 5}]
+        env._consume_items(agent_id=household_id, consumptions=consumptions)
         new_Rice_amount: int = env.agent_id2agent[household_id].inventory_dic["Rice"]
         assert new_Rice_amount == initial_Rice_amount - 5
 
     def test_add_new_orders_and_proposals(self) -> None:
         env = DummyEnvironment(config=self.config)
-        env.register_classes(
-            [
-                DummyHousehold, DummyRetailer, Yen, Rice
-            ]
-        )
+        env.register_classes([DummyHousehold, DummyRetailer, Yen, Rice])
         env.reset(seed=42)
         orders: list[dict[str, Any]] = [
             {
@@ -306,11 +279,7 @@ class TestEnvironment:
 
     def test_apply_action_to_env_and_process_orders_and_proposals(self) -> None:
         env = DummyEnvironment(config=self.config)
-        env.register_classes(
-            [
-                DummyHousehold, DummyRetailer, Yen, Rice
-            ]
-        )
+        env.register_classes([DummyHousehold, DummyRetailer, Yen, Rice])
         env.reset(seed=42)
         household_id0: int = env.household_ids[0]
         household_id1: int = env.household_ids[1]
@@ -318,7 +287,9 @@ class TestEnvironment:
         action_dic0: dict[str, Any] = {
             "move": "DummyRetailer5",
             "consumptions": [{"item_name": "Rice", "item_amount": 2}],
-            "orders": [{"item_name": "Rice", "item_amount": 2, "counterparty_id": retailer_id}],
+            "orders": [
+                {"item_name": "Rice", "item_amount": 2, "counterparty_id": retailer_id}
+            ],
             "tweet": "Hello, world!",
             "follow": household_id1,
         }
@@ -326,8 +297,18 @@ class TestEnvironment:
         action_dic1: dict[str, Any] = {
             "move": "DummyRetailer5",
             "consumptions": [{"item_name": "Rice", "item_amount": 2}],
-            "orders": [{"item_name": "Rice", "item_amount": 2, "counterparty_id": retailer_id}],
-            "proposals": [{"responder_agent_id": household_id0, "give_item_name": "Rice", "give_item_amount": 5, "get_item_name": "Yen", "get_item_amount": 5000}],
+            "orders": [
+                {"item_name": "Rice", "item_amount": 2, "counterparty_id": retailer_id}
+            ],
+            "proposals": [
+                {
+                    "responder_agent_id": household_id0,
+                    "give_item_name": "Rice",
+                    "give_item_amount": 5,
+                    "get_item_name": "Yen",
+                    "get_item_amount": 5000,
+                }
+            ],
             "tweet": "Hello, world!",
             "follow": household_id0,
         }
@@ -384,11 +365,7 @@ class TestEnvironment:
 
     def test_step(self) -> None:
         env = DummyEnvironment(config=self.config)
-        env.register_classes(
-            [
-                DummyHousehold, DummyRetailer, Yen, Rice
-            ]
-        )
+        env.register_classes([DummyHousehold, DummyRetailer, Yen, Rice])
         env.reset(seed=42)
         all_actions_dic: dict[int, dict[str, Any]] = {}
         for agent_id in env.agent_ids:
