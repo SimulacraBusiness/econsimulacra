@@ -1,28 +1,41 @@
 from abc import ABC, abstractmethod
+import random
+from random import Random
+from typing import Any
 from typing import Optional
 from typing import Generic, TypeVar
 
 
 ObsT = TypeVar("ObsT")
-ActT = TypeVar("ActT")
 
 
-class Agent(ABC, Generic[ObsT, ActT]):
+class Agent(ABC, Generic[ObsT]):
     def __init__(
         self,
         agent_id: int,
         agent_name: str,
+        prng: Optional[Random] = None,
+        config: Optional[dict[str, Any]] = None,
     ) -> None:
         self.agent_id: int = agent_id
         self.agent_name: str = agent_name
+        self.prng: Random = prng if prng is not None else random.Random()
         self.inventory_dic: dict[str, float | int] = self._initialize_inventory()
+        self.config: dict[str, Any] = config if config is not None else {}
+        self.self_assign_name(self.config)
+
+    def get_self_name(self) -> str:
+        return self.agent_name
+
+    def self_assign_name(self, config: dict[str, Any]) -> None:
+        pass
 
     @abstractmethod
     def _initialize_inventory(self) -> dict[str, float | int]:
         pass
 
     @abstractmethod
-    def act(self, obs: ObsT) -> ActT:
+    def act(self, obs: ObsT) -> dict[str, Any]:
         pass
 
     def exchange_goods(
