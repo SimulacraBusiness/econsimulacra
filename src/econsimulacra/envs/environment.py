@@ -293,8 +293,8 @@ class Environment(ABC, Generic[ObsT]):
         proposals: list[dict[str, Any]],
     ) -> None:
         for order_dic in orders:
-            counterparty_id: int = order_dic.get("counterparty_id", None)
-            counterparty_name: str = order_dic.get("counterparty_name", None)
+            counterparty_id: Optional[int] = order_dic.get("counterparty_id", None)
+            counterparty_name: Optional[str] = order_dic.get("counterparty_name", None)
             if counterparty_id is None and counterparty_name is not None:
                 counterparty_id = self.agent_name2agent_id[counterparty_name]
             elif counterparty_id is None and counterparty_name is None:
@@ -303,6 +303,7 @@ class Environment(ABC, Generic[ObsT]):
                 )
             if "item_name" not in order_dic:
                 raise ValueError("item_name must be provided in order_dic.")
+            assert counterparty_id is not None
             item_name: str = order_dic["item_name"]
             item_amount: float | int = order_dic["item_amount"]
             if "item_amount" not in order_dic:
@@ -321,14 +322,15 @@ class Environment(ABC, Generic[ObsT]):
             self.pending_orders.append(new_order)
             self.latest_order_id += 1
         for proposal_dic in proposals:
-            responder_agent_id: int = proposal_dic.get("responder_agent_id", None)
-            responder_agent_name: str = proposal_dic.get("responder_agent_name", None)
+            responder_agent_id: Optional[int] = proposal_dic.get("responder_agent_id", None)
+            responder_agent_name: Optional[str] = proposal_dic.get("responder_agent_name", None)
             if responder_agent_id is None and responder_agent_name is not None:
                 responder_agent_id = self.agent_name2agent_id[responder_agent_name]
             elif responder_agent_id is None and responder_agent_name is None:
                 raise ValueError(
                     "Either responder_agent_id or responder_agent_name must be provided in proposal_dic."
                 )
+            assert responder_agent_id is not None
             if "give_item_name" not in proposal_dic:
                 raise ValueError("give_item_name must be provided in proposal_dic.")
             if "give_item_amount" not in proposal_dic:
@@ -341,7 +343,7 @@ class Environment(ABC, Generic[ObsT]):
             give_item_amount: float | int = proposal_dic["give_item_amount"]
             get_item_name: str = proposal_dic["get_item_name"]
             get_item_amount: float | int = proposal_dic["get_item_amount"]
-            ttl: Optional[int] = proposal_dic.get("ttl", None)
+            ttl = proposal_dic.get("ttl", None)
             new_proposal: SwapProposal = SwapProposal(
                 proposer_agent_id=agent_id,
                 responder_agent_id=responder_agent_id,
