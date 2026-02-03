@@ -35,15 +35,23 @@ class SpaceAssignLog(Log):
 
 class MoveLog(Log):
     def __init__(
-        self, agent_id: int, old_pos: tuple[int, ...], new_pos: tuple[int, ...]
+        self,
+        time: int,
+        agent_id: int,
+        old_pos: tuple[int, ...],
+        new_pos: tuple[int, ...],
     ) -> None:
+        self.time: int = time
         self.agent_id: int = agent_id
         self.old_pos: tuple[int, ...] = old_pos
         self.new_pos: tuple[int, ...] = new_pos
 
 
 class ConsumptionLog(Log):
-    def __init__(self, agent_id: int, item_name: str, item_amount: float | int) -> None:
+    def __init__(
+        self, time: int, agent_id: int, item_name: str, item_amount: float | int
+    ) -> None:
+        self.time: int = time
         self.agent_id: int = agent_id
         self.item_name: str = item_name
         self.item_amount: float | int = item_amount
@@ -52,6 +60,7 @@ class ConsumptionLog(Log):
 class OrderLog(Log):
     def __init__(
         self,
+        time: int,
         agent_id: int,
         counterparty_id: int,
         item_name: str,
@@ -59,6 +68,7 @@ class OrderLog(Log):
         price: Optional[float],
         order_id: Optional[int],
     ) -> None:
+        self.time: int = time
         self.agent_id: int = agent_id
         self.counterparty_id: int = counterparty_id
         self.item_name: str = item_name
@@ -70,6 +80,7 @@ class OrderLog(Log):
 class ProposalLog(Log):
     def __init__(
         self,
+        time: int,
         proposal_id: int,
         proposer_agent_id: int,
         responder_agent_id: int,
@@ -78,6 +89,7 @@ class ProposalLog(Log):
         get_item_name: str,
         get_item_amount: float | int,
     ) -> None:
+        self.time: int = time
         self.proposal_id: int = proposal_id
         self.proposer_agent_id: int = proposer_agent_id
         self.responder_agent_id: int = responder_agent_id
@@ -90,6 +102,7 @@ class ProposalLog(Log):
 class OrderReactionLog(Log):
     def __init__(
         self,
+        time: int,
         agent_id: int,
         counterparty_id: int,
         item_name: str,
@@ -98,6 +111,7 @@ class OrderReactionLog(Log):
         order_id: Optional[int],
         accept_amount: float | int,
     ) -> None:
+        self.time: int = time
         self.agent_id: int = agent_id
         self.counterparty_id: int = counterparty_id
         self.item_name: str = item_name
@@ -110,6 +124,7 @@ class OrderReactionLog(Log):
 class ProposalReactionLog(Log):
     def __init__(
         self,
+        time: int,
         proposal_id: int,
         proposer_agent_id: int,
         responder_agent_id: int,
@@ -119,6 +134,7 @@ class ProposalReactionLog(Log):
         get_item_amount: float | int,
         accept: bool,
     ) -> None:
+        self.time: int = time
         self.proposal_id: int = proposal_id
         self.proposer_agent_id: int = proposer_agent_id
         self.responder_agent_id: int = responder_agent_id
@@ -130,19 +146,22 @@ class ProposalReactionLog(Log):
 
 
 class TweetLog(Log):
-    def __init__(self, agent_id: int, message: str) -> None:
+    def __init__(self, time: int, agent_id: int, message: str) -> None:
+        self.time: int = time
         self.agent_id: int = agent_id
         self.message: str = message
 
 
 class FollowLog(Log):
-    def __init__(self, agent_id: int, target_agent_id: int) -> None:
+    def __init__(self, time: int, agent_id: int, target_agent_id: int) -> None:
+        self.time: int = time
         self.agent_id: int = agent_id
         self.target_agent_id: int = target_agent_id
 
 
 class UnfollowLog(Log):
-    def __init__(self, agent_id: int, target_agent_id: int) -> None:
+    def __init__(self, time: int, agent_id: int, target_agent_id: int) -> None:
+        self.time: int = time
         self.agent_id: int = agent_id
         self.target_agent_id: int = target_agent_id
 

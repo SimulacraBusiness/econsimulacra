@@ -306,7 +306,12 @@ class Environment(ABC, Generic[ObsT]):
             current_pos=current_pos, destination_pos=destination_pos
         )
         self.grid_space.move_agent(agent_id=agent_id, new_pos=next_pos)
-        log: MoveLog = MoveLog(agent_id=agent_id, old_pos=current_pos, new_pos=next_pos)
+        log: MoveLog = MoveLog(
+            time=self.get_time(),
+            agent_id=agent_id,
+            old_pos=current_pos,
+            new_pos=next_pos,
+        )
         if self.logger is not None:
             log.read_and_write(logger=self.logger)
         if next_pos == destination_pos:
@@ -328,7 +333,10 @@ class Environment(ABC, Generic[ObsT]):
                 give_item_amount=item_amount,
             )
             log: ConsumptionLog = ConsumptionLog(
-                agent_id=agent_id, item_name=item_name, item_amount=item_amount
+                time=self.get_time(),
+                agent_id=agent_id,
+                item_name=item_name,
+                item_amount=item_amount,
             )
             if self.logger is not None:
                 log.read_and_write(logger=self.logger)
@@ -367,6 +375,7 @@ class Environment(ABC, Generic[ObsT]):
                 ttl=ttl,
             )
             order_log: OrderLog = OrderLog(
+                time=self.get_time(),
                 agent_id=agent_id,
                 counterparty_id=counterparty_id,
                 item_name=item_name,
@@ -416,6 +425,7 @@ class Environment(ABC, Generic[ObsT]):
                 ttl=ttl,
             )
             proposal_log: ProposalLog = ProposalLog(
+                time=self.get_time(),
                 proposal_id=self.latest_proposal_id,
                 proposer_agent_id=agent_id,
                 responder_agent_id=responder_agent_id,
@@ -446,7 +456,7 @@ class Environment(ABC, Generic[ObsT]):
                 agent_id=agent_id, target_agent_id=follow_agent_id
             )
             follow_log: FollowLog = FollowLog(
-                agent_id=agent_id, target_agent_id=follow_agent_id
+                time=self.get_time(), agent_id=agent_id, target_agent_id=follow_agent_id
             )
             if self.logger is not None:
                 follow_log.read_and_write(logger=self.logger)
@@ -455,7 +465,9 @@ class Environment(ABC, Generic[ObsT]):
                 agent_id=agent_id, target_agent_id=unfollow_agent_id
             )
             unfollow_log: UnfollowLog = UnfollowLog(
-                agent_id=agent_id, target_agent_id=unfollow_agent_id
+                time=self.get_time(),
+                agent_id=agent_id,
+                target_agent_id=unfollow_agent_id,
             )
             if self.logger is not None:
                 unfollow_log.read_and_write(logger=self.logger)
@@ -528,6 +540,7 @@ class Environment(ABC, Generic[ObsT]):
                             )
                         order.react(amount=accept_amount)
                         order_reaction_log: OrderReactionLog = OrderReactionLog(
+                            time=self.get_time(),
                             agent_id=agent_id,
                             counterparty_id=order.agent_id,
                             item_name=order.item_name,
@@ -551,6 +564,7 @@ class Environment(ABC, Generic[ObsT]):
                         proposal.react(accept=accept)
                         proposal_reaction_log: ProposalReactionLog = (
                             ProposalReactionLog(
+                                time=self.get_time(),
                                 proposal_id=proposal.proposal_id,
                                 proposer_agent_id=proposal.proposer_agent_id,
                                 responder_agent_id=proposal.responder_agent_id,
