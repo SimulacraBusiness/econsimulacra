@@ -76,6 +76,10 @@ class Environment(ABC, Generic[ObsT]):
         self.prng: Random = random.Random()
         self.registered_classes: list[Type] = []
         self.logger: Optional[Logger] = logger
+        self._time: int = -1
+
+    def get_time(self) -> int:
+        return self._time
 
     def register_classes(self, class_list: list[Type]) -> None:
         self.registered_classes.extend(class_list)
@@ -103,6 +107,7 @@ class Environment(ABC, Generic[ObsT]):
         self.latest_proposal_id: int = 0
         if self.logger is not None:
             self.logger.process_logs()
+        self._time = 0
 
     def _generate_agents(self, agent_types: list[str]) -> None:
         """generate agents and place them in the grid space.
@@ -568,6 +573,7 @@ class Environment(ABC, Generic[ObsT]):
             order.update_time()
         for proposal in self.pending_swap_proposals:
             proposal.update_time()
+        self._time += 1
 
     def _remove_expired_orders_and_proposals(self) -> None:
         self.pending_orders = [
