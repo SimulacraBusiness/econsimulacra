@@ -1,6 +1,7 @@
 from econsimulacra.agents import Agent
 from econsimulacra.envs import Environment
 from econsimulacra.items import Item
+from econsimulacra.logs import Logger
 import pytest
 from typing import Any, Optional
 
@@ -16,24 +17,28 @@ class DummyHousehold(Agent):
             action_dic["move"] = obs["destination"]
         else:
             if obs["pos"] == obs["initial_coords"]:
-                if self.inventory_dic["Rice"] > 50:
-                    action_dic["consumptions"] = {"item_name": "Rice", "item_amount": 1}
+                if self.inventory_dic["Rice"] >= 50:
+                    action_dic["consumptions"] = [
+                        {"item_name": "Rice", "item_amount": 1}
+                    ]
                 else:
                     action_dic["move"] = obs["retailer_pos"]
             elif obs["pos"] == obs["retailer_pos"]:
                 if self.inventory_dic["Rice"] < 50:
-                    action_dic["purchase"] = {
-                        "item_name": "Rice",
-                        "item_amount": 1,
-                        "rice": None,
-                        "counterparty_id": obs["retailer_id"],
-                    }
+                    action_dic["orders"] = [
+                        {
+                            "item_name": "Rice",
+                            "item_amount": 1,
+                            "rice": None,
+                            "counterparty_id": obs["retailer_id"],
+                        }
+                    ]
                 else:
                     action_dic["move"] = obs["initial_coords"]
             else:
                 action_dic["move"] = obs["initial_coords"]
         action_dic["tweet"] = "Hello, world!"
-        follow_id: int
+        follow_id: Optional[int] = None
         unfollow_id: Optional[int] = None
         follows: set[int] = obs["follows"]
         for id in obs["recommended_follows"]:
@@ -78,6 +83,47 @@ class Rice(Item):
         self.price = 1000
 
 
+class DummyLogger(Logger):
+    def __init__(self) -> None:
+        super().__init__()
+        self.daily_life_logs: list[dict[str, Any]] = []
+        self.social_network_logs: list[dict[str, Any]] = []
+        self.space_logs: list[dict[str, Any]] = []
+
+    def _process_agent_generation_log(self, log):
+        self.daily_life_logs.append(log.to_dict())
+
+    def _process_space_assign_log(self, log):
+        self.space_logs.append(log.to_dict())
+
+    def _process_move_log(self, log):
+        self.space_logs.append(log.to_dict())
+
+    def _process_consumption_log(self, log):
+        self.daily_life_logs.append(log.to_dict())
+
+    def _process_order_log(self, log):
+        self.daily_life_logs.append(log.to_dict())
+
+    def _process_proposal_log(self, log):
+        self.daily_life_logs.append(log.to_dict())
+
+    def _process_order_reaction_log(self, log):
+        self.daily_life_logs.append(log.to_dict())
+
+    def _process_proposal_reaction_log(self, log):
+        self.daily_life_logs.append(log.to_dict())
+
+    def _process_tweet_log(self, log):
+        self.social_network_logs.append(log.to_dict())
+
+    def _process_follow_log(self, log):
+        self.social_network_logs.append(log.to_dict())
+
+    def _process_unfollow_log(self, log):
+        self.social_network_logs.append(log.to_dict())
+
+
 class DummyEnvironment(Environment):
     def get_observations(self, agent_id: int) -> dict[str, Any]:
         retailer_id: int = self.agent_name2agent_id["DummyRetailer5"]
@@ -105,7 +151,7 @@ class DummyEnvironment(Environment):
 
 
 class TestEnvironment:
-    config = {  # <- ここ変えた！
+    config = {
         "gridSpace": (10, 10),
         "simulation": {
             "numSteps": 10,
@@ -175,6 +221,14 @@ class TestEnvironment:
             else:
                 assert agent.inventory_dic == {"Yen": 500, "Rice": 10000}
                 assert agent.agent_name == f"DummyRetailer{agent_id}"
+        env = DummyEnvironment(config=self.config, logger=DummyLogger())
+        env.register_classes([DummyHousehold, DummyRetailer, Yen, Rice])
+        env.reset(seed=42)
+        logger = env.logger
+        assert isinstance(logger, DummyLogger)
+        assert len(logger.daily_life_logs) == 6
+        assert len(logger.space_logs) == 6
+        assert len(logger.social_network_logs) == 0
 
     def test_move(self) -> None:
         env = DummyEnvironment(config=self.config)
@@ -374,3 +428,19 @@ class TestEnvironment:
             action_dic: dict[str, Any] = agent.act(obs=obs)
             all_actions_dic[agent_id] = action_dic
         env.step(all_actions_dic=all_actions_dic)
+        env = DummyEnvironment(config=self.config, logger=DummyLogger())
+        env.register_classes([DummyHousehold, DummyRetailer, Yen, Rice])
+        env.reset(seed=42)
+        for _ in range(100):
+            all_actions_dic = {}
+            for agent_id in env.agent_ids:
+                agent = env.agent_id2agent[agent_id]
+                obs = env.get_observations(agent_id=agent_id)
+                action_dic = agent.act(obs=obs)
+                all_actions_dic[agent_id] = action_dic
+            env.step(all_actions_dic=all_actions_dic)
+        logger = env.logger
+        assert isinstance(logger, DummyLogger)
+        assert len(logger.daily_life_logs) > 6
+        assert len(logger.space_logs) > 6
+        assert len(logger.social_network_logs) > 0
