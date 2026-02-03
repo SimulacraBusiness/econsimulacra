@@ -2,6 +2,18 @@ from abc import ABC, abstractmethod
 from ..agents import Agent
 from .env_utils import find_class
 from ..items import Item
+from ..logs import AgentGenerationLog
+from ..logs import SpaceAssignLog
+from ..logs import MoveLog
+from ..logs import ConsumptionLog
+from ..logs import OrderLog
+from ..logs import ProposalLog
+from ..logs import OrderReactionLog
+from ..logs import ProposalReactionLog
+from ..logs import TweetLog
+from ..logs import FollowLog
+from ..logs import UnfollowLog
+from ..logs import Logger
 import random
 from random import Random
 from .order import Order
@@ -9,6 +21,7 @@ from .order import SwapProposal
 from .social_network import SocialNetwork
 from .space import GridSpace
 from typing import Any
+from typing import Literal
 from typing import Optional
 from typing import Type
 from typing import Generic, TypeVar
@@ -17,7 +30,11 @@ ObsT = TypeVar("ObsT")
 
 
 class Environment(ABC, Generic[ObsT]):
-    def __init__(self, config: dict[str, Any]) -> None:
+    def __init__(
+        self,
+        config: dict[str, Any],
+        logger: Optional[Logger] = None,
+    ) -> None:
         """Initialization.
 
         config example:
@@ -58,11 +75,14 @@ class Environment(ABC, Generic[ObsT]):
         self.config: dict[str, Any] = config
         self.prng: Random = random.Random()
         self.registered_classes: list[Type] = []
+        self.logger: Optional[Logger] = logger
 
     def register_classes(self, class_list: list[Type]) -> None:
         self.registered_classes.extend(class_list)
 
     def reset(self, seed: int) -> None:
+        if self.logger is not None:
+            self.logger.clear()
         self.prng.seed(seed)
         self.grid_space: GridSpace = GridSpace(space_size=self.space_size)
         self.social_network: SocialNetwork = SocialNetwork()
@@ -81,6 +101,8 @@ class Environment(ABC, Generic[ObsT]):
         self.pending_swap_proposals: list[SwapProposal] = []
         self.latest_order_id: int = 0
         self.latest_proposal_id: int = 0
+        if self.logger is not None:
+            self.logger.process_logs()
 
     def _generate_agents(self, agent_types: list[str]) -> None:
         """generate agents and place them in the grid space.
@@ -112,6 +134,13 @@ class Environment(ABC, Generic[ObsT]):
                     config=agent_config,
                 )
                 agent_name: str = agent_instance.get_self_name()
+                log: AgentGenerationLog = AgentGenerationLog(
+                    agent_id=current_agent_id,
+                    agent_name=agent_name,
+                    inventory_dic=agent_instance.inventory_dic.copy(),
+                )
+                if self.logger is not None:
+                    log.read_and_write(logger=self.logger)
                 while True:
                     if agent_name not in self.agent_name2agent_id:
                         break
@@ -158,6 +187,9 @@ class Environment(ABC, Generic[ObsT]):
             )
         self.grid_space.place_agent(agent_id=agent_id, pos=coords)
         self.agent_id2initial_coords[agent_id] = coords
+        log: SpaceAssignLog = SpaceAssignLog(agent_id=agent_id, pos=coords)
+        if self.logger is not None:
+            log.read_and_write(logger=self.logger)
 
     def step(self, all_actions_dic: dict[int, dict[str, Any]]) -> None:
         """execute one step of the environment.
@@ -173,6 +205,8 @@ class Environment(ABC, Generic[ObsT]):
         self._process_orders_and_proposals()
         self._update_time()
         self._remove_expired_orders_and_proposals()
+        if self.logger is not None:
+            self.logger.process_logs()
 
     def apply_action_to_env(self, agent_id: int, action_dic: dict[str, Any]) -> None:
         """
@@ -267,6 +301,9 @@ class Environment(ABC, Generic[ObsT]):
             current_pos=current_pos, destination_pos=destination_pos
         )
         self.grid_space.move_agent(agent_id=agent_id, new_pos=next_pos)
+        log: MoveLog = MoveLog(agent_id=agent_id, old_pos=current_pos, new_pos=next_pos)
+        if self.logger is not None:
+            log.read_and_write(logger=self.logger)
         if next_pos == destination_pos:
             self.agent_id2is_moving[agent_id] = False
             self.agent_id2destination[agent_id] = None
@@ -285,6 +322,11 @@ class Environment(ABC, Generic[ObsT]):
                 give_item_name=item_name,
                 give_item_amount=item_amount,
             )
+            log: ConsumptionLog = ConsumptionLog(
+                agent_id=agent_id, item_name=item_name, item_amount=item_amount
+            )
+            if self.logger is not None:
+                log.read_and_write(logger=self.logger)
 
     def _add_new_orders_and_proposals(
         self,
@@ -319,6 +361,16 @@ class Environment(ABC, Generic[ObsT]):
                 order_id=self.latest_order_id,
                 ttl=ttl,
             )
+            order_log: OrderLog = OrderLog(
+                agent_id=agent_id,
+                counterparty_id=counterparty_id,
+                item_name=item_name,
+                item_amount=item_amount,
+                price=price,
+                order_id=self.latest_order_id,
+            )
+            if self.logger is not None:
+                order_log.read_and_write(logger=self.logger)
             self.pending_orders.append(new_order)
             self.latest_order_id += 1
         for proposal_dic in proposals:
@@ -358,6 +410,17 @@ class Environment(ABC, Generic[ObsT]):
                 proposal_id=self.latest_proposal_id,
                 ttl=ttl,
             )
+            proposal_log: ProposalLog = ProposalLog(
+                proposal_id=self.latest_proposal_id,
+                proposer_agent_id=agent_id,
+                responder_agent_id=responder_agent_id,
+                give_item_name=give_item_name,
+                give_item_amount=give_item_amount,
+                get_item_name=get_item_name,
+                get_item_amount=get_item_amount,
+            )
+            if self.logger is not None:
+                proposal_log.read_and_write(logger=self.logger)
             self.pending_swap_proposals.append(new_proposal)
             self.latest_proposal_id += 1
 
@@ -370,14 +433,27 @@ class Environment(ABC, Generic[ObsT]):
     ) -> None:
         if tweet is not None:
             self.social_network.tweet(agent_id=agent_id, message=tweet)
+            tweet_log: TweetLog = TweetLog(agent_id=agent_id, message=tweet)
+            if self.logger is not None:
+                tweet_log.read_and_write(logger=self.logger)
         if follow_agent_id is not None:
             self.social_network.follow_agent(
                 agent_id=agent_id, target_agent_id=follow_agent_id
             )
+            follow_log: FollowLog = FollowLog(
+                agent_id=agent_id, target_agent_id=follow_agent_id
+            )
+            if self.logger is not None:
+                follow_log.read_and_write(logger=self.logger)
         if unfollow_agent_id is not None:
             self.social_network.unfollow_agent(
                 agent_id=agent_id, target_agent_id=unfollow_agent_id
             )
+            unfollow_log: UnfollowLog = UnfollowLog(
+                agent_id=agent_id, target_agent_id=unfollow_agent_id
+            )
+            if self.logger is not None:
+                unfollow_log.read_and_write(logger=self.logger)
 
     def _process_orders_and_proposals(self) -> None:
         for order in self.pending_orders:
@@ -389,7 +465,6 @@ class Environment(ABC, Generic[ObsT]):
                 accepted_amount: float | int = order.accepted_amount
                 item_name: str = order.item_name
                 item: Item = self.item_name2item[item_name]
-                print(item)
                 total_price: float = accepted_amount * max(
                     0 if order.price is None else order.price, item.price
                 )
@@ -432,7 +507,7 @@ class Environment(ABC, Generic[ObsT]):
         for reaction in reactions:
             if "kind" not in reaction:
                 raise ValueError("Each reaction must include 'kind' key.")
-            kind: str = reaction["kind"]
+            kind: Literal["order", "proposal"] = reaction["kind"]
             if "id" not in reaction:
                 raise ValueError("Each reaction must include 'id' key.")
             if kind == "order":
@@ -447,6 +522,17 @@ class Environment(ABC, Generic[ObsT]):
                                 f"Agent {agent_id} cannot react to order {order_id} as it is not the counterparty."
                             )
                         order.react(amount=accept_amount)
+                        order_reaction_log: OrderReactionLog = OrderReactionLog(
+                            agent_id=agent_id,
+                            counterparty_id=order.agent_id,
+                            item_name=order.item_name,
+                            item_amount=order.item_amount,
+                            price=order.price,
+                            order_id=order.order_id,
+                            accept_amount=accept_amount,
+                        )
+                        if self.logger is not None:
+                            order_reaction_log.read_and_write(logger=self.logger)
             elif kind == "proposal":
                 proposal_id: int = reaction["id"]
                 if "accept" not in reaction:
@@ -458,6 +544,20 @@ class Environment(ABC, Generic[ObsT]):
                         and proposal.responder_agent_id == agent_id
                     ):
                         proposal.react(accept=accept)
+                        proposal_reaction_log: ProposalReactionLog = (
+                            ProposalReactionLog(
+                                proposal_id=proposal.proposal_id,
+                                proposer_agent_id=proposal.proposer_agent_id,
+                                responder_agent_id=proposal.responder_agent_id,
+                                give_item_name=proposal.give_item_name,
+                                give_item_amount=proposal.give_item_amount,
+                                get_item_name=proposal.get_item_name,
+                                get_item_amount=proposal.get_item_amount,
+                                accept=accept,
+                            )
+                        )
+                        if self.logger is not None:
+                            proposal_reaction_log.read_and_write(logger=self.logger)
             else:
                 raise ValueError(
                     f"Unknown reaction kind: {kind}. Must be either 'order' or 'proposal'."
