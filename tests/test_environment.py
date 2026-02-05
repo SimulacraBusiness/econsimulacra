@@ -61,12 +61,15 @@ class DummyRetailer(Agent):
         for item_name, item in obs["item_name2item"].items():
             if item_name == "Rice":
                 item.set_price(1000)
+        if len(obs["orders"]) == 0:
+            return {}
         action_dic: dict[str, Any] = {"reactions": []}
         for order in obs["orders"]:
             action_dic["reactions"].append(
                 {
-                    "order_id": order["order_id"],
-                    "accepted_amount": order["item_amount"],
+                    "kind": "order",
+                    "id": order.order_id,
+                    "accept_amount": order.item_amount,
                 }
             )
         return action_dic
