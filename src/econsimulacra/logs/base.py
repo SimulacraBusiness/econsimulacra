@@ -1,3 +1,4 @@
+from typing import Callable
 from typing import Optional
 
 
@@ -183,6 +184,7 @@ class UnfollowLog(Log):
 class Logger:
     def __init__(self) -> None:
         self.pending_logs: list[Log] = []
+        self._dispatch_table: dict[type[Log], Callable] = {}
 
     def clear(self) -> None:
         self.pending_logs.clear()
@@ -192,31 +194,13 @@ class Logger:
 
     def process_logs(self) -> None:
         for log in self.pending_logs:
-            if isinstance(log, AgentGenerationLog):
-                self._process_agent_generation_log(log)
-            elif isinstance(log, SpaceAssignLog):
-                self._process_space_assign_log(log)
-            elif isinstance(log, MoveLog):
-                self._process_move_log(log)
-            elif isinstance(log, ConsumptionLog):
-                self._process_consumption_log(log)
-            elif isinstance(log, OrderLog):
-                self._process_order_log(log)
-            elif isinstance(log, ProposalLog):
-                self._process_proposal_log(log)
-            elif isinstance(log, OrderReactionLog):
-                self._process_order_reaction_log(log)
-            elif isinstance(log, ProposalReactionLog):
-                self._process_proposal_reaction_log(log)
-            elif isinstance(log, TweetLog):
-                self._process_tweet_log(log)
-            elif isinstance(log, FollowLog):
-                self._process_follow_log(log)
-            elif isinstance(log, UnfollowLog):
-                self._process_unfollow_log(log)
-            else:
-                raise ValueError(f"Unknown log type: {type(log)}")
+            handler = self._dispatch_table.get(type(log), self._process_log_default)
+            print(handler)
+            handler(log)
         self.pending_logs.clear()
+
+    def _process_log_default(self, log: Log) -> None:
+        raise NotImplementedError
 
     def _process_agent_generation_log(self, log: AgentGenerationLog) -> None:
         pass
