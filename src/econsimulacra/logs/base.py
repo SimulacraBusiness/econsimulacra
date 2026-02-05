@@ -195,7 +195,6 @@ class Logger:
     def process_logs(self) -> None:
         for log in self.pending_logs:
             handler = self._dispatch_table.get(type(log), self._process_log_default)
-            print(handler)
             handler(log)
         self.pending_logs.clear()
 
