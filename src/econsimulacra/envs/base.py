@@ -141,6 +141,7 @@ class Environment(ABC, Generic[ObsT]):
                 agent_name: str = agent_instance.get_self_name()
                 log: AgentGenerationLog = AgentGenerationLog(
                     agent_id=current_agent_id,
+                    time=self.get_time(),
                     agent_name=agent_name,
                     inventory_dic=agent_instance.inventory_dic.copy(),
                 )
