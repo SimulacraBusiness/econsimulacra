@@ -449,7 +449,9 @@ class Environment(ABC, Generic[ObsT]):
     ) -> None:
         if tweet is not None:
             self.social_network.tweet(agent_id=agent_id, message=tweet)
-            tweet_log: TweetLog = TweetLog(time=self.get_time(), agent_id=agent_id, message=tweet)
+            tweet_log: TweetLog = TweetLog(
+                time=self.get_time(), agent_id=agent_id, message=tweet
+            )
             if self.logger is not None:
                 tweet_log.read_and_write(logger=self.logger)
         if follow_agent_id is not None:

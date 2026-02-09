@@ -12,7 +12,11 @@ class Log:
 
 class AgentGenerationLog(Log):
     def __init__(
-        self, time: int, agent_id: int, agent_name: str, inventory_dic: dict[str, float | int]
+        self,
+        time: int,
+        agent_id: int,
+        agent_name: str,
+        inventory_dic: dict[str, float | int],
     ) -> None:
         self.type: str = "agent_generation"
         self.time: int = time
