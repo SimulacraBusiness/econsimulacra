@@ -14,6 +14,7 @@ class TestAgent:
     def test__init__(self) -> None:
         agent = DummyAgent(agent_id=1, agent_name="TestAgent")
         assert agent.agent_id == 1
+        assert agent.agent_type == "DummyAgent"
         assert agent.agent_name == "TestAgent"
         assert agent.inventory_dic == {"cash": 100, "rice": 50}
 

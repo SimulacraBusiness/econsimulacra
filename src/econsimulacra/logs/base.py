@@ -15,12 +15,14 @@ class AgentGenerationLog(Log):
         self,
         time: int,
         agent_id: int,
+        agent_type: str,
         agent_name: str,
         inventory_dic: dict[str, float | int],
     ) -> None:
         self.type: str = "agent_generation"
         self.time: int = time
         self.agent_id: int = agent_id
+        self.agent_type: str = agent_type
         self.agent_name: str = agent_name
         self.inventory_dic: dict[str, float | int] = inventory_dic.copy()
 
@@ -29,6 +31,7 @@ class AgentGenerationLog(Log):
             "type": self.type,
             "time": self.time,
             "agent_id": self.agent_id,
+            "agent_type": self.agent_type,
             "agent_name": self.agent_name,
         }
         for item_name, item_amount in self.inventory_dic.items():
