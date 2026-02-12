@@ -1,24 +1,31 @@
+import asyncio
 import json
+from .agents.base import Agent
 from .logs.base import Logger
 from .envs.base import Environment
 from pathlib import Path
 from typing import Any
+from typing import Generic
 from typing import Optional
 from typing import Type
+from typing import TypeVar
+
+ObsT = TypeVar("ObsT")
 
 
-class Simulator:
+class Simulator(Generic[ObsT]):
     def __init__(
         self,
         config: dict[str, Any] | Path,
         env_class: Type[Environment],
         logger: Optional[Logger] = None,
     ) -> None:
+        self.config: dict[str, Any]
         if isinstance(config, Path):
             config_path: Path = config
-            self.config: dict[str, Any] = json.load(open(config_path, "r"))
+            self.config = json.load(open(config_path, "r"))
         else:
-            self.config: dict[str, Any] = config
+            self.config = config
         self.config = self._convert_list_to_tuple(self.config)
         self.env: Environment = env_class(config=self.config, logger=logger)
 
@@ -35,16 +42,33 @@ class Simulator:
         else:
             return obj
 
-    def simulate(self, seed: Optional[int] = None) -> None:
+    async def simulate(
+        self,
+        seed: Optional[int] = None,
+        parallel_batch_size: Optional[int] = None,
+    ) -> None:
+        def _chunked(seq: list[int], size: int) -> list[list[int]]:
+            return [seq[i : i + size] for i in range(0, len(seq), size)]
+
+        parallel_batch_size = (
+            1 if parallel_batch_size is None else parallel_batch_size
+        )
         self.env.reset(seed=seed)
         num_steps: int = self.config["simulation"]["numSteps"]
         for _ in range(num_steps):
             all_actions_dic: dict[int, dict[str, Any]] = {}
-            for agent_id in self.env.agent_ids:
-                agent = self.env.agent_id2agent[agent_id]
-                obs = self.env.get_observations(agent_id=agent_id)
-                action_dic = agent.act(obs=obs)
-                all_actions_dic[agent_id] = action_dic
+
+            async def _act_one(agent_id: int) -> tuple[int, dict[str, Any]]:
+                agent: Agent = self.env.agent_id2agent[agent_id]
+                obs: ObsT = self.env.get_observations(agent_id=agent_id)
+                action_dic: dict[str, Any] = await agent.act(obs=obs)
+                return agent_id, action_dic
+
+            for batch in _chunked(self.env.agent_ids, parallel_batch_size):
+                results: list[tuple[int, dict[str, Any]]] = await asyncio.gather(
+                    *[_act_one(agent_id) for agent_id in batch]
+                )
+                all_actions_dic.update(dict(results))
             self.env.step(all_actions_dic=all_actions_dic)
         if self.env.logger is not None:
             self.env.logger.save()

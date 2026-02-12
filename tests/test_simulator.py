@@ -1,9 +1,9 @@
+import asyncio
 from econsimulacra.agents import Agent
 from econsimulacra.envs import Environment
 from econsimulacra.items import Item
 from econsimulacra.logs import DictLogger
 from econsimulacra.simulator import Simulator
-import pytest
 from typing import Any, Optional
 
 
@@ -11,7 +11,7 @@ class DummyHousehold(Agent):
     def _initialize_inventory(self) -> dict[str, float | int]:
         return {"Yen": 100000, "Rice": 50}
 
-    def act(self, obs: dict[str, Any]) -> dict[str, Any]:
+    async def act(self, obs: dict[str, Any]) -> dict[str, Any]:
         action_dic: dict[str, Any] = {}
         is_moving: bool = obs["is_moving"]
         if is_moving:
@@ -57,7 +57,7 @@ class DummyRetailer(Agent):
     def _initialize_inventory(self) -> dict[str, float | int]:
         return {"Yen": 500, "Rice": 10000}
 
-    def act(self, obs):
+    async def act(self, obs):
         item: Item
         for item_name, item in obs["item_name2item"].items():
             if item_name == "Rice":
@@ -176,7 +176,7 @@ class TestSimulator:
                 Rice,
             ]
         )
-        simulator.simulate(seed=42)
+        asyncio.run(simulator.simulate(seed=42, parallel_batch_size=4))
         logger: DictLogger = simulator.env.logger
         assert logger is not None
         assert len(logger.logs) > 0
