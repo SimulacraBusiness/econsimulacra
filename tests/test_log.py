@@ -18,8 +18,11 @@ class TestDictLogger:
     def test_process_logs(self) -> None:
         logger = DictLogger()
         log1 = AgentGenerationLog(
-            time=0, agent_id=1, agent_type="DummyAgent",
-            agent_name="AgentA", inventory_dic={"Cash": 100}
+            time=0,
+            agent_id=1,
+            agent_type="DummyAgent",
+            agent_name="AgentA",
+            inventory_dic={"Cash": 100},
         )
         log2 = MoveLog(time=1, agent_id=1, old_pos=(0, 0), new_pos=(1, 1))
         log1.read_and_write(logger)
