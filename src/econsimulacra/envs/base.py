@@ -84,10 +84,11 @@ class Environment(ABC, Generic[ObsT]):
     def register_classes(self, class_list: list[Type]) -> None:
         self.registered_classes.extend(class_list)
 
-    def reset(self, seed: int) -> None:
+    def reset(self, seed: Optional[int]) -> None:
         if self.logger is not None:
             self.logger.clear()
-        self.prng.seed(seed)
+        if seed is not None:
+            self.prng.seed(seed)
         self.grid_space: GridSpace = GridSpace(space_size=self.space_size)
         self.social_network: SocialNetwork = SocialNetwork()
         assert "environment" in self.config, "Config must include 'environment' key."
