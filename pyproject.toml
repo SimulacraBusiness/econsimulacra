@@ -22,6 +22,14 @@ transformers = "^4.57.6"
 statsmodels = "^0.14.6"
 manim = "^0.19.2"
 
+[tool.mypy]
+python_version = "3.11"
+exclude = ["src/econsimulacra/animations/"]
+
+[[tool.mypy.overrides]]
+module = ["manim", "manim.*"]
+ignore_missing_imports = true
+
 
 [build-system]
 requires = ["poetry-core"]
