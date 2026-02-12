@@ -11,6 +11,7 @@ from .base import TweetLog as TweetLog
 from .base import FollowLog as FollowLog
 from .base import UnfollowLog as UnfollowLog
 from .base import Logger as Logger
+from .dict_logger import DictLogger as DictLogger
 
 __all__ = [
     "Log",
@@ -26,4 +27,5 @@ __all__ = [
     "FollowLog",
     "UnfollowLog",
     "Logger",
+    "DictLogger",
 ]

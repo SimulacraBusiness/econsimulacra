@@ -18,6 +18,7 @@ class Agent(ABC, Generic[ObsT]):
         config: Optional[dict[str, Any]] = None,
     ) -> None:
         self.agent_id: int = agent_id
+        self.agent_type: str = self.__class__.__name__
         self.agent_name: str = agent_name
         self.prng: Random = prng if prng is not None else random.Random()
         self.inventory_dic: dict[str, float | int] = self._initialize_inventory()

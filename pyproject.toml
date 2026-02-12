@@ -5,13 +5,12 @@ description = ""
 authors = ["ryuji-hashimoto0110"]
 readme = "README.md"
 
+# ---------------------------------------------------------
+# Core dependencies (always installed)
+# ---------------------------------------------------------
 [tool.poetry.dependencies]
 python = "^3.11"
-pytest = "^9.0.2"
-pytest-cov = "^7.0.0"
-mypy = "^1.19.1"
 typing-extensions = "^4.15.0"
-ruff = "^0.14.13"
 torch = "2.2.1"
 numpy = "^2.4.1"
 pandas = "^2.3.3"
@@ -21,7 +20,44 @@ rich = "^14.2.0"
 transformers = "^4.57.6"
 statsmodels = "^0.14.6"
 
+# ---------------------------------------------------------
+# Development tools
+# Install with:
+#   poetry install --with dev
+# Used in CI (ruff, mypy, pytest)
+# ---------------------------------------------------------
+[tool.poetry.group.dev.dependencies]
+pytest = "^9.0.2"
+pytest-cov = "^7.0.0"
+mypy = "^1.19.1"
+ruff = "^0.14.13"
+
+# ---------------------------------------------------------
+# Animation dependencies (manim requires cairo/pango system libs)
+# Install only when working on animations:
+#   poetry install --with dev,animations
+#
+# CI does NOT install this group to avoid cairo build issues.
+# ---------------------------------------------------------
+[tool.poetry.group.animations]
+optional = true
+
+[tool.poetry.group.animations.dependencies]
+manim = "^0.19.2"
+
+# ---------------------------------------------------------
+# Mypy configuration
+# Animations layer is excluded because manim lacks full type hints
+# ---------------------------------------------------------
+[tool.mypy]
+python_version = "3.11"
+exclude = ["src/econsimulacra/animations/"]
+
+[[tool.mypy.overrides]]
+module = ["manim", "manim.*"]
+ignore_missing_imports = true
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+

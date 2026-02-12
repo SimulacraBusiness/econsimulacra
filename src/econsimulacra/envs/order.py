@@ -18,7 +18,7 @@ class Order:
         self.item_amount: float | int = item_amount
         self.price: Optional[float] = price
         self.order_id: Optional[int] = order_id
-        self.expire_in: int = ttl if ttl is not None else 1
+        self.expire_in: int = ttl if ttl is not None else 2
         self.accepted_amount: float | int = 0
 
     def react(self, amount: float | int) -> None:
