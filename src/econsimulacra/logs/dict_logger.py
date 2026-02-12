@@ -6,7 +6,6 @@ import pathlib
 from typing import Optional
 
 
-
 class DictLogger(Logger):
     def __init__(self, txt_save_path: Optional[Path] = None) -> None:
         super().__init__()
@@ -21,4 +20,4 @@ class DictLogger(Logger):
             pathlib.Path(self.txt_save_path).parent.mkdir(parents=True, exist_ok=True)
             with open(self.txt_save_path, "w") as f:
                 for log_dic in self.logs:
-                    f.write(f"{json.dumps(log_dic)}\n")
+                    f.write(json.dumps(log_dic, ensure_ascii=False) + "\n")
