@@ -36,7 +36,7 @@ class Agent(ABC, Generic[ObsT]):
         pass
 
     @abstractmethod
-    def act(self, obs: ObsT) -> dict[str, Any]:
+    async def act(self, obs: ObsT) -> dict[str, Any]:
         pass
 
     def exchange_goods(

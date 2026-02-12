@@ -240,3 +240,6 @@ class Logger:
 
     def _process_unfollow_log(self, log: UnfollowLog) -> None:
         pass
+
+    def save(self) -> None:
+        pass
