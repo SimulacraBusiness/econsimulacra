@@ -50,9 +50,7 @@ class Simulator(Generic[ObsT]):
         def _chunked(seq: list[int], size: int) -> list[list[int]]:
             return [seq[i : i + size] for i in range(0, len(seq), size)]
 
-        parallel_batch_size = (
-            1 if parallel_batch_size is None else parallel_batch_size
-        )
+        parallel_batch_size = 1 if parallel_batch_size is None else parallel_batch_size
         self.env.reset(seed=seed)
         num_steps: int = self.config["simulation"]["numSteps"]
         for _ in range(num_steps):

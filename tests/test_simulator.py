@@ -112,6 +112,7 @@ class DummyEnvironment(Environment):
                 "item_name2item": self.item_name2item,
             }
 
+
 class TestSimulator:
     config = {
         "gridSpace": (10, 10),
@@ -134,6 +135,7 @@ class TestSimulator:
             "initialCoords": (5, 5),
         },
     }
+
     def test_init(self):
         simulator = Simulator(
             config=self.config,
@@ -154,7 +156,7 @@ class TestSimulator:
             "e": {
                 "f": {"g": [8, 9]},
                 "h": 10,
-            }
+            },
         }
         converted_obj = simulator._convert_list_to_tuple(input_obj)
         assert isinstance(converted_obj["a"], tuple)
