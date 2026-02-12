@@ -39,6 +39,9 @@ ruff = "^0.14.13"
 #
 # CI does NOT install this group to avoid cairo build issues.
 # ---------------------------------------------------------
+[tool.poetry.group.animations]
+optional = true
+
 [tool.poetry.group.animations.dependencies]
 manim = "^0.19.2"
 
