@@ -40,9 +40,9 @@ class Order:
 
     def __repr__(self) -> str:
         return (
-            f"Order(agent_id={self.agent_id}, counterparty_id={self.counterparty_id}, "
+            f"Order(order_id={self.order_id}, agent_id={self.agent_id}, counterparty_id={self.counterparty_id}, "
             f"item_name='{self.item_name}', item_amount={self.item_amount}, accepted_amount={self.accepted_amount}, "
-            f"price={self.price}, order_id={self.order_id}, expire_in={self.expire_in})"
+            f"price={self.price}, expire_in={self.expire_in})"
         )
 
 
@@ -79,8 +79,9 @@ class SwapProposal:
 
     def __repr__(self) -> str:
         return (
-            f"SwapProposal(proposer_agent_id={self.proposer_agent_id}, responder_agent_id={self.responder_agent_id}, "
+            f"SwapProposal(proposal_id={self.proposal_id}, "
+            f"proposer_agent_id={self.proposer_agent_id}, responder_agent_id={self.responder_agent_id}, "
             f"give_item_name='{self.give_item_name}', give_item_amount={self.give_item_amount}, "
             f"get_item_name='{self.get_item_name}', get_item_amount={self.get_item_amount}, "
-            f"proposal_id={self.proposal_id}, expire_in={self.expire_in}, accept={self.accept})"
+            f"expire_in={self.expire_in}, accept={self.accept})"
         )
