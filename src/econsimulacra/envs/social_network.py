@@ -67,3 +67,8 @@ class SocialNetwork:
         if agent_id not in self.nodes:
             raise ValueError(f"Agent ID {agent_id} not found in the social network.")
         return self.agent_id2follows[agent_id]
+
+    def get_tweet(self, agent_id: int) -> str:
+        if agent_id not in self.nodes:
+            raise ValueError(f"Agent ID {agent_id} not found in the social network.")
+        return self.agent_id2tweet[agent_id]
