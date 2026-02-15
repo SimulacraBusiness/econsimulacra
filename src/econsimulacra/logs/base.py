@@ -164,6 +164,23 @@ class ProposalReactionLog(Log):
         self.accept: bool = accept
 
 
+class ChangePriceLog(Log):
+    def __init__(
+        self,
+        time: int,
+        agent_id: int,
+        item_name: str,
+        old_price: float,
+        new_price: float,
+    ) -> None:
+        self.type: str = "change_price"
+        self.time: int = time
+        self.agent_id: int = agent_id
+        self.item_name: str = item_name
+        self.old_price: float = old_price
+        self.new_price: float = new_price
+
+
 class TweetLog(Log):
     def __init__(self, time: int, agent_id: int, message: str) -> None:
         self.type: str = "tweet"
@@ -230,6 +247,9 @@ class Logger:
         pass
 
     def _process_proposal_reaction_log(self, log: ProposalReactionLog) -> None:
+        pass
+
+    def _process_change_price_log(self, log: ChangePriceLog) -> None:
         pass
 
     def _process_tweet_log(self, log: TweetLog) -> None:
