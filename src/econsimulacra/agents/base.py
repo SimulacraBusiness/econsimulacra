@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from ..sim_utils import JsonRandom
 import random
 from random import Random
 from typing import Any
@@ -21,13 +22,15 @@ class Agent(ABC, Generic[ObsT]):
         self.agent_type: str = self.__class__.__name__
         self.agent_name: str = agent_name
         self.prng: Random = prng if prng is not None else random.Random()
-        self.inventory_dic: dict[str, float | int] = self._initialize_inventory(config)
+        self.config: dict[str, Any] = config if config is not None else {}
+        self.inventory_dic: dict[str, float | int] = self._initialize_inventory(
+            self.config
+        )
         self.is_rich_info_allowed: bool
-        if config is not None and "isRichInfoAllowed" in config:
-            self.is_rich_info_allowed = config["isRichInfoAllowed"]
+        if self.config is not None and "isRichInfoAllowed" in self.config:
+            self.is_rich_info_allowed = self.config["isRichInfoAllowed"]
         else:
             self.is_rich_info_allowed = False
-        self.config: dict[str, Any] = config if config is not None else {}
         self.self_assign_name(self.config)
 
     def get_self_name(self) -> str:
@@ -36,11 +39,16 @@ class Agent(ABC, Generic[ObsT]):
     def self_assign_name(self, config: dict[str, Any]) -> None:
         pass
 
-    @abstractmethod
     def _initialize_inventory(
-        self, config: Optional[dict[str, Any]]
+        self, config: dict[str, Any]
     ) -> dict[str, float | int]:
-        pass
+        json_random = JsonRandom(prng=self.prng)
+        inventory_config: dict[str, Any] = config.get("inventory", {})
+        inventory_dic: dict[str, Any] = {}
+        for item_name, json_value in inventory_config.items():
+            amount = json_random.random(json_value=json_value)
+            inventory_dic[item_name] = amount
+        return inventory_dic
 
     @abstractmethod
     async def act(self, obs: ObsT) -> dict[str, Any]:
