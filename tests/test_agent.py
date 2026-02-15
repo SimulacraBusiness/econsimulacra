@@ -52,12 +52,14 @@ class TestAgent:
             prng=random.Random(42),
             config={
                 "cashAmount": [50, 100],
-                "riceAmount": [30,70]
+                "riceAmount": [30,70],
+                "isRichInfoAllowed": True,
             },
         )
         assert agent.agent_id == 3
         assert agent.agent_type == "DummyAgentwRandomInventory"
         assert agent.agent_name == "TestAgent3"
+        assert agent.is_rich_info_allowed == True
         cash_amount = agent.inventory_dic["cash"]
         rice_amount = agent.inventory_dic["rice"]
         assert 50 <= cash_amount <= 100

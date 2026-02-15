@@ -14,16 +14,19 @@ class Agent(ABC, Generic[ObsT]):
         self,
         agent_id: int,
         agent_name: str,
-        is_rich_info_allowed: bool = False,
         prng: Optional[Random] = None,
         config: Optional[dict[str, Any]] = None,
     ) -> None:
         self.agent_id: int = agent_id
         self.agent_type: str = self.__class__.__name__
         self.agent_name: str = agent_name
-        self.is_rich_info_allowed: bool = is_rich_info_allowed
         self.prng: Random = prng if prng is not None else random.Random()
         self.inventory_dic: dict[str, float | int] = self._initialize_inventory(config)
+        self.is_rich_info_allowed: bool
+        if config is not None and "isRichInfoAllowed" in config:
+            self.is_rich_info_allowed = config["isRichInfoAllowed"]
+        else:
+            self.is_rich_info_allowed = False
         self.config: dict[str, Any] = config if config is not None else {}
         self.self_assign_name(self.config)
 
@@ -34,7 +37,9 @@ class Agent(ABC, Generic[ObsT]):
         pass
 
     @abstractmethod
-    def _initialize_inventory(self, config: Optional[dict[str, Any]]) -> dict[str, float | int]:
+    def _initialize_inventory(
+        self, config: Optional[dict[str, Any]]
+    ) -> dict[str, float | int]:
         pass
 
     @abstractmethod
@@ -69,20 +74,16 @@ class Agent(ABC, Generic[ObsT]):
                 )
             self.inventory_dic[give_item_name] -= give_item_amount
 
-    def provide_public_info(self) -> Optional[dict[str, Any]]:
-        return None
+    def provide_info4all_agents(self) -> list[str]:
+        return []  # self_pos
 
-    def provide_info4co_located_agents(self) -> Optional[dict[str, Any]]:
-        return None
+    def provide_info4co_located_agents(self) -> list[str]:
+        return []  # inventory
 
-    def provide_info4allowed_agents(self) -> Optional[dict[str, Any]]:
-        return None
+    def provide_info4allowed_agents(self) -> list[str]:
+        return []  # item_name2price
 
     def request_obs(self) -> list[str]:
-        return ["all"]
-
-    def request_global_obs4allowed_agents(self) -> list[str]:
-        # called if self.is_rich_info_allowed is True
         return ["all"]
 
     def __repr__(self) -> str:
