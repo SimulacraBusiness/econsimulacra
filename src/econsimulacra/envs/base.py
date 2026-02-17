@@ -795,7 +795,9 @@ class Environment(ABC, Generic[ObsT]):
                 continue
             other_agent: Agent = self.agent_id2agent[other_agent_id]
             if "inventory" in other_agent.provide_info4co_located_agents():
-                inventory_info_dic: dict[str, str | dict[str, str | float | int]] = {
+                inventory_info_dic: dict[
+                    str, str | int | dict[str, str | int | float]
+                ] = {
                     "agent_id": other_agent_id,
                     "agent_name": other_agent.get_self_name(),
                 }
