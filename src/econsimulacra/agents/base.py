@@ -39,9 +39,7 @@ class Agent(ABC, Generic[ObsT]):
     def self_assign_name(self, config: dict[str, Any]) -> None:
         pass
 
-    def _initialize_inventory(
-        self, config: dict[str, Any]
-    ) -> dict[str, float | int]:
+    def _initialize_inventory(self, config: dict[str, Any]) -> dict[str, float | int]:
         json_random = JsonRandom(prng=self.prng)
         inventory_config: dict[str, Any] = config.get("inventory", {})
         inventory_dic: dict[str, Any] = {}
