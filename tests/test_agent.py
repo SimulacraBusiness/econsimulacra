@@ -25,6 +25,7 @@ class TestAgent:
             "rice": 50,
         }
     }
+
     def test__init__(self) -> None:
         agent = DummyAgent(agent_id=1, agent_name="TestAgent", config=self.agent_config)
         assert agent.agent_id == 1
@@ -32,7 +33,9 @@ class TestAgent:
         assert agent.agent_name == "TestAgent"
         assert agent.is_rich_info_allowed == False
         assert agent.inventory_dic == {"cash": 100, "rice": 50}
-        agent = DummyAgentwName(agent_id=2, agent_name="IgnoredName", config=self.agent_config)
+        agent = DummyAgentwName(
+            agent_id=2, agent_name="IgnoredName", config=self.agent_config
+        )
         assert agent.agent_id == 2
         assert agent.agent_type == "DummyAgentwName"
         assert agent.agent_name == "DummyAgent2"
