@@ -37,6 +37,12 @@ class GridSpace:
         self.agent_id2pos[agent_id] = pos
         self.pos2agent_ids[pos].add(agent_id)
 
+    def get_colocated_agents(self, agent_id: int) -> set[int]:
+        if agent_id not in self.agent_id2pos:
+            raise ValueError(f"Agent ID {agent_id} not found in grid space.")
+        pos: tuple[int, ...] = self.agent_id2pos[agent_id]
+        return self.pos2agent_ids.get(pos, set()) - {agent_id}
+
     def remove_agent(self, agent_id: int) -> None:
         if agent_id not in self.agent_id2pos:
             raise ValueError(f"Agent ID {agent_id} not found in grid space.")
