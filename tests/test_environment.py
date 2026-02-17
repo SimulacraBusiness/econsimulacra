@@ -60,7 +60,7 @@ class DummyHousehold(Agent):
 
 class DummyRetailer(Agent):
     def self_assign_name(self, config: dict[str, Any]) -> None:
-        self.agent_name = f"DummyRetailer"
+        self.agent_name = "DummyRetailer"
 
     def _initialize_inventory(self, config) -> dict[str, float | int]:
         return {"Yen": 500, "Rice": 10000}
@@ -231,7 +231,7 @@ class TestEnvironment:
                 assert 50 <= inventory_dic["Rice"] <= 100
             else:
                 assert agent.inventory_dic == {"Yen": 500, "Rice": 10000}
-                assert agent.agent_name == f"DummyRetailer"
+                assert agent.agent_name == "DummyRetailer"
         env = DummyEnvironment(config=self.config, logger=DictLogger())
         env.register_classes([DummyHousehold, DummyRetailer, Yen, Rice])
         env.reset(seed=42)

@@ -31,7 +31,7 @@ class TestAgent:
         assert agent.agent_id == 1
         assert agent.agent_type == "DummyAgent"
         assert agent.agent_name == "TestAgent"
-        assert agent.is_rich_info_allowed == False
+        assert not agent.is_rich_info_allowed
         assert agent.inventory_dic == {"cash": 100, "rice": 50}
         agent = DummyAgentwName(
             agent_id=2, agent_name="IgnoredName", config=self.agent_config
@@ -52,7 +52,7 @@ class TestAgent:
         assert agent.agent_id == 3
         assert agent.agent_type == "DummyAgent"
         assert agent.agent_name == "TestAgent3"
-        assert agent.is_rich_info_allowed == True
+        assert agent.is_rich_info_allowed
         cash_amount = agent.inventory_dic["cash"]
         rice_amount = agent.inventory_dic["rice"]
         assert 50 <= cash_amount <= 100

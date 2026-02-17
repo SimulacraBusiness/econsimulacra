@@ -61,7 +61,7 @@ class DummyHousehold(Agent):
 
 class DummyRetailer(Agent):
     def self_assign_name(self, config: dict[str, Any]) -> None:
-        self.agent_name = f"DummyRetailer"
+        self.agent_name = "DummyRetailer"
 
     def _initialize_inventory(self, config) -> dict[str, float | int]:
         return {"Yen": 500, "Rice": 10000}
