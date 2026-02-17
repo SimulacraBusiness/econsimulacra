@@ -7,6 +7,7 @@ from .base import OrderLog as OrderLog
 from .base import ProposalLog as ProposalLog
 from .base import OrderReactionLog as OrderReactionLog
 from .base import ProposalReactionLog as ProposalReactionLog
+from .base import ChangePriceLog as ChangePriceLog
 from .base import TweetLog as TweetLog
 from .base import FollowLog as FollowLog
 from .base import UnfollowLog as UnfollowLog
@@ -23,6 +24,7 @@ __all__ = [
     "ProposalLog",
     "OrderReactionLog",
     "ProposalReactionLog",
+    "ChangePriceLog",
     "TweetLog",
     "FollowLog",
     "UnfollowLog",

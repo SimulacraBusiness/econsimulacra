@@ -1,115 +1,139 @@
 from econsimulacra.agents import Agent
 from econsimulacra.envs import Environment
+from econsimulacra.envs import Order
 from econsimulacra.items import Item
 from econsimulacra.logs import DictLogger
 import pytest
-from typing import Any, Optional
+from typing import Any
+from typing import Callable
+from typing import Optional
+
+Provider = Callable[[int], Any]
 
 
 class DummyHousehold(Agent):
-    def _initialize_inventory(self) -> dict[str, float | int]:
-        return {"Yen": 100000, "Rice": 50}
-
     def act(self, obs: dict[str, Any]) -> dict[str, Any]:
         action_dic: dict[str, Any] = {}
-        is_moving: bool = obs["is_moving"]
+        is_moving: bool = obs["self_is_moving"]
         if is_moving:
-            action_dic["move"] = obs["destination"]
+            action_dic["move"] = obs["self_destination"]
         else:
-            if obs["pos"] == obs["initial_coords"]:
-                if self.inventory_dic["Rice"] >= 50:
+            pos: tuple[int, int] = obs["self_pos"]
+            retailer_pos: tuple[int, int] = obs["others_pos"][0]["pos"]
+            if pos == obs["self_init_pos"]:
+                if self.inventory_dic["Rice"] >= 75:
                     action_dic["consumptions"] = [
-                        {"item_name": "Rice", "item_amount": 1}
+                        {"item_name": "Rice", "item_amount": 10}
                     ]
                 else:
-                    action_dic["move"] = obs["retailer_pos"]
-            elif obs["pos"] == obs["retailer_pos"]:
-                if self.inventory_dic["Rice"] < 50:
+                    action_dic["move"] = retailer_pos
+            elif pos == retailer_pos:
+                if self.inventory_dic["Rice"] < 75:
+                    info4co_located_agents: list[dict[str, Any]] = obs[
+                        "others_inventory"
+                    ]
+                    retailer_inventory_dic: dict[str, Any] = info4co_located_agents[0]
+                    retailer_id: int = retailer_inventory_dic["agent_id"]
                     action_dic["orders"] = [
                         {
                             "item_name": "Rice",
-                            "item_amount": 1,
-                            "rice": None,
-                            "counterparty_id": obs["retailer_id"],
+                            "item_amount": 10,
+                            "counterparty_id": retailer_id,
                         }
                     ]
                 else:
-                    action_dic["move"] = obs["initial_coords"]
+                    action_dic["move"] = obs["self_pos"]
             else:
-                action_dic["move"] = obs["initial_coords"]
+                action_dic["move"] = obs["self_pos"]
         action_dic["tweet"] = "Hello, world!"
         follow_id: Optional[int] = None
         unfollow_id: Optional[int] = None
-        follows: set[int] = obs["follows"]
-        for id in obs["recommended_follows"]:
-            if id not in follows:
-                follow_id = id
-                break
-            else:
-                unfollow_id = id
+        visible_tl: list[dict[str, Any]] = obs["visible_tl"]
+        follows: set[int] = [tl_dic["agent_id"] for tl_dic in visible_tl]
+        unfollow_id = follows[0] if len(follows) > 0 else None
+        recommended_follows: list[int] = obs["recommended_follows"]
+        follow_id = recommended_follows[0] if len(recommended_follows) > 0 else None
         action_dic["follow"] = follow_id
         action_dic["unfollow"] = unfollow_id
         return action_dic
 
 
 class DummyRetailer(Agent):
-    def _initialize_inventory(self) -> dict[str, float | int]:
+    def self_assign_name(self, config: dict[str, Any]) -> None:
+        self.agent_name = "DummyRetailer"
+
+    def _initialize_inventory(self, config) -> dict[str, float | int]:
         return {"Yen": 500, "Rice": 10000}
 
     def act(self, obs):
-        item: Item
-        for item_name, item in obs["item_name2item"].items():
+        action_dic: dict[str, list[dict[str, Any]]] = {
+            "reactions": [],
+            "set_prices": [],
+        }
+        item_name2prices: list[dict[str, Any]] = obs["item_name2price"]
+        for d in item_name2prices:
+            item_name: str = d["item_name"]
             if item_name == "Rice":
-                item.set_price(1000)
-        if len(obs["orders"]) == 0:
-            return {}
-        action_dic: dict[str, Any] = {"reactions": []}
-        for order in obs["orders"]:
+                action_dic["set_prices"].append(
+                    {
+                        "item_name": item_name,
+                        "price": d["price"] * self.prng.uniform(0.99, 1.11),
+                    }
+                )
+        incoming_orders: list[Order] = obs["incoming_orders"]
+        for order_info in incoming_orders:
             action_dic["reactions"].append(
                 {
                     "kind": "order",
-                    "id": order.order_id,
-                    "accept_amount": order.item_amount,
+                    "id": order_info["order_id"],
+                    "accept_amount": order_info["item_amount"],
                 }
             )
         return action_dic
 
+    def provide_info4co_located_agents(self) -> list[str]:
+        return ["inventory"]
+
+    def provide_info4all_agents(self):
+        return ["self_pos"]
+
 
 class Yen(Item):
-    def __init__(self, item_id: int, item_name: str = "Yen") -> None:
-        super().__init__(item_id=item_id, item_name=item_name)
+    def __init__(
+        self,
+        item_id: int,
+        item_name: str = "Yen",
+        config: Optional[dict[str, Any]] = None,
+    ) -> None:
+        super().__init__(item_id=item_id, item_name=item_name, config=config)
 
 
 class Rice(Item):
-    def __init__(self, item_id: int, item_name: str = "Rice") -> None:
-        super().__init__(item_id=item_id, item_name=item_name)
-        self.price = 1000
+    def __init__(
+        self,
+        item_id: int,
+        item_name: str = "Rice",
+        config: Optional[dict[str, Any]] = None,
+    ) -> None:
+        super().__init__(item_id=item_id, item_name=item_name, config=config)
 
 
 class DummyEnvironment(Environment):
-    def get_observations(self, agent_id: int) -> dict[str, Any]:
-        retailer_id: int = self.agent_name2agent_id["DummyRetailer5"]
-        if agent_id not in self.agent_id2agent:
-            raise ValueError(f"Agent ID {agent_id} not found in the environment.")
-        if agent_id in self.household_ids:
-            return {
-                "space_size": self.space_size,
-                "pos": self.grid_space.get_pos(agent_id),
-                "initial_coords": self.agent_id2initial_coords[agent_id],
-                "retailer_id": retailer_id,
-                "retailer_pos": self.grid_space.get_pos(retailer_id),
-                "is_moving": self.agent_id2is_moving[agent_id],
-                "destination": self.agent_id2destination[agent_id],
-                "follows": self.social_network.get_follows(agent_id),
-                "recommended_follows": [
-                    id for id in self.household_ids if id != agent_id
-                ],
-            }
-        else:
-            return {
-                "orders": self.pending_orders,
-                "item_name2item": self.item_name2item,
-            }
+    def _build_observation_registry(self) -> dict[str, Provider]:
+        provider_dic: dict[str, Provider] = super()._build_observation_registry()
+        provider_dic["recommended_follows"] = (
+            lambda agent_id: self._obs_recommended_follows(agent_id)
+        )
+        return provider_dic
+
+    def _obs_recommended_follows(self, agent_id: int) -> list[int]:
+        recommended_follows: list[int] = []
+        for other_agent_id in self.agent_ids:
+            if other_agent_id == agent_id:
+                continue
+            if other_agent_id not in self.social_network.get_follows(agent_id):
+                recommended_follows.append(other_agent_id)
+        return recommended_follows
 
 
 class TestEnvironment:
@@ -127,11 +151,26 @@ class TestEnvironment:
         "DummyHousehold": {
             "isHousehold": True,
             "numAgents": 5,
+            "inventory": {
+                "Yen": [100000, 200000],
+                "Rice": [50, 100],
+            },
         },
         "DummyRetailer": {
+            "isRichInfoAllowed": True,
             "isHousehold": False,
             "numAgents": 1,
-            "initialCoords": (5, 5),
+            "initialCoords": (9, 9),
+            "inventory": {
+                "Yen": 100000,
+                "Rice": 1000,
+            },
+        },
+        "Yen": {
+            "initialPrice": 1.0,
+        },
+        "Rice": {
+            "initialPrice": 1000.0,
         },
     }
 
@@ -158,6 +197,12 @@ class TestEnvironment:
         assert len(env.household_ids) == 5
         assert len(env.others_ids) == 1
         assert len(env.item_name2item) == 2
+        for item_name, item in env.item_name2item.items():
+            assert isinstance(item, Item)
+            if item_name == "Yen":
+                assert item.get_price() == 1.0
+            elif item_name == "Rice":
+                assert item.get_price() == 1000.0
         for agent_id in env.agent_ids:
             assert agent_id in env.grid_space.agent_id2pos
             assert isinstance(env.grid_space.get_pos(agent_id), tuple)
@@ -178,11 +223,15 @@ class TestEnvironment:
             agent: Agent = env.agent_id2agent[agent_id]
             assert isinstance(agent, (DummyHousehold, DummyRetailer))
             if isinstance(agent, DummyHousehold):
-                assert agent.inventory_dic == {"Yen": 100000, "Rice": 50}
                 assert agent.agent_name == f"DummyHousehold{agent_id}"
+                inventory_dic = agent.inventory_dic
+                assert "Yen" in inventory_dic
+                assert "Rice" in inventory_dic
+                assert 100000 <= inventory_dic["Yen"] <= 200000
+                assert 50 <= inventory_dic["Rice"] <= 100
             else:
                 assert agent.inventory_dic == {"Yen": 500, "Rice": 10000}
-                assert agent.agent_name == f"DummyRetailer{agent_id}"
+                assert agent.agent_name == "DummyRetailer"
         env = DummyEnvironment(config=self.config, logger=DictLogger())
         env.register_classes([DummyHousehold, DummyRetailer, Yen, Rice])
         env.reset(seed=42)
@@ -217,9 +266,9 @@ class TestEnvironment:
         assert new_pos == destination_pos
         assert env.agent_id2is_moving[household_id] is False
         assert env.agent_id2destination[household_id] is None
-        destination_pos: str = "DummyRetailer5"
+        destination_pos: str = "DummyRetailer"
+        retailer_id: int = env.agent_name2agent_id["DummyRetailer"]
         env._move(agent_id=household_id, where_to_move=destination_pos)
-        retailer_id: int = env.agent_name2agent_id["DummyRetailer5"]
         retailer_pos: tuple[int, int] = env.grid_space.get_pos(retailer_id)
         assert env.agent_id2is_moving[household_id] is True
         assert env.agent_id2destination[household_id] == retailer_pos
@@ -229,13 +278,13 @@ class TestEnvironment:
         env.register_classes([DummyHousehold, DummyRetailer, Yen, Rice])
         env.reset(seed=42)
         household_id: int = env.household_ids[0]
-        initial_Rice_amount: int = env.agent_id2agent[household_id].inventory_dic[
+        initial_rice_amount: int = env.agent_id2agent[household_id].inventory_dic[
             "Rice"
         ]
         consumptions: list[dict[str, Any]] = [{"item_name": "Rice", "item_amount": 5}]
         env._consume_items(agent_id=household_id, consumptions=consumptions)
-        new_Rice_amount: int = env.agent_id2agent[household_id].inventory_dic["Rice"]
-        assert new_Rice_amount == initial_Rice_amount - 5
+        new_rice_amount: int = env.agent_id2agent[household_id].inventory_dic["Rice"]
+        assert new_rice_amount == initial_rice_amount - 5
 
     def test_add_new_orders_and_proposals(self) -> None:
         env = DummyEnvironment(config=self.config)
@@ -298,8 +347,19 @@ class TestEnvironment:
         household_id0: int = env.household_ids[0]
         household_id1: int = env.household_ids[1]
         retailer_id: int = env.others_ids[0]
+        household0: Agent = env.agent_id2agent[household_id0]
+        rice0_amount: int = household0.inventory_dic["Rice"]
+        yen0_amount: int = household0.inventory_dic["Yen"]
+        rice1_amount: int = env.agent_id2agent[household_id1].inventory_dic["Rice"]
+        yen1_amount: int = env.agent_id2agent[household_id1].inventory_dic["Yen"]
+        retailer_rice_amount: int = env.agent_id2agent[retailer_id].inventory_dic[
+            "Rice"
+        ]
+        retailer_yen_amount: int = env.agent_id2agent[retailer_id].inventory_dic["Yen"]
+        household1: Agent = env.agent_id2agent[household_id1]
+        retailer: Agent = env.agent_id2agent[retailer_id]
         action_dic0: dict[str, Any] = {
-            "move": "DummyRetailer5",
+            "move": "DummyRetailer",
             "consumptions": [{"item_name": "Rice", "item_amount": 2}],
             "orders": [
                 {"item_name": "Rice", "item_amount": 2, "counterparty_id": retailer_id}
@@ -309,7 +369,7 @@ class TestEnvironment:
         }
         env.apply_action_to_env(agent_id=household_id0, action_dic=action_dic0)
         action_dic1: dict[str, Any] = {
-            "move": "DummyRetailer5",
+            "move": "DummyRetailer",
             "consumptions": [{"item_name": "Rice", "item_amount": 2}],
             "orders": [
                 {"item_name": "Rice", "item_amount": 2, "counterparty_id": retailer_id}
@@ -367,15 +427,81 @@ class TestEnvironment:
         env._remove_expired_orders_and_proposals()
         assert len(env.pending_orders) == 0
         assert len(env.pending_swap_proposals) == 0
-        household0: Agent = env.agent_id2agent[household_id0]
-        household1: Agent = env.agent_id2agent[household_id1]
-        retailer: Agent = env.agent_id2agent[retailer_id]
-        assert household0.inventory_dic["Rice"] == 50 - 2 + 2 + 5
-        assert household0.inventory_dic["Yen"] == 100000 - 2000 - 5000
-        assert household1.inventory_dic["Rice"] == 50 - 2 + 2 - 5
-        assert household1.inventory_dic["Yen"] == 100000 - 2000 + 5000
-        assert retailer.inventory_dic["Rice"] == 10000 - 2 - 2
-        assert retailer.inventory_dic["Yen"] == 500 + 2000 + 2000
+        assert household0.inventory_dic["Rice"] == rice0_amount - 2 + 2 + 5
+        assert household0.inventory_dic["Yen"] == yen0_amount - 2000 - 5000
+        assert household1.inventory_dic["Rice"] == rice1_amount - 2 + 2 - 5
+        assert household1.inventory_dic["Yen"] == yen1_amount - 2000 + 5000
+        assert retailer.inventory_dic["Rice"] == retailer_rice_amount - 2 - 2
+        assert retailer.inventory_dic["Yen"] == retailer_yen_amount + 2000 + 2000
+
+    def test_get_observations(self) -> None:
+        env = DummyEnvironment(config=self.config)
+        env.register_classes([DummyHousehold, DummyRetailer, Yen, Rice])
+        env.reset(seed=42)
+        for agent_id in env.agent_ids:
+            obs: dict[str, Any] = env.get_observations(agent_id=agent_id)
+            assert "time" in obs
+            assert obs["time"] == 0
+            assert "self_agent_id" in obs
+            assert obs["self_agent_id"] == agent_id
+            assert "self_name" in obs
+            assert obs["self_name"] == env.agent_id2agent[agent_id].get_self_name()
+            assert "self_pos" in obs
+            assert obs["self_pos"] == env.grid_space.get_pos(agent_id)
+            assert "self_init_pos" in obs
+            assert obs["self_init_pos"] == env.agent_id2initial_coords[agent_id]
+            assert "self_is_moving" in obs
+            assert obs["self_is_moving"] is env.agent_id2is_moving[agent_id]
+            assert "self_destination" in obs
+            assert obs["self_destination"] == env.agent_id2destination[agent_id]
+            assert "others_pos" in obs
+            if agent_id in env.household_ids:
+                assert obs["others_pos"] == [
+                    {
+                        "agent_id": env.agent_name2agent_id["DummyRetailer"],
+                        "agent_name": "DummyRetailer",
+                        "pos": (9, 9),
+                    }
+                ]
+            else:
+                assert obs["others_pos"] == []
+            assert "self_tweet" in obs
+            assert obs["self_tweet"] == ""
+            assert "visible_tl" in obs
+            assert obs["visible_tl"] == []
+            assert "incoming_orders" in obs
+            assert obs["incoming_orders"] == []
+            assert "incoming_proposals" in obs
+            assert obs["incoming_proposals"] == []
+            assert "recommended_follows" in obs
+            assert len(obs["recommended_follows"]) > 0
+            if agent_id not in env.household_ids:
+                assert "item_name2price" in obs
+            else:
+                assert "item_name2price" not in obs
+        household_id: int = env.household_ids[0]
+        while True:
+            env._move(agent_id=household_id, where_to_move="DummyRetailer")
+            if not env.agent_id2is_moving[household_id]:
+                break
+            else:
+                obs = env.get_observations(agent_id=household_id)
+                co_located_agents: set[int] = env.grid_space.get_colocated_agents(
+                    agent_id=household_id
+                )
+                if len(co_located_agents) == 0:
+                    assert "others_inventory" not in obs
+                else:
+                    assert "others_inventory" in obs
+        obs = env.get_observations(agent_id=household_id)
+        assert "others_inventory" in obs
+        assert obs["others_inventory"] == [
+            {
+                "agent_id": env.agent_name2agent_id["DummyRetailer"],
+                "agent_name": "DummyRetailer",
+                "Rice": {"price": 1000.0, "amount": 10000},
+            }
+        ]
 
     def test_step(self) -> None:
         env = DummyEnvironment(config=self.config)
@@ -396,6 +522,10 @@ class TestEnvironment:
             for agent_id in env.agent_ids:
                 agent = env.agent_id2agent[agent_id]
                 obs = env.get_observations(agent_id=agent_id)
+                if agent_id in env.household_ids:
+                    assert "item_name2price" not in obs
+                else:
+                    assert "item_name2price" in obs
                 action_dic = agent.act(obs=obs)
                 all_actions_dic[agent_id] = action_dic
             env.step(all_actions_dic=all_actions_dic)

@@ -44,7 +44,7 @@ class JsonRandom:
         return lam * -math.log(self.prng.random())
 
     def random(self, json_value: JsonValue) -> float:
-        if isinstance(json_value, list):
+        if isinstance(json_value, list) or isinstance(json_value, tuple):
             if len(json_value) != 2:
                 raise ValueError(
                     "Uniform distribution must be [min, max] but "
