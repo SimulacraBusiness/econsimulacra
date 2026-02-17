@@ -1,6 +1,6 @@
-from abc import ABC, abstractmethod
+from abc import ABC
 from ..agents import Agent
-from .env_utils import find_class
+from ..sim_utils import find_class
 from ..items import Item
 from ..logs import AgentGenerationLog
 from ..logs import SpaceAssignLog
@@ -10,6 +10,7 @@ from ..logs import OrderLog
 from ..logs import ProposalLog
 from ..logs import OrderReactionLog
 from ..logs import ProposalReactionLog
+from ..logs import ChangePriceLog
 from ..logs import TweetLog
 from ..logs import FollowLog
 from ..logs import UnfollowLog
@@ -21,12 +22,15 @@ from .order import SwapProposal
 from .social_network import SocialNetwork
 from .space import GridSpace
 from typing import Any
+from typing import Callable
+from typing import Generic
 from typing import Literal
 from typing import Optional
 from typing import Type
-from typing import Generic, TypeVar
+from typing import TypeVar
 
 ObsT = TypeVar("ObsT")
+Provider = Callable[[int], Any]
 
 
 class Environment(ABC, Generic[ObsT]):
@@ -61,6 +65,9 @@ class Environment(ABC, Generic[ObsT]):
                 "isHousehold": bool, # Optional, default False
                 ...
             },
+            "Rice": {
+                "initialPrice": float,
+            }
         }
         Args:
             config (dict[str, Any]): Environment configuration dictionary.
@@ -121,6 +128,7 @@ class Environment(ABC, Generic[ObsT]):
         self.household_ids: list[int] = []
         self.others_ids: list[int] = []
         self.agent_id2agent: dict[int, Agent] = {}
+        self.agent_id2agent_name: dict[int, str] = {}
         self.agent_name2agent_id: dict[str, int] = {}
         self.agent_id2initial_coords: dict[int, tuple[int, ...]] = {}
         self.agent_id2is_moving: dict[int, bool] = {}
@@ -154,6 +162,7 @@ class Environment(ABC, Generic[ObsT]):
                         break
                     agent_name += "_"
                 self.agent_name2agent_id[agent_name] = current_agent_id
+                self.agent_id2agent_name[current_agent_id] = agent_name
                 self.agent_ids.append(current_agent_id)
                 if is_household:
                     self.household_ids.append(current_agent_id)
@@ -175,13 +184,16 @@ class Environment(ABC, Generic[ObsT]):
         Args:
             item_names (list[str]): name list of items to be generated.
         """
-        self.item_name2item: dict[str, Any] = {}
+        self.item_name2item: dict[str, Item] = {}
         for item_name in item_names:
+            item_config: dict[str, Any] = self.config.get(item_name, {})
             item_class: Type[Item] = find_class(
                 name=item_name, optional_class_list=self.registered_classes
             )
             item_instance: Item = item_class(
-                item_id=len(self.item_name2item), item_name=item_name
+                item_id=len(self.item_name2item),
+                item_name=item_name,
+                config=item_config,
             )
             self.item_name2item[item_name] = item_instance
 
@@ -238,6 +250,10 @@ class Environment(ABC, Generic[ObsT]):
                 {"kind": "proposal", "id": int, "accept": bool},
                 ...
             ], # Optional, default []
+            "set_prices": [
+                {"item_name": str, "price": float},
+                ...
+            ], # Optional, default []
             "tweet": str, # Optional, default None
             "follow": int, # agent_id to follow. Optional, default None
             "unfollow": int, # agent_id to unfollow. Optional, default None
@@ -264,6 +280,11 @@ class Environment(ABC, Generic[ObsT]):
         self._process_reactions(
             agent_id=agent_id,
             reactions=reactions,
+        )
+        set_prices: list[dict[str, Any]] = action_dic.get("set_prices", [])
+        self._set_prices(
+            agent_id=agent_id,
+            set_prices=set_prices,
         )
         tweet: Optional[str] = action_dic.get("tweet", None)
         follow_agent_id: Optional[int] = action_dic.get("follow", None)
@@ -587,6 +608,27 @@ class Environment(ABC, Generic[ObsT]):
                     f"Unknown reaction kind: {kind}. Must be either 'order' or 'proposal'."
                 )
 
+    def _set_prices(self, agent_id: int, set_prices: list[dict[str, Any]]) -> None:
+        for set_price in set_prices:
+            if "item_name" not in set_price:
+                raise ValueError("Each set_price must include 'item_name' key.")
+            if "price" not in set_price:
+                raise ValueError("Each set_price must include 'price' key.")
+            item_name: str = set_price["item_name"]
+            price: float = set_price["price"]
+            item: Item = self.item_name2item[item_name]
+            old_price: float = item.get_price()
+            item.set_price(price=price, set_by=agent_id)
+            change_price_log: ChangePriceLog = ChangePriceLog(
+                time=self.get_time(),
+                agent_id=agent_id,
+                item_name=item_name,
+                old_price=old_price,
+                new_price=price,
+            )
+            if self.logger is not None:
+                change_price_log.read_and_write(logger=self.logger)
+
     def _update_time(self) -> None:
         for order in self.pending_orders:
             order.update_time()
@@ -604,6 +646,178 @@ class Environment(ABC, Generic[ObsT]):
             if not proposal.is_fulfilled()
         ]
 
-    @abstractmethod
     def get_observations(self, agent_id: int) -> ObsT:
-        pass
+        if not hasattr(self, "_obs_providers"):
+            self._obs_providers: dict[str, Provider] = (
+                self._build_observation_registry()
+            )
+        if not hasattr(self, "_obs4allowed_agents_providers"):
+            self._obs4allowed_agents_providers: dict[str, Provider] = (
+                self._build_observation4allowed_agents_registry()
+            )
+        co_located_agents: set[int] = self.grid_space.get_colocated_agents(
+            agent_id=agent_id
+        )
+        self._obs4co_located_agents_providers: dict[str, Provider] = (
+            self._build_observation4co_located_agents_registry(
+                co_located_agents=co_located_agents
+            )
+        )
+        obs_providers: dict[str, Provider] = {}
+        obs_providers.update(self._obs_providers)
+        agent: Agent = self.agent_id2agent[agent_id]
+        if agent.is_rich_info_allowed:
+            obs_providers.update(self._obs4allowed_agents_providers)
+        if len(co_located_agents) > 0:
+            obs_providers.update(self._obs4co_located_agents_providers)
+        keys_to_request: list[str] = agent.request_obs()
+        if "all" in keys_to_request:
+            keys_to_request = list(obs_providers.keys())
+        observation: dict[str, Any] = {}
+        for key in keys_to_request:
+            if key not in obs_providers:
+                raise ValueError(f"Unknown observation key requested: {key}.")
+            provider: Provider = obs_providers[key]
+            observation[key] = provider(agent_id)
+        return observation  # type: ignore
+
+    def _build_observation_registry(self) -> dict[str, Provider]:
+        # edit here to add new observation providers
+        return {
+            "time": lambda agent_id: self.get_time(),
+            "self_agent_id": lambda agent_id: agent_id,
+            "self_name": lambda agent_id: self.agent_id2agent[agent_id].get_self_name(),
+            "self_pos": lambda agent_id: self.grid_space.get_pos(agent_id),
+            "self_init_pos": lambda agent_id: self.agent_id2initial_coords[agent_id],
+            "self_is_moving": lambda agent_id: self.agent_id2is_moving[agent_id],
+            "self_destination": lambda agent_id: self.agent_id2destination[agent_id],
+            "others_pos": lambda agent_id: self._obs_others_pos(agent_id),
+            "self_tweet": lambda agent_id: self.social_network.get_tweet(
+                agent_id=agent_id
+            ),
+            "visible_tl": lambda agent_id: self._obs_visible_tl(agent_id),
+            "incoming_orders": lambda agent_id: self._obs_incoming_orders(agent_id),
+            "incoming_proposals": lambda agent_id: self._obs_incoming_proposals(
+                agent_id
+            ),
+        }
+
+    def _build_observation4allowed_agents_registry(self) -> dict[str, Provider]:
+        # edit here to add new observation providers for allowed agents
+        return {
+            "item_name2price": lambda agent_id: self.item_name2price(),
+        }
+
+    def _build_observation4co_located_agents_registry(
+        self, co_located_agents: set[int]
+    ) -> dict[str, Provider]:
+        # edit here to add new observation providers for co-located agents
+        return {
+            "others_inventory": lambda agent_id: self._obs_others_inventory(
+                agent_id, co_located_agents=co_located_agents
+            ),
+        }
+
+    def _obs_visible_tl(self, agent_id: int) -> list[dict[str, Any]]:
+        follow_agent_ids: set[int] = self.social_network.get_follows(agent_id=agent_id)
+        visible_tl: list[dict[str, Any]] = []
+        for follow_agent_id in follow_agent_ids:
+            tweet: str = self.social_network.get_tweet(agent_id=follow_agent_id)
+            visible_tl.append(
+                {
+                    "agent_id": follow_agent_id,
+                    "agent_name": self.agent_id2agent[follow_agent_id].get_self_name(),
+                    "message": tweet,
+                }
+            )
+        return visible_tl
+
+    def _obs_incoming_orders(self, agent_id: int) -> list[dict[str, Any]]:
+        incoming_orders: list[dict[str, Any]] = []
+        for order in self.pending_orders:
+            if order.counterparty_id == agent_id:
+                incoming_orders.append(
+                    {
+                        "order_id": order.order_id,
+                        "agent_id": order.agent_id,
+                        "agent_name": self.agent_id2agent_name[order.agent_id],
+                        "item_name": order.item_name,
+                        "item_amount": order.item_amount,
+                        "price": order.price,
+                    }
+                )
+        return incoming_orders
+
+    def _obs_incoming_proposals(self, agent_id: int) -> list[dict[str, Any]]:
+        incoming_proposals: list[dict[str, Any]] = []
+        for proposal in self.pending_swap_proposals:
+            if proposal.responder_agent_id == agent_id:
+                incoming_proposals.append(
+                    {
+                        "proposal_id": proposal.proposal_id,
+                        "agent_id": proposal.proposer_agent_id,
+                        "agent_name": self.agent_id2agent_name[
+                            proposal.proposer_agent_id
+                        ],
+                        "give_item_name": proposal.give_item_name,
+                        "give_item_amount": proposal.give_item_amount,
+                        "get_item_name": proposal.get_item_name,
+                        "get_item_amount": proposal.get_item_amount,
+                        "description": "You are asked to give your "
+                        + f"{proposal.get_item_amount} of {proposal.get_item_name} "
+                        + f"in exchange for {proposal.give_item_amount} of {proposal.give_item_name}.",
+                    }
+                )
+        return incoming_proposals
+
+    def _obs_others_pos(self, agent_id: int) -> list[dict[str, Any]]:
+        others_pos_infos: list[dict[str, Any]] = []
+        for other_agent_id in self.agent_ids:
+            if other_agent_id == agent_id:
+                continue
+            other_agent: Agent = self.agent_id2agent[other_agent_id]
+            if "self_pos" in other_agent.provide_info4all_agents():
+                others_pos_infos.append(
+                    {
+                        "agent_id": other_agent_id,
+                        "agent_name": other_agent.get_self_name(),
+                        "pos": self.grid_space.get_pos(agent_id=other_agent_id),
+                    }
+                )
+        return others_pos_infos
+
+    def _obs_others_inventory(
+        self, agent_id: int, co_located_agents: set[int], mask_amount: bool = False
+    ) -> list[dict[str, Any]]:
+        inventory_infos: list[dict[str, Any]] = []
+        for other_agent_id in self.agent_ids:
+            if other_agent_id == agent_id or other_agent_id not in co_located_agents:
+                continue
+            other_agent: Agent = self.agent_id2agent[other_agent_id]
+            if "inventory" in other_agent.provide_info4co_located_agents():
+                inventory_info_dic: dict[str, str | dict[str, str | float | int]] = {
+                    "agent_id": other_agent_id,
+                    "agent_name": other_agent.get_self_name(),
+                }
+                for item_name, item_amount in other_agent.inventory_dic.items():
+                    if item_name == self.cash_name:
+                        continue
+                    price: float = self.item_name2item[item_name].price
+                    amount: str | float | int = (
+                        "Unknown" if mask_amount else item_amount
+                    )
+                    inventory_info_dic[item_name] = {"price": price, "amount": amount}
+                inventory_infos.append(inventory_info_dic)
+        return inventory_infos
+
+    def item_name2price(self) -> list[dict[str, Any]]:
+        item_name2prices: list[dict[str, Any]] = []
+        for item_name, item in self.item_name2item.items():
+            item_name2prices.append(
+                {
+                    "item_name": item_name,
+                    "price": item.price,
+                    "price_set_by": item.price_set_by,
+                }
+            )
+        return item_name2prices
