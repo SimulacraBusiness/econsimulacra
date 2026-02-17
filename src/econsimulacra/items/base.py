@@ -9,6 +9,10 @@ class Item:
         item_name: str,
         config: Optional[dict[str, Any]] = None,
     ) -> None:
+        """initialization.
+        
+        Args:
+        """
         self.item_id: int = item_id
         self.item_name: str = item_name
         self.price: float
