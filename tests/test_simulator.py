@@ -92,12 +92,6 @@ class DummyRetailer(Agent):
             )
         return action_dic
 
-    def provide_info4co_located_agents(self) -> list[str]:
-        return ["inventory"]
-
-    def provide_info4all_agents(self):
-        return ["self_pos"]
-
 
 class Yen(Item):
     def __init__(
@@ -166,6 +160,8 @@ class TestSimulator:
                 "Yen": 100000,
                 "Rice": 1000,
             },
+            "provideInfo4CoLocatedAgents": ["inventory"],
+            "provideInfo4AllAgents": ["self_pos"],
         },
         "Yen": {
             "initialPrice": 1.0,
