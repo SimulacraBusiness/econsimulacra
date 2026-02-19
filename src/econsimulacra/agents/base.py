@@ -21,6 +21,7 @@ class Agent(ABC, Generic[ObsT]):
         self,
         agent_id: int,
         agent_name: str,
+        env_services: dict[str, Any],
         prng: Optional[Random] = None,
         config: Optional[dict[str, Any]] = None,
     ) -> None:
@@ -49,7 +50,8 @@ class Agent(ABC, Generic[ObsT]):
                 # "item_name2price", "others_inventory",
                 "provideInfo4AllAgents": [], # built-in option: "self_pos",
                 "provideInfo4CoLocatedAgents": [], # built-in option: "inventory"
-                "provideInfo4AllowedAgents": [] # built-in option: None
+                "provideInfo4AllowedAgents": [], # built-in option: None,
+                "availableServices": ["prompt_builder", "llm_client", ...] # Optional, default []
             }
         """
         self.agent_id: int = agent_id
@@ -67,6 +69,7 @@ class Agent(ABC, Generic[ObsT]):
             self.is_rich_info_allowed = False
         self._setup_request_obs()
         self._setup_infos_to_provide()
+        self._setup_env_services()
         self.self_assign_name(self.config)
 
     def get_self_name(self) -> str:
@@ -96,6 +99,15 @@ class Agent(ABC, Generic[ObsT]):
             self.info4all_agents = []
             self.info4co_located_agents = []
             self.info4allowed_agents = []
+
+    def _setup_env_services(self) -> None:
+        """setup environment services for the agent based on self.service_dic.
+
+        See also:
+            econsimulacra.envs.base._generate_service_providers
+            econsimulacra.agents.LLMAgent
+        """
+        pass
 
     def _initialize_inventory(self, config: dict[str, Any]) -> dict[str, float | int]:
         json_random = JsonRandom(prng=self.prng)

@@ -41,36 +41,56 @@ class Environment(ABC, Generic[ObsT]):
     ) -> None:
         """Initialization.
 
-        config example:
-        {
-            "simulation": {
-                "numSteps": int,
-            },
-            "environment": {
-                "gridSpace": [int, ...],
-                "cashName": str,
-                "agents": ["Household", "Retailer", "Restaurant", ...],
-                "items": ["Yen", "Rice", ...]
-            }
-            "Household": {
-                "isHousehold": bool,
-                "numAgents": int, # Optional, default 1
-                ...
-            },
-            "Retailer": {
-                "isHousehold": bool, # Optional, default False
-                ...
-            },
-            "Restaurant": {
-                "isHousehold": bool, # Optional, default False
-                ...
-            },
-            "Rice": {
-                "initialPrice": float,
-            }
-        }
         Args:
             config (dict[str, Any]): Environment configuration dictionary.
+
+        Note:
+            config example:
+            {
+                "simulation": {
+                    "numSteps": int,
+                },
+                "environment": {
+                    "gridSpace": [int, ...],
+                    "cashName": str,
+                    "agents": ["Household", "Retailer", "Restaurant", ...],
+                    "items": ["Yen", "Rice", ...],
+                    "service": ["promptBuilder", "llmClient", ...]
+                }
+                "Household": {
+                    "type": "Household",
+                    "isHousehold": bool,
+                    "numAgents": int, # Optional, default 1
+                    ...,
+                },
+                "Retailer": {
+                    "type": "Retailer",
+                    "isHousehold": bool, # Optional, default False
+                    ...
+                },
+                "Restaurant": {
+                    "type": "Restaurant",
+                    "isHousehold": bool, # Optional, default False
+                    ...
+                },
+                "Yen": {
+                    "type": "Item",
+                    "initialPrice": float,
+                },
+                "Rice": {
+                    "type": "Item",
+                    "initialPrice": float,
+                },
+                "promptBuilder": {
+                    "type": "PromptBuilder", # Optional, default is the same as the service name
+                    ...
+                },
+                "llmClient": {
+                    "type": "LLMClient", # Optional, default is the same as the service name
+                    ...
+                },
+                ...
+            }
         """
         env_config: dict[str, Any] = config.get("environment", {})
         if "gridSpace" not in env_config:
@@ -99,16 +119,21 @@ class Environment(ABC, Generic[ObsT]):
         self.grid_space: GridSpace = GridSpace(space_size=self.space_size)
         self.social_network: SocialNetwork = SocialNetwork()
         assert "environment" in self.config, "Config must include 'environment' key."
+        assert isinstance(self.config["environment"], dict), (
+            "'environment' key must be a dictionary."
+        )
+        service_provider_keys: list[str] = self.config["environment"].get("service", [])
+        self._generate_service_providers(service_provider_keys=service_provider_keys)
         assert "agents" in self.config["environment"], (
             "Environment config must include 'agents' key."
         )
-        agent_types: list[str] = self.config["environment"]["agents"]
-        self._generate_agents(agent_types=agent_types)
+        agent_keys: list[str] = self.config["environment"]["agents"]
+        self._generate_agents(agent_keys=agent_keys)
         assert "items" in self.config["environment"], (
             "Environment config must include 'items' key."
         )
-        item_names: list[str] = self.config["environment"]["items"]
-        self._generate_items(item_names=item_names)
+        item_keys: list[str] = self.config["environment"]["items"]
+        self._generate_items(item_keys=item_keys)
         self.pending_orders: list[Order] = []
         self.pending_swap_proposals: list[SwapProposal] = []
         self.latest_order_id: int = 0
@@ -117,7 +142,31 @@ class Environment(ABC, Generic[ObsT]):
             self.logger.process_logs()
         self._time = 0
 
-    def _generate_agents(self, agent_types: list[str]) -> None:
+    def _generate_service_providers(self, service_provider_keys: list[str]) -> None:
+        """generate service providers.
+
+        Args:
+            service_provider_keys (list[str]): name list of service provider types to be generated.
+        """
+        self.service_dic: dict[str, Any] = {}
+        for service_provider_key in service_provider_keys:
+            if service_provider_key not in self.config:
+                raise ValueError(
+                    f"Service provider config for {service_provider_key} is not found in the environment config."
+                )
+            service_provider_config: dict[str, Any] = self.config[service_provider_key]
+            instance_type: str = service_provider_config.get(
+                "type", service_provider_key
+            )
+            service_provider_class: Type = find_class(
+                name=instance_type, optional_class_list=self.registered_classes
+            )
+            service_provider_instance = service_provider_class(
+                config=service_provider_config
+            )
+            self.service_dic[service_provider_key] = service_provider_instance
+
+    def _generate_agents(self, agent_keys: list[str]) -> None:
         """generate agents and place them in the grid space.
 
         Args:
@@ -133,17 +182,19 @@ class Environment(ABC, Generic[ObsT]):
         self.agent_id2initial_coords: dict[int, tuple[int, ...]] = {}
         self.agent_id2is_moving: dict[int, bool] = {}
         self.agent_id2destination: dict[int, Optional[tuple[int, ...]]] = {}
-        for agent_type in agent_types:
-            agent_config: dict[str, Any] = self.config.get(agent_type, {})
+        for agent_key in agent_keys:
+            agent_config: dict[str, Any] = self.config.get(agent_key, {})
+            instance_type: str = agent_config.get("type", agent_key)
             num_agents: int = agent_config.get("numAgents", 1)
             is_household: bool = agent_config.get("isHousehold", False)
             for _ in range(num_agents):
                 agent_class: Type[Agent] = find_class(
-                    name=agent_type, optional_class_list=self.registered_classes
+                    name=instance_type, optional_class_list=self.registered_classes
                 )
                 agent_instance: Agent = agent_class(
                     agent_id=current_agent_id,
-                    agent_name=agent_type + str(current_agent_id),
+                    agent_name=agent_key + str(current_agent_id),
+                    env_services=self.service_dic,
                     prng=self.prng,
                     config=agent_config,
                 )
@@ -178,24 +229,25 @@ class Environment(ABC, Generic[ObsT]):
                 self.social_network.add_agent(current_agent_id)
                 current_agent_id += 1
 
-    def _generate_items(self, item_names: list[str]) -> None:
+    def _generate_items(self, item_keys: list[str]) -> None:
         """generate items.
 
         Args:
-            item_names (list[str]): name list of items to be generated.
+            item_keys (list[str]): name list of items to be generated.
         """
         self.item_name2item: dict[str, Item] = {}
-        for item_name in item_names:
-            item_config: dict[str, Any] = self.config.get(item_name, {})
+        for item_key in item_keys:
+            item_config: dict[str, Any] = self.config.get(item_key, {})
+            item_type: str = item_config.get("type", item_key)
             item_class: Type[Item] = find_class(
-                name=item_name, optional_class_list=self.registered_classes
+                name=item_type, optional_class_list=self.registered_classes
             )
             item_instance: Item = item_class(
                 item_id=len(self.item_name2item),
-                item_name=item_name,
+                item_name=item_key,
                 config=item_config,
             )
-            self.item_name2item[item_name] = item_instance
+            self.item_name2item[item_key] = item_instance
 
     def _assign_agent_to_space(
         self, agent_id: int, coords: Optional[tuple[int, ...]] = None

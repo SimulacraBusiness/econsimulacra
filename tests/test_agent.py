@@ -27,14 +27,22 @@ class TestAgent:
     }
 
     def test__init__(self) -> None:
-        agent = DummyAgent(agent_id=1, agent_name="TestAgent", config=self.agent_config)
+        agent = DummyAgent(
+            agent_id=1,
+            agent_name="TestAgent",
+            env_services={},
+            config=self.agent_config,
+        )
         assert agent.agent_id == 1
         assert agent.agent_type == "DummyAgent"
         assert agent.agent_name == "TestAgent"
         assert not agent.is_rich_info_allowed
         assert agent.inventory_dic == {"cash": 100, "rice": 50}
         agent = DummyAgentwName(
-            agent_id=2, agent_name="IgnoredName", config=self.agent_config
+            agent_id=2,
+            agent_name="IgnoredName",
+            env_services={},
+            config=self.agent_config,
         )
         assert agent.agent_id == 2
         assert agent.agent_type == "DummyAgentwName"
@@ -46,6 +54,7 @@ class TestAgent:
         agent = DummyAgent(
             agent_id=3,
             agent_name="TestAgent3",
+            env_services={},
             prng=random.Random(42),
             config=random_config,
         )
@@ -63,6 +72,7 @@ class TestAgent:
         agent = DummyAgent(
             agent_id=4,
             agent_name="TestAgent3",
+            env_services={},
             prng=random.Random(42),
             config=random_config,
         )
@@ -74,7 +84,12 @@ class TestAgent:
         assert 71 <= rice_amount <= 110
 
     def test_exchange_goods(self) -> None:
-        agent = DummyAgent(agent_id=1, agent_name="TestAgent", config=self.agent_config)
+        agent = DummyAgent(
+            agent_id=1,
+            agent_name="TestAgent",
+            env_services={},
+            config=self.agent_config,
+        )
         agent.exchange_goods(
             get_item_name="cash",
             get_item_amount=20,
