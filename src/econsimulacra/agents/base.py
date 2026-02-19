@@ -79,7 +79,7 @@ class Agent(ABC, Generic[ObsT]):
         if self.config is not None and "requestObs" in self.config:
             self.request_obses: list[str] = list(self.config["requestObs"])
         else:
-            self.request_obses: list[str] = ["all"]
+            self.request_obses = ["all"]
 
     def _setup_infos_to_provide(self) -> None:
         if self.config is not None:
