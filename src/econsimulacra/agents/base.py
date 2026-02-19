@@ -11,6 +11,12 @@ ObsT = TypeVar("ObsT")
 
 
 class Agent(ABC, Generic[ObsT]):
+    """Agent class.
+
+    Once you define the agent class inheriting this agent ABC class, environment automatically generate agents using the class you define.
+    act(self, obs: ObsT) method is the only method that must be implemented in the agent class you define, and it will be called by environment at each step to get the action of the agent.
+    """
+
     def __init__(
         self,
         agent_id: int,
@@ -18,6 +24,34 @@ class Agent(ABC, Generic[ObsT]):
         prng: Optional[Random] = None,
         config: Optional[dict[str, Any]] = None,
     ) -> None:
+        """initialization.
+
+        Args:
+            agent_id (int): agent id, which is unique in the environment.
+            agent_name (str): agent name, which is used for identification and display purposes.
+            prng (Optional[Random], optional): pseudo-random number generator for the agent. Defaults to None.
+            config (Optional[dict[str, Any]], optional): configuration dictionary for the agent. Defaults to None.
+
+        Note:
+            config example:
+            {
+                "isHousehold": True,
+                "numAgents": 10,
+                "inventory": {
+                    "Yen": [1000000, 10000000],
+                    "Rice": [3, 10],
+                    "Fish": [3, 10]
+                },
+                "isRichInfoAllowed": False,
+                "requestObs": ["all"],
+                # built-in options: "time", "self_agent_id", "self_name", "self_pos", "self_init_pos", "self_is_moving",
+                # "self_destination", "others_pos", "self_tweet", "visible_tl", "incoming_orders", "incoming_proposals",
+                # "item_name2price", "others_inventory",
+                "provideInfo4AllAgents": [], # built-in option: "self_pos",
+                "provideInfo4CoLocatedAgents": [], # built-in option: "inventory"
+                "provideInfo4AllowedAgents": [] # built-in option: None
+            }
+        """
         self.agent_id: int = agent_id
         self.agent_type: str = self.__class__.__name__
         self.agent_name: str = agent_name
@@ -31,6 +65,8 @@ class Agent(ABC, Generic[ObsT]):
             self.is_rich_info_allowed = self.config["isRichInfoAllowed"]
         else:
             self.is_rich_info_allowed = False
+        self._setup_request_obs()
+        self._setup_infos_to_provide()
         self.self_assign_name(self.config)
 
     def get_self_name(self) -> str:
@@ -38,6 +74,28 @@ class Agent(ABC, Generic[ObsT]):
 
     def self_assign_name(self, config: dict[str, Any]) -> None:
         pass
+
+    def _setup_request_obs(self) -> None:
+        if self.config is not None and "requestObs" in self.config:
+            self.request_obses: list[str] = list(self.config["requestObs"])
+        else:
+            self.request_obses: list[str] = ["all"]
+
+    def _setup_infos_to_provide(self) -> None:
+        if self.config is not None:
+            self.info4all_agents: list[str] = list(
+                self.config.get("provideInfo4AllAgents", [])
+            )
+            self.info4co_located_agents: list[str] = list(
+                self.config.get("provideInfo4CoLocatedAgents", [])
+            )
+            self.info4allowed_agents: list[str] = list(
+                self.config.get("provideInfo4AllowedAgents", [])
+            )
+        else:
+            self.info4all_agents = []
+            self.info4co_located_agents = []
+            self.info4allowed_agents = []
 
     def _initialize_inventory(self, config: dict[str, Any]) -> dict[str, float | int]:
         json_random = JsonRandom(prng=self.prng)
@@ -81,16 +139,48 @@ class Agent(ABC, Generic[ObsT]):
             self.inventory_dic[give_item_name] -= give_item_amount
 
     def provide_info4all_agents(self) -> list[str]:
-        return []  # self_pos
+        """provide information for all agents.
+
+        Returns:
+            list[str]: a list of information keys that the agent can provide for all agents.
+
+        Note:
+            Usually called by observation providers registered in econsimulacra.environment.base._build_observation_registry.
+            Currently, the following built-in observation provider is supported: econsimulacra.environment.base._obs_others_pos
+            If another agent is requesting "others_pos" information (i.e., "others_pos" is in the self.request_obses of the another agent),
+            the agent can provide its position information to them by adding "self_pos" in self.info4all_agents.
+        """
+        return self.info4all_agents
 
     def provide_info4co_located_agents(self) -> list[str]:
-        return []  # inventory
+        """provide information for those agents who are co-located.
+
+        Returns:
+            list[str]: a list of information keys that the agent can provide for those agents who are co-located.
+
+        Note:
+            Usually called by observation providers registered in econsimulacra.environment.base._build_observation4co_located_agents_registry.
+            Currently, the following built-in observation provider is supported: econsimulacra.environment.base._obs_others_inventory
+            If another agent who is co-located with the agent is requesting "others_inventory" informaation (i.e., "others_inventory" is in the self.request_obses of the another agent),
+            the agent can provide its inventory information to them by adding "inventory" in self.info4co_located_agents.
+        """
+        return self.info4co_located_agents
 
     def provide_info4allowed_agents(self) -> list[str]:
-        return []  # item_name2price
+        """provide information for those agents who are allowed.
+
+        Returns:
+            list[str]: a list of information keys that the agent can provide for those agents who are is_rich_info_allowed.
+
+        Note:
+            Usually called by observation providers registered in econsimulacra.environment.base._build_observation4allowed_agents_registry.
+            Currently, built-in observation provider is not supported, but users can implement their own observation provider
+            and register it in econsimulacra.environment.base._build_observation4allowed_agents_registry to provide rich information for those agents who are is_rich_info_allowed.
+        """
+        return self.info4allowed_agents
 
     def request_obs(self) -> list[str]:
-        return ["all"]
+        return self.request_obses
 
     def __repr__(self) -> str:
         return f"Agent(id={self.agent_id}, name={self.agent_name}, inventory={self.inventory_dic})"
