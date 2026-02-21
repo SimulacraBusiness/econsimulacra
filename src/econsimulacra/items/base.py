@@ -10,6 +10,7 @@ class Item:
         config: Optional[dict[str, Any]] = None,
     ) -> None:
         """initialization.
+
         Args:
             item_id (int): The unique id for the item.
             item_name (str): The name of the item.
@@ -27,6 +28,7 @@ class Item:
 
     def get_price(self) -> float:
         """Get the price of the item.
+
         Returns:
             float: The price of the item.
         """
@@ -34,9 +36,11 @@ class Item:
 
     def set_price(self, price: float, set_by: Optional[int] = None) -> None:
         """Set the price of the item.
+
         Args:
             price (float): The new price of the item.
             set_by (int, Optional): The id of the agent who set the price. Defaults to None.
+
         Returns:
             None
         """
@@ -45,6 +49,7 @@ class Item:
 
     def __repr__(self):
         """Return a readable string representation of the item
+        
         Returns:
             str: A string containing the item id, name, price, and who set the price.
         """
