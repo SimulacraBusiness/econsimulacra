@@ -14,7 +14,7 @@ class Item:
         Args:
             item_id (int): The unique id for the item.
             item_name (str): The name of the item.
-            config (dict[str, Any],Optional) : Optional config. If it contains "initialPrice", it is used as the initial price. Defaults to None.
+            config (dict[str, Any], Optional): Optional config. If it contains "initialPrice", it is used as the initial price. Defaults to None.
         """
         self.item_id: int = item_id
         self.item_name: str = item_name
@@ -48,8 +48,8 @@ class Item:
         self.price_set_by = set_by
 
     def __repr__(self):
-        """Return a readable string representation of the item
-        
+        """Return a readable string representation of the item.
+
         Returns:
             str: A string containing the item id, name, price, and who set the price.
         """
