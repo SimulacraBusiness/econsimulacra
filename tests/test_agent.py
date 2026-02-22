@@ -30,7 +30,7 @@ class TestAgent:
         agent = DummyAgent(
             agent_id=1,
             agent_name="TestAgent",
-            env_services={},
+            env_service_dic={},
             config=self.agent_config,
         )
         assert agent.agent_id == 1
@@ -41,7 +41,7 @@ class TestAgent:
         agent = DummyAgentwName(
             agent_id=2,
             agent_name="IgnoredName",
-            env_services={},
+            env_service_dic={},
             config=self.agent_config,
         )
         assert agent.agent_id == 2
@@ -54,7 +54,7 @@ class TestAgent:
         agent = DummyAgent(
             agent_id=3,
             agent_name="TestAgent3",
-            env_services={},
+            env_service_dic={},
             prng=random.Random(42),
             config=random_config,
         )
@@ -72,7 +72,7 @@ class TestAgent:
         agent = DummyAgent(
             agent_id=4,
             agent_name="TestAgent3",
-            env_services={},
+            env_service_dic={},
             prng=random.Random(42),
             config=random_config,
         )
@@ -87,7 +87,7 @@ class TestAgent:
         agent = DummyAgent(
             agent_id=1,
             agent_name="TestAgent",
-            env_services={},
+            env_service_dic={},
             config=self.agent_config,
         )
         agent.exchange_goods(
