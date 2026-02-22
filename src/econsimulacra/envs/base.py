@@ -194,7 +194,7 @@ class Environment(ABC, Generic[ObsT]):
                 agent_instance: Agent = agent_class(
                     agent_id=current_agent_id,
                     agent_name=agent_key + str(current_agent_id),
-                    env_services=self.service_dic,
+                    env_service_dic=self.service_dic,
                     prng=self.prng,
                     config=agent_config,
                 )

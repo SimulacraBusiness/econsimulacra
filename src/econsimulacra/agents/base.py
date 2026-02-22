@@ -21,7 +21,7 @@ class Agent(ABC, Generic[ObsT]):
         self,
         agent_id: int,
         agent_name: str,
-        env_services: dict[str, Any],
+        env_service_dic: dict[str, Any],
         prng: Optional[Random] = None,
         config: Optional[dict[str, Any]] = None,
     ) -> None:
@@ -69,7 +69,7 @@ class Agent(ABC, Generic[ObsT]):
             self.is_rich_info_allowed = False
         self._setup_request_obs()
         self._setup_infos_to_provide()
-        self._setup_env_services()
+        self._setup_env_services(env_service_dic)
         self.self_assign_name(self.config)
 
     def get_self_name(self) -> str:
@@ -100,7 +100,7 @@ class Agent(ABC, Generic[ObsT]):
             self.info4co_located_agents = []
             self.info4allowed_agents = []
 
-    def _setup_env_services(self) -> None:
+    def _setup_env_services(self, env_service_dic: dict[str, Any]) -> None:
         """setup environment services for the agent based on self.service_dic.
 
         See also:
