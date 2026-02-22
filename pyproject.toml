@@ -12,11 +12,10 @@ readme = "README.md"
 python = ">=3.11,<3.14"
 typing-extensions = "^4.15.0"
 torch = "2.2.1"
-numpy = "^2.4.1"
+numpy = "^1.26.1"
 pandas = "^2.3.3"
 matplotlib = "^3.10.8"
-opencv-python = "^4.13.0.90"
-outlines = "^1.2.11"
+outlines = "0.1.11"
 rich = "^14.2.0"
 transformers = "^4.49.0"
 statsmodels = "^0.14.6"
@@ -33,30 +32,8 @@ pytest-cov = "^7.0.0"
 mypy = "^1.19.1"
 ruff = "^0.14.13"
 
-# ---------------------------------------------------------
-# Animation dependencies (manim requires cairo/pango system libs)
-# Install only when working on animations:
-#   poetry install --with dev,animations
-#
-# CI does NOT install this group to avoid cairo build issues.
-# ---------------------------------------------------------
-[tool.poetry.group.animations]
-optional = true
-
-[tool.poetry.group.animations.dependencies]
-manim = "^0.19.2"
-
-# ---------------------------------------------------------
-# Mypy configuration
-# Animations layer is excluded because manim lacks full type hints
-# ---------------------------------------------------------
 [tool.mypy]
 python_version = "3.11"
-exclude = ["src/econsimulacra/animations/"]
-
-[[tool.mypy.overrides]]
-module = ["manim", "manim.*"]
-ignore_missing_imports = true
 
 [build-system]
 requires = ["poetry-core"]
