@@ -37,7 +37,8 @@ class OpenAIClient(LLMClient):
                 "OpenAIClient: API key must be provided in the config or set in the OPENAI_API_KEY environment variable."
             )
         model = models.openai(
-            model_name, api_key=api_key,
+            model_name,
+            api_key=api_key,
         )
         json_schema_str: str = self._get_json_schema(config)
         self.json_generator: Callable[[str], dict[str, Any]] = generate.json(

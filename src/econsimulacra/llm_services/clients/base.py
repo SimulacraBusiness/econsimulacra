@@ -18,7 +18,6 @@ class LLMClient(ABC):
     def _get_json_schema(self, config: dict[str, Any]) -> str:
         """get JSON schema for structured generation from config or use default schema."""
         schema_path_str: Optional[str] = config.get("json_schema_path")
-        schema_path_str: Optional[str] = config.get("json_schema_path")
         if schema_path_str is not None:
             schema_path: Path = pathlib.Path(schema_path_str).resolve()
             if not schema_path.exists():
