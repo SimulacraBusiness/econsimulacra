@@ -58,10 +58,10 @@ class TransformersClient(LLMClient):
         }
         if device_str == "cuda":
             model_kwargs["device_map"] = "auto"
-        model = models.transformers(model_name=model_name, model_kwargs=model_kwargs)
+        model = models.transformers(model_name, model_kwargs=model_kwargs)
         json_schema_str: str = self._get_json_schema(config)
         self.json_generator: Callable[[str], dict[str, Any]] = generate.json(
-            model=model, schema_object=json_schema_str
+            model, schema_object=json_schema_str
         )
         self._lock = asyncio.Lock()
 
