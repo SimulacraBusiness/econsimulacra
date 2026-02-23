@@ -27,7 +27,7 @@ DEFAULT_ACTION_JSON_SCHEMA: dict[str, Any] = {
                 },
                 "required": ["item_name", "item_amount"],
             },
-            "default": [],
+        "default": [],
         },
         "orders": {
             "type": "array",
@@ -38,7 +38,7 @@ DEFAULT_ACTION_JSON_SCHEMA: dict[str, Any] = {
                     "counterparty_id": {"type": "integer"},
                     "item_name": {"type": "string"},
                     "item_amount": {"type": "number"},
-                    "ttl": {"type": "integer", "minimum": 1},
+                    "ttl": {"type": "integer"}#, "minimum": 1},
                 },
                 "required": ["counterparty_id", "item_name", "item_amount", "ttl"],
             },
@@ -55,7 +55,7 @@ DEFAULT_ACTION_JSON_SCHEMA: dict[str, Any] = {
                     "give_item_amount": {"type": "number"},
                     "get_item_name": {"type": "string"},
                     "get_item_amount": {"type": "number"},
-                    "ttl": {"type": "integer", "minimum": 1},
+                    "ttl": {"type": "integer"}#, "minimum": 1},
                 },
                 "required": [
                     "responder_agent_id",
@@ -71,28 +71,15 @@ DEFAULT_ACTION_JSON_SCHEMA: dict[str, Any] = {
         "reactions": {
             "type": "array",
             "items": {
-                "oneOf": [
-                    {
-                        "type": "object",
-                        "additionalProperties": False,
-                        "properties": {
-                            "kind": {"const": "order"},
-                            "id": {"type": "integer"},
-                            "accept_amount": {"type": "number"},
-                        },
-                        "required": ["kind", "id", "accept_amount"],
-                    },
-                    {
-                        "type": "object",
-                        "additionalProperties": False,
-                        "properties": {
-                            "kind": {"const": "proposal"},
-                            "id": {"type": "integer"},
-                            "accept": {"type": "boolean"},
-                        },
-                        "required": ["kind", "id", "accept"],
-                    },
-                ]
+                "type": "object",
+                "additionalProperties": False,
+                "properties": {
+                    "kind": {"type": "string", "enum": ["order", "proposal"]},
+                    "id": {"type": "integer"},
+                    "accept_amount": {"anyOf": [{"type": "number"}, {"type": "null"}]},
+                    "accept": {"anyOf": [{"type": "boolean"}, {"type": "null"}]},
+                },
+                "required": ["kind", "id", "accept_amount", "accept"],
             },
             "default": [],
         },
@@ -100,5 +87,14 @@ DEFAULT_ACTION_JSON_SCHEMA: dict[str, Any] = {
         "follow": {"anyOf": [{"type": "integer"}, {"type": "null"}]},
         "unfollow": {"anyOf": [{"type": "integer"}, {"type": "null"}]},
     },
-    "required": [],
+    "required": [
+        "move",
+        "consumptions",
+        "orders",
+        "proposals",
+        "reactions",
+        "tweet",
+        "follow",
+        "unfollow",
+    ],
 }
