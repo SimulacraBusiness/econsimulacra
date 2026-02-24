@@ -92,26 +92,6 @@ class DummyRetailer(Agent):
         return action_dic
 
 
-class Yen(Item):
-    def __init__(
-        self,
-        item_id: int,
-        item_name: str = "Yen",
-        config: Optional[dict[str, Any]] = None,
-    ) -> None:
-        super().__init__(item_id=item_id, item_name=item_name, config=config)
-
-
-class Rice(Item):
-    def __init__(
-        self,
-        item_id: int,
-        item_name: str = "Rice",
-        config: Optional[dict[str, Any]] = None,
-    ) -> None:
-        super().__init__(item_id=item_id, item_name=item_name, config=config)
-
-
 class DummyEnvironment(Environment):
     def _build_observation_registry(self) -> dict[str, Provider]:
         provider_dic: dict[str, Provider] = super()._build_observation_registry()
@@ -163,9 +143,11 @@ class TestEnvironment:
             "provideInfo4AllAgents": ["self_pos"],
         },
         "Yen": {
+            "type": "Item",
             "initialPrice": 1.0,
         },
         "Rice": {
+            "type": "Item",
             "initialPrice": 1000.0,
         },
     }
@@ -179,15 +161,13 @@ class TestEnvironment:
 
     def test_register_classes(self) -> None:
         env = DummyEnvironment(config=self.config)
-        env.register_classes([DummyHousehold, DummyRetailer, Yen, Rice])
+        env.register_classes([DummyHousehold, DummyRetailer])
         assert DummyHousehold in env.registered_classes
         assert DummyRetailer in env.registered_classes
-        assert Yen in env.registered_classes
-        assert Rice in env.registered_classes
 
     def test_reset(self) -> None:
         env = DummyEnvironment(config=self.config)
-        env.register_classes([DummyHousehold, DummyRetailer, Yen, Rice])
+        env.register_classes([DummyHousehold, DummyRetailer])
         env.reset(seed=42)
         assert len(env.agent_ids) == 6
         assert len(env.household_ids) == 5
@@ -229,7 +209,7 @@ class TestEnvironment:
                 assert agent.inventory_dic == {"Yen": 500, "Rice": 10000}
                 assert agent.agent_name == "DummyRetailer"
         env = DummyEnvironment(config=self.config, logger=DictLogger())
-        env.register_classes([DummyHousehold, DummyRetailer, Yen, Rice])
+        env.register_classes([DummyHousehold, DummyRetailer])
         env.reset(seed=42)
         logger = env.logger
         assert isinstance(logger, DictLogger)
@@ -237,7 +217,7 @@ class TestEnvironment:
 
     def test_move(self) -> None:
         env = DummyEnvironment(config=self.config)
-        env.register_classes([DummyHousehold, DummyRetailer, Yen, Rice])
+        env.register_classes([DummyHousehold, DummyRetailer])
         env.reset(seed=42)
         household_id: int = env.household_ids[0]
         initial_pos: tuple[int, int] = env.grid_space.get_pos(household_id)
@@ -271,7 +251,7 @@ class TestEnvironment:
 
     def test_consume_items(self) -> None:
         env = DummyEnvironment(config=self.config)
-        env.register_classes([DummyHousehold, DummyRetailer, Yen, Rice])
+        env.register_classes([DummyHousehold, DummyRetailer])
         env.reset(seed=42)
         household_id: int = env.household_ids[0]
         initial_rice_amount: int = env.agent_id2agent[household_id].inventory_dic[
@@ -284,7 +264,7 @@ class TestEnvironment:
 
     def test_add_new_orders_and_proposals(self) -> None:
         env = DummyEnvironment(config=self.config)
-        env.register_classes([DummyHousehold, DummyRetailer, Yen, Rice])
+        env.register_classes([DummyHousehold, DummyRetailer])
         env.reset(seed=42)
         orders: list[dict[str, Any]] = [
             {
@@ -338,7 +318,7 @@ class TestEnvironment:
 
     def test_apply_action_to_env_and_process_orders_and_proposals(self) -> None:
         env = DummyEnvironment(config=self.config)
-        env.register_classes([DummyHousehold, DummyRetailer, Yen, Rice])
+        env.register_classes([DummyHousehold, DummyRetailer])
         env.reset(seed=42)
         household_id0: int = env.household_ids[0]
         household_id1: int = env.household_ids[1]
@@ -432,7 +412,7 @@ class TestEnvironment:
 
     def test_get_observations(self) -> None:
         env = DummyEnvironment(config=self.config)
-        env.register_classes([DummyHousehold, DummyRetailer, Yen, Rice])
+        env.register_classes([DummyHousehold, DummyRetailer])
         env.reset(seed=42)
         for agent_id in env.agent_ids:
             obs: dict[str, Any] = env.get_observations(agent_id=agent_id)
@@ -501,7 +481,7 @@ class TestEnvironment:
 
     def test_step(self) -> None:
         env = DummyEnvironment(config=self.config)
-        env.register_classes([DummyHousehold, DummyRetailer, Yen, Rice])
+        env.register_classes([DummyHousehold, DummyRetailer])
         env.reset(seed=42)
         all_actions_dic: dict[int, dict[str, Any]] = {}
         for agent_id in env.agent_ids:
@@ -511,7 +491,7 @@ class TestEnvironment:
             all_actions_dic[agent_id] = action_dic
         env.step(all_actions_dic=all_actions_dic)
         env = DummyEnvironment(config=self.config, logger=DictLogger())
-        env.register_classes([DummyHousehold, DummyRetailer, Yen, Rice])
+        env.register_classes([DummyHousehold, DummyRetailer])
         env.reset(seed=42)
         for _ in range(100):
             all_actions_dic = {}

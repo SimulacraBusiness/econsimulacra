@@ -93,26 +93,6 @@ class DummyRetailer(Agent):
         return action_dic
 
 
-class Yen(Item):
-    def __init__(
-        self,
-        item_id: int,
-        item_name: str = "Yen",
-        config: Optional[dict[str, Any]] = None,
-    ) -> None:
-        super().__init__(item_id=item_id, item_name=item_name, config=config)
-
-
-class Rice(Item):
-    def __init__(
-        self,
-        item_id: int,
-        item_name: str = "Rice",
-        config: Optional[dict[str, Any]] = None,
-    ) -> None:
-        super().__init__(item_id=item_id, item_name=item_name, config=config)
-
-
 class DummyEnvironment(Environment):
     def _build_observation_registry(self) -> dict[str, Provider]:
         provider_dic: dict[str, Provider] = super()._build_observation_registry()
@@ -164,9 +144,11 @@ class TestSimulator:
             "provideInfo4AllAgents": ["self_pos"],
         },
         "Yen": {
+            "type": "Item",
             "initialPrice": 1.0,
         },
         "Rice": {
+            "type": "Item",
             "initialPrice": 1000.0,
         },
     }
@@ -209,8 +191,6 @@ class TestSimulator:
             [
                 DummyHousehold,
                 DummyRetailer,
-                Yen,
-                Rice,
             ]
         )
         asyncio.run(simulator.simulate(seed=42, parallel_batch_size=4))
