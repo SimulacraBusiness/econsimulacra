@@ -60,6 +60,7 @@ class Simulator(Generic[ObsT]):
                 agent: Agent = self.env.agent_id2agent[agent_id]
                 obs: ObsT = self.env.get_observations(agent_id=agent_id)
                 action_dic: dict[str, Any] = await agent.act(obs=obs)
+                action_dic = self._convert_list_to_tuple(action_dic)
                 return agent_id, action_dic
 
             for batch in _chunked(self.env.agent_ids, parallel_batch_size):

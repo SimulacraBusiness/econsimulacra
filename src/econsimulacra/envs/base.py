@@ -356,7 +356,11 @@ class Environment(ABC, Generic[ObsT]):
             return
         elif isinstance(where_to_move, str):
             destination_name: str = where_to_move
-            destination_id: int = self.agent_name2agent_id[destination_name]
+            destination_id: Optional[int] = self.agent_name2agent_id.get(
+                destination_name
+            )
+            if destination_id is None:
+                return
             destination_pos: tuple[int, ...] = self.grid_space.get_pos(
                 agent_id=destination_id
             )
@@ -744,10 +748,16 @@ class Environment(ABC, Generic[ObsT]):
             "self_is_moving": lambda agent_id: self.agent_id2is_moving[agent_id],
             "self_destination": lambda agent_id: self.agent_id2destination[agent_id],
             "others_pos": lambda agent_id: self._obs_others_pos(agent_id),
+            "self_inventory": lambda agent_id: self.agent_id2agent[
+                agent_id
+            ].inventory_dic.copy(),
             "self_tweet": lambda agent_id: self.social_network.get_tweet(
                 agent_id=agent_id
             ),
             "visible_tl": lambda agent_id: self._obs_visible_tl(agent_id),
+            "recommended_follows": lambda agent_id: self._obs_recommended_follows(
+                agent_id
+            ),
             "incoming_orders": lambda agent_id: self._obs_incoming_orders(agent_id),
             "incoming_proposals": lambda agent_id: self._obs_incoming_proposals(
                 agent_id
@@ -837,6 +847,15 @@ class Environment(ABC, Generic[ObsT]):
                     }
                 )
         return others_pos_infos
+
+    def _obs_recommended_follows(self, agent_id: int) -> list[int]:
+        recommended_follows: list[int] = []
+        for other_agent_id in self.agent_ids:
+            if other_agent_id == agent_id:
+                continue
+            if other_agent_id not in self.social_network.get_follows(agent_id):
+                recommended_follows.append(other_agent_id)
+        return recommended_follows
 
     def _obs_others_inventory(
         self, agent_id: int, co_located_agents: set[int], mask_amount: bool = False
