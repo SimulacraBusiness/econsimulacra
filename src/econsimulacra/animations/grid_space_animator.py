@@ -157,7 +157,9 @@ class GridSpaceAnimator(Animator):
                     f"Expected: {old_manim_coord}, Actual: {current_manim_coord}"
                 )
                 new_manim_coord: ndarray = self.mapper.map_pos_to_manim_coord(new_pos)
+                label: Text = agent_id2label_dic[agent_id]
                 anims.append(agent_mobject.animate.move_to(new_manim_coord))
+                anims.append(label.animate.move_to(new_manim_coord + UP * 0.05))
             if anims:
                 self.play(AnimationGroup(*anims, lag_ratio=0.0), run_time=0.8)
 
@@ -191,7 +193,10 @@ class GridSpaceAnimator(Animator):
             agent_manim_obj.set_color("WHITE")
             agent_manim_obj.move_to(manim_coord)
             label: Text = Text(agent_name, font_size=18)
-            label.add_updater(lambda m, d=agent_manim_obj: m.next_to(d, UP, buff=0.05))
+            label.next_to(agent_manim_obj, UP, buff=0.05)
+            label.add_updater(
+                lambda m, dt, d=agent_manim_obj: m.next_to(d, UP, buff=0.05)
+            )
             agent_id2agent_mobject_dic[agent_id] = agent_manim_obj
             agent_id2label_dic[agent_id] = label
             agents_group.add(agent_manim_obj, label)
