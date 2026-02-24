@@ -29,14 +29,6 @@ class SocialNetwork:
             )
         if target_agent_id == agent_id:
             raise ValueError("An agent cannot follow itself.")
-        if target_agent_id in self.agent_id2follows[agent_id]:
-            raise ValueError(
-                f"Agent ID {agent_id} already follows Agent ID {target_agent_id}."
-            )
-        if agent_id in self.agent_id2followers[target_agent_id]:
-            raise ValueError(
-                f"Agent ID {target_agent_id} already has Agent ID {agent_id} as a follower."
-            )
         self.agent_id2follows[agent_id].add(target_agent_id)
         self.agent_id2followers[target_agent_id].add(agent_id)
 
