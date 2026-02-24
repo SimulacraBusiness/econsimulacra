@@ -56,6 +56,8 @@ class TransformersClient(LLMClient):
             "dtype": dtype,
             "trust_remote_code": trust_remote_code,
         }
+        if device_str == "cuda":
+            model_kwargs["device_map"] = "auto"
         model = models.transformers(model_name, model_kwargs=model_kwargs)
         json_schema_str: str = self._get_json_schema(config)
         self.json_generator: Callable[[str], dict[str, Any]] = generate.json(
