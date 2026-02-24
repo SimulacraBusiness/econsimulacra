@@ -15,9 +15,11 @@ class PromptBuilder:
     def build_prompt(self, obs: dict[str, Any]) -> str:
         obs = self._truncate_floats(obs)
         obs_str: str = json.dumps(obs, ensure_ascii=False)
-        prompt: str = "You are a member of the society. Based on the following observation, decide the action to take.\n" + \
-                    f"Observation description: {self.obs_desc}\nAction description: {self.action_desc}\nRespond in JSON format." + \
-                    f" Respond in JSON format.\nObservation: {obs_str}"
+        prompt: str = (
+            "You are a member of the society. Based on the following observation, decide the action to take.\n"
+            + f"Observation description: {self.obs_desc}\nAction description: {self.action_desc}\nRespond in JSON format."
+            + f" Respond in JSON format.\nObservation: {obs_str}"
+        )
         return prompt
 
     def _truncate_floats(self, obj: Any) -> Any:
@@ -36,19 +38,27 @@ class PromptBuilder:
     def _get_obs_action_description(self, config: dict[str, Any]) -> tuple[str, str]:
         """get description of observations and actions from config for better LLM understanding."""
         obs_desc_path_str: Optional[str] = config.get("obs_description_path")
+        obs_desc: str
         if obs_desc_path_str is not None:
             obs_desc_path: Path = pathlib.Path(obs_desc_path_str).resolve()
             if not obs_desc_path.exists():
-                raise FileNotFoundError(f"Observation description file not found at: {obs_desc_path}")
-            obs_desc: str = obs_desc_path.read_text(encoding="utf-8")
+                raise FileNotFoundError(
+                    f"Observation description file not found at: {obs_desc_path}"
+                )
+            obs_desc = obs_desc_path.read_text(encoding="utf-8")
         else:
-            obs_desc: str = json.dumps(DEFAULT_OBS_DESCRIPTION, ensure_ascii=False)
+            obs_desc = json.dumps(DEFAULT_OBS_DESCRIPTION, ensure_ascii=False)
         action_desc_path_str: Optional[str] = config.get("action_description_path")
+        action_desc: str
         if action_desc_path_str is not None:
             action_desc_path: Path = pathlib.Path(action_desc_path_str).resolve()
             if not action_desc_path.exists():
-                raise FileNotFoundError(f"Action description file not found at: {action_desc_path}")
-            action_desc: str = action_desc_path.read_text(encoding="utf-8")
+                raise FileNotFoundError(
+                    f"Action description file not found at: {action_desc_path}"
+                )
+            action_desc = action_desc_path.read_text(encoding="utf-8")
         else:
-            action_desc: str = json.dumps(DEFAULT_ACTION_DESCRIPTION, ensure_ascii=False)
+            action_desc = json.dumps(
+                DEFAULT_ACTION_DESCRIPTION, ensure_ascii=False
+            )
         return obs_desc, action_desc
