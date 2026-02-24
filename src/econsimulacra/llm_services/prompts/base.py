@@ -58,7 +58,5 @@ class PromptBuilder:
                 )
             action_desc = action_desc_path.read_text(encoding="utf-8")
         else:
-            action_desc = json.dumps(
-                DEFAULT_ACTION_DESCRIPTION, ensure_ascii=False
-            )
+            action_desc = json.dumps(DEFAULT_ACTION_DESCRIPTION, ensure_ascii=False)
         return obs_desc, action_desc
