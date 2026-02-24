@@ -2,7 +2,6 @@ import asyncio
 from econsimulacra.agents import Agent
 from econsimulacra.envs import Environment
 from econsimulacra.envs import Order
-from econsimulacra.items import Item
 from econsimulacra.logs import DictLogger
 from econsimulacra.simulator import Simulator
 from typing import Any
