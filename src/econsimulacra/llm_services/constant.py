@@ -27,7 +27,7 @@ DEFAULT_ACTION_JSON_SCHEMA: dict[str, Any] = {
                 },
                 "required": ["item_name", "item_amount"],
             },
-        "default": [],
+            "default": [],
         },
         "orders": {
             "type": "array",
@@ -38,7 +38,7 @@ DEFAULT_ACTION_JSON_SCHEMA: dict[str, Any] = {
                     "counterparty_id": {"type": "integer"},
                     "item_name": {"type": "string"},
                     "item_amount": {"type": "number"},
-                    "ttl": {"type": "integer"}#, "minimum": 1},
+                    "ttl": {"type": "integer"},
                 },
                 "required": ["counterparty_id", "item_name", "item_amount", "ttl"],
             },
@@ -55,7 +55,7 @@ DEFAULT_ACTION_JSON_SCHEMA: dict[str, Any] = {
                     "give_item_amount": {"type": "number"},
                     "get_item_name": {"type": "string"},
                     "get_item_amount": {"type": "number"},
-                    "ttl": {"type": "integer"}#, "minimum": 1},
+                    "ttl": {"type": "integer"},  # , "minimum": 1},
                 },
                 "required": [
                     "responder_agent_id",
