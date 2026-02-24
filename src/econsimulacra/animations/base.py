@@ -33,7 +33,7 @@ class Animator(Scene):
         for log_dic in self.log_dics:
             if log_dic.get("type") == "agent_generation":
                 agent_id: int = log_dic["agent_id"]
-                agent_name: str = log_dic["agent_type"] + str(agent_id)
+                agent_name: str = log_dic["agent_name"]
                 agent_id2name_dic[agent_id] = agent_name
         return agent_id2name_dic
 
