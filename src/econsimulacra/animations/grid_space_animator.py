@@ -75,30 +75,24 @@ class GridSpaceAnimator(Animator):
                 agent_id2init_pos_dic[agent_id] = pos
         return agent_id2init_pos_dic
 
-    def _get_time2move_dic(
-        self,
-    ) -> tuple[list[str | int], dict[int, list[tuple[int | str, Pos, Pos]]]]:
-        time2move_dic: dict[int | str, list[tuple[int | str, Pos, Pos]]] = defaultdict(
-            list
-        )
-        times: list[int | str] = []
+    def _get_time2move_dic(self) -> dict[int, list[tuple[int, Pos, Pos]]]:
+        time2move_dic: dict[int, list[tuple[int, Pos, Pos]]] = defaultdict(list)
         for log_dic in self.log_dics:
             if log_dic.get("type") == "move":
-                time: int | str = log_dic["time"]
-                if time not in times:
-                    times.append(time)
+                time: int = log_dic["time"]
                 agent_id: int = log_dic["agent_id"]
                 old_pos: Pos = tuple(log_dic["old_pos"])  # type: ignore
                 new_pos: Pos = tuple(log_dic["new_pos"])  # type: ignore
                 time2move_dic[time].append((agent_id, old_pos, new_pos))
-        return times, time2move_dic
+        return time2move_dic
 
     def construct(self) -> None:
         self.agent_id2name_dic: dict[int, str] = self._get_agent_id2name_dic()
         self.agent_id2init_pos_dic: dict[int, Pos] = self._get_agent_id2init_pos_dic()
         self.agent_ids: list[int] = sorted(list(self.agent_id2init_pos_dic.keys()))
-        self.times, self.time2move_dic = self._get_time2move_dic()
-        self.times: list[int | str] = sorted(self.times)
+        self.time2move_dic: dict[int, list[tuple[int, Pos, Pos]]] = (
+            self._get_time2move_dic()
+        )
         xmin: int
         xmax: int
         ymin: int
@@ -148,10 +142,10 @@ class GridSpaceAnimator(Animator):
             ),
             run_time=1.0,
         )
-        time_text: Text = Text(self.times[0], font_size=28).to_corner(UL)
+        time_text: Text = Text("t = 0", font_size=28).to_corner(UL)
         self.add(time_text)
-        for time in self.times:
-            new_time_text: Text = Text(time, font_size=28).to_corner(UL)
+        for time in range(self.num_steps):
+            new_time_text: Text = Text(f"t = {time}", font_size=28).to_corner(UL)
             self.play(Transform(time_text, new_time_text), run_time=0.2)
             anims: list[Mobject] = []
             for agent_id, old_pos, new_pos in self.time2move_dic[time]:

@@ -37,7 +37,7 @@ DEFAULT_ACTION_JSON_SCHEMA: dict[str, Any] = {
                     "counterparty_id": {"type": "integer"},
                     "item_name": {"type": "string"},
                     "item_amount": {"type": "number"},
-                    "ttl": {"type": "integer", "minimum": 2},
+                    "ttl": {"type": "integer"},
                 },
                 "required": ["counterparty_id", "item_name", "item_amount", "ttl"],
             },
@@ -54,7 +54,7 @@ DEFAULT_ACTION_JSON_SCHEMA: dict[str, Any] = {
                     "give_item_amount": {"type": "number"},
                     "get_item_name": {"type": "string"},
                     "get_item_amount": {"type": "number"},
-                    "ttl": {"type": "integer", "minimum": 2},
+                    "ttl": {"type": "integer"},
                 },
                 "required": [
                     "responder_agent_id",
@@ -82,19 +82,6 @@ DEFAULT_ACTION_JSON_SCHEMA: dict[str, Any] = {
             },
             "default": [],
         },
-        "set_price": {
-            "type": "array",
-            "items": {
-                "type": "object",
-                "additionalProperties": False,
-                "properties": {
-                    "item_name": {"type": "string"},
-                    "price": {"type": "number"},
-                },
-                "required": ["item_name", "price"],
-            },
-            "default": [],
-        },
         "tweet": {"anyOf": [{"type": "string"}, {"type": "null"}]},
         "follow": {"anyOf": [{"type": "integer"}, {"type": "null"}]},
         "unfollow": {"anyOf": [{"type": "integer"}, {"type": "null"}]},
@@ -105,7 +92,6 @@ DEFAULT_ACTION_JSON_SCHEMA: dict[str, Any] = {
         "orders",
         "proposals",
         "reactions",
-        "set_price",
         "tweet",
         "follow",
         "unfollow",
@@ -113,8 +99,7 @@ DEFAULT_ACTION_JSON_SCHEMA: dict[str, Any] = {
 }
 
 DEFAULT_OBS_DESCRIPTION: dict[str, str] = {
-    "time": "The current time step in the simulation. Provided as either an integer or a string in ISO datetime format.",
-    "timedelta": "The time delta for each simulation step, represented as either an integer or a string in ISO format (e.g., '0:00:01' for 1 second).",
+    "time": "The current time step in the simulation.",
     "self_agent_id": "Your unique identifier.",
     "self_name": "Your name.",
     "self_pos": "Your current coordinates in the grid space, represented as a list of integers [x, y].",
@@ -133,12 +118,11 @@ DEFAULT_OBS_DESCRIPTION: dict[str, str] = {
 }
 
 DEFAULT_ACTION_DESCRIPTION: dict[str, str] = {
-    "move": "The move action is a list of integers representing the coordinates to move to. You can only move to adjacent grid spaces or stay in the same place in the next time step. If you are a a corporation (e.g., retailer or restaurant), you cannot move and must set this to null.",
-    "consumptions": "The consumptions action is a list of items that you want to consume. Each item is represented as an object with 'item_name' and 'item_amount'. If you do not want to consume anything, it can set this to an empty list. You must have the item in your inventory to consume it, and the specified amount must not exceed the available quantity of that item in your inventory. You will be happy if you consume items that you like.",
-    "orders": "The orders action represents a purchase at a posted price offered by a corporation (e.g., retailer or restaurant). You accept the seller's price without negotiation. This action is used for person-to-corporation trades under a posted-price mechanism. Each order is represented as an object with 'counterparty_id', 'item_name', 'item_amount', and 'ttl' (must be more than 1). You must be located in the same grid space as the corporation to execute the order. You must have sufficient cash in your inventory to execute an order. The total cost of the order (posted price * item_amount) must not exceed your available cash balance.",
-    "proposals": "The proposals action represents a bilateral trade proposal made to another individual agent. The proposing agent explicitly specifies both what it gives and what it requests in return. This action is used for person-to-person negotiation and may include money as one of the exchanged items. Each proposal is represented as an object with 'responder_agent_id', 'give_item_name', 'give_item_amount', 'get_item_name', 'get_item_amount', and 'ttl' (must be more than 1). If you do not want to make any proposals, it can set this to an empty list. You must only specify items that exist in your own inventory (self_inventory) as give_item_name. Furthermore, the specified give_item_amount must not exceed the available quantity of that item in your inventory.",
-    "reactions": "The reactions action is a list of reactions that you want to make in response to incoming orders or proposals. If you are a household, ignore any orders. Each reaction is represented as an object with 'kind' (either 'order' or 'proposal'), 'id' (the id of the order or proposal, not the agent id), 'accept_amount' (the amount of item accepted, or null if not applicable), and 'accept' (a boolean indicating whether to accept the order/proposal, or null if not applicable). If you do not want to make any reactions, it can set this to an empty list. You must decline the order/proposal if you do not have sufficient inventory to fulfill the accepted amount in the order/proposal. For orders, you can only accept or reject the entire order.",
-    "set_prices": "The set_prices action is a list of items for which you want to set the price. Each item is represented as an object with 'item_name' and 'price'. This action is only available to agents that are corporations (e.g., retailers or restaurants) and is used to set the posted price for items that other agents can purchase from the corporation. You must have the item in your inventory to set its price, and the specified price must be a positive value.",
+    "move": "The move action is a list of integers representing the coordinates to move to.",
+    "consumptions": "The consumptions action is a list of items that you want to consume. Each item is represented as an object with 'item_name' and 'item_amount'. If the agent does not want to consume anything, it can set this to an empty list.",
+    "orders": "The orders action is a list of orders that you want to make. Order is used for person to coorporation trade. Each order is represented as an object with 'counterparty_id', 'item_name', 'item_amount', and 'ttl'. To make an order, you must go to the same grid space as the counterparty agent.",
+    "proposals": "The proposals action is a list of proposals that you want to make. Proposal is used for person to person trade. Each proposal is represented as an object with 'responder_agent_id', 'give_item_name', 'give_item_amount', 'get_item_name', 'get_item_amount', and 'ttl'. If the agent does not want to make any proposals, it can set this to an empty list.",
+    "reactions": "The reactions action is a list of reactions that you want to make in response to incoming orders or proposals. Each reaction is represented as an object with 'kind' (either 'order' or 'proposal'), 'id' (the id of the order or proposal), 'accept_amount' (the amount of item accepted, or null if not applicable), and 'accept' (a boolean indicating whether to accept the order/proposal, or null if not applicable). If the agent does not want to make any reactions, it can set this to an empty list.",
     "tweet": "The tweet action is a string representing what you want to tweet.",
     "follow": "The follow action is an integer representing the id of the agent that you want to follow.",
     "unfollow": "The unfollow action is an integer representing the id of the agent that you want to unfollow.",
