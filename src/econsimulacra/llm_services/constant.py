@@ -99,7 +99,8 @@ DEFAULT_ACTION_JSON_SCHEMA: dict[str, Any] = {
 }
 
 DEFAULT_OBS_DESCRIPTION: dict[str, str] = {
-    "time": "The current time step in the simulation.",
+    "time": "The current time step in the simulation. Provided as either an integer or a string in ISO datetime format.",
+    "timedelta": "The time delta for each simulation step, represented as either an integer or a string in ISO format (e.g., '0:00:01' for 1 second).",
     "self_agent_id": "Your unique identifier.",
     "self_name": "Your name.",
     "self_pos": "Your current coordinates in the grid space, represented as a list of integers [x, y].",
@@ -118,7 +119,7 @@ DEFAULT_OBS_DESCRIPTION: dict[str, str] = {
 }
 
 DEFAULT_ACTION_DESCRIPTION: dict[str, str] = {
-    "move": "The move action is a list of integers representing the coordinates to move to.",
+    "move": "The move action is a list of integers representing the coordinates to move to. You can only move to adjacent grid spaces or stay in the same place in the next time step.",
     "consumptions": "The consumptions action is a list of items that you want to consume. Each item is represented as an object with 'item_name' and 'item_amount'. If the agent does not want to consume anything, it can set this to an empty list.",
     "orders": "The orders action is a list of orders that you want to make. Order is used for person to coorporation trade. Each order is represented as an object with 'counterparty_id', 'item_name', 'item_amount', and 'ttl'. To make an order, you must go to the same grid space as the counterparty agent.",
     "proposals": "The proposals action is a list of proposals that you want to make. Proposal is used for person to person trade. Each proposal is represented as an object with 'responder_agent_id', 'give_item_name', 'give_item_amount', 'get_item_name', 'get_item_amount', and 'ttl'. If the agent does not want to make any proposals, it can set this to an empty list.",
