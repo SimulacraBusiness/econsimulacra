@@ -17,7 +17,7 @@ def conduct_simulation():
         env_class=Environment,
         logger=logger,
     )
-    asyncio.run(simulator.simulate(seed=42, parallel_batch_size=6))
+    asyncio.run(simulator.simulate(seed=42, parallel_batch_size=10))
     logs: list[dict] = logger.logs
     log_txt_path: Path = pathlib.Path(os.environ["LOG_TXT_PATH"])
     with open(log_txt_path, "w", encoding="utf-8") as f:
