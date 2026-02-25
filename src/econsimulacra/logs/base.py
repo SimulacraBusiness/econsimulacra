@@ -14,6 +14,7 @@ class AgentGenerationLog(Log):
     def __init__(
         self,
         time: int | str,
+        time_step: int,
         agent_id: int,
         agent_type: str,
         agent_name: str,
@@ -21,6 +22,7 @@ class AgentGenerationLog(Log):
     ) -> None:
         self.type: str = "agent_generation"
         self.time: int | str = time
+        self.time_step: int = time_step
         self.agent_id: int = agent_id
         self.agent_type: str = agent_type
         self.agent_name: str = agent_name
@@ -30,6 +32,7 @@ class AgentGenerationLog(Log):
         d: dict[str, object] = {
             "type": self.type,
             "time": self.time,
+            "time_step": self.time_step,
             "agent_id": self.agent_id,
             "agent_type": self.agent_type,
             "agent_name": self.agent_name,
@@ -50,12 +53,14 @@ class MoveLog(Log):
     def __init__(
         self,
         time: int | str,
+        time_step: int,
         agent_id: int,
         old_pos: tuple[int, ...],
         new_pos: tuple[int, ...],
     ) -> None:
         self.type: str = "move"
         self.time: int | str = time
+        self.time_step: int = time_step
         self.agent_id: int = agent_id
         self.old_pos: tuple[int, ...] = old_pos
         self.new_pos: tuple[int, ...] = new_pos
@@ -63,10 +68,16 @@ class MoveLog(Log):
 
 class ConsumptionLog(Log):
     def __init__(
-        self, time: int | str, agent_id: int, item_name: str, item_amount: float | int
+        self,
+        time: int | str,
+        time_step: int,
+        agent_id: int,
+        item_name: str,
+        item_amount: float | int,
     ) -> None:
         self.type: str = "consumption"
         self.time: int | str = time
+        self.time_step: int = time_step
         self.agent_id: int = agent_id
         self.item_name: str = item_name
         self.item_amount: float | int = item_amount
@@ -76,6 +87,7 @@ class OrderLog(Log):
     def __init__(
         self,
         time: int | str,
+        time_step: int,
         agent_id: int,
         counterparty_id: int,
         item_name: str,
@@ -85,6 +97,7 @@ class OrderLog(Log):
     ) -> None:
         self.type: str = "order"
         self.time: int | str = time
+        self.time_step: int = time_step
         self.agent_id: int = agent_id
         self.counterparty_id: int = counterparty_id
         self.item_name: str = item_name
@@ -97,6 +110,7 @@ class ProposalLog(Log):
     def __init__(
         self,
         time: int | str,
+        time_step: int,
         proposal_id: int,
         proposer_agent_id: int,
         responder_agent_id: int,
@@ -107,6 +121,7 @@ class ProposalLog(Log):
     ) -> None:
         self.type: str = "proposal"
         self.time: int | str = time
+        self.time_step: int = time_step
         self.proposal_id: int = proposal_id
         self.proposer_agent_id: int = proposer_agent_id
         self.responder_agent_id: int = responder_agent_id
@@ -120,6 +135,7 @@ class OrderReactionLog(Log):
     def __init__(
         self,
         time: int | str,
+        time_step: int,
         agent_id: int,
         counterparty_id: int,
         item_name: str,
@@ -130,6 +146,7 @@ class OrderReactionLog(Log):
     ) -> None:
         self.type: str = "order_reaction"
         self.time: int | str = time
+        self.time_step: int = time_step
         self.agent_id: int = agent_id
         self.counterparty_id: int = counterparty_id
         self.item_name: str = item_name
@@ -143,6 +160,7 @@ class ProposalReactionLog(Log):
     def __init__(
         self,
         time: int | str,
+        time_step: int,
         proposal_id: int,
         proposer_agent_id: int,
         responder_agent_id: int,
@@ -154,6 +172,7 @@ class ProposalReactionLog(Log):
     ) -> None:
         self.type: str = "proposal_reaction"
         self.time: int | str = time
+        self.time_step: int = time_step
         self.proposal_id: int = proposal_id
         self.proposer_agent_id: int = proposer_agent_id
         self.responder_agent_id: int = responder_agent_id
@@ -168,6 +187,7 @@ class ChangePriceLog(Log):
     def __init__(
         self,
         time: int | str,
+        time_step: int,
         agent_id: int,
         item_name: str,
         old_price: float,
@@ -175,6 +195,7 @@ class ChangePriceLog(Log):
     ) -> None:
         self.type: str = "change_price"
         self.time: int | str = time
+        self.time_step: int = time_step
         self.agent_id: int = agent_id
         self.item_name: str = item_name
         self.old_price: float = old_price
@@ -182,25 +203,34 @@ class ChangePriceLog(Log):
 
 
 class TweetLog(Log):
-    def __init__(self, time: int | str, agent_id: int, message: str) -> None:
+    def __init__(
+        self, time: int | str, time_step: int, agent_id: int, message: str
+    ) -> None:
         self.type: str = "tweet"
         self.time: int | str = time
+        self.time_step: int = time_step
         self.agent_id: int = agent_id
         self.message: str = message
 
 
 class FollowLog(Log):
-    def __init__(self, time: int | str, agent_id: int, target_agent_id: int) -> None:
+    def __init__(
+        self, time: int | str, time_step: int, agent_id: int, target_agent_id: int
+    ) -> None:
         self.type: str = "follow"
         self.time: int | str = time
+        self.time_step: int = time_step
         self.agent_id: int = agent_id
         self.target_agent_id: int = target_agent_id
 
 
 class UnfollowLog(Log):
-    def __init__(self, time: int | str, agent_id: int, target_agent_id: int) -> None:
+    def __init__(
+        self, time: int | str, time_step: int, agent_id: int, target_agent_id: int
+    ) -> None:
         self.type: str = "unfollow"
         self.time: int | str = time
+        self.time_step: int = time_step
         self.agent_id: int = agent_id
         self.target_agent_id: int = target_agent_id
 

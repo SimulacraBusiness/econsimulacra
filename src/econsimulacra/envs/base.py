@@ -124,6 +124,9 @@ class Environment(ABC, Generic[ObsT]):
             return time_translator.step_to_datetime(self._time)
         return self._time
 
+    def get_time_step(self) -> int:
+        return self._time
+
     def get_timedelta(self) -> int | str:
         time_translator: Optional[TimeTranslator] = self.get_time_translator()
         if time_translator is not None:
@@ -223,6 +226,7 @@ class Environment(ABC, Generic[ObsT]):
                 log: AgentGenerationLog = AgentGenerationLog(
                     agent_id=current_agent_id,
                     time=self.get_time(),
+                    time_step=self.get_time_step(),
                     agent_type=agent_instance.agent_type,
                     agent_name=agent_name,
                     inventory_dic=agent_instance.inventory_dic.copy(),
@@ -409,6 +413,7 @@ class Environment(ABC, Generic[ObsT]):
         self.grid_space.move_agent(agent_id=agent_id, new_pos=next_pos)
         log: MoveLog = MoveLog(
             time=self.get_time(),
+            time_step=self.get_time_step(),
             agent_id=agent_id,
             old_pos=current_pos,
             new_pos=next_pos,
@@ -435,6 +440,7 @@ class Environment(ABC, Generic[ObsT]):
             )
             log: ConsumptionLog = ConsumptionLog(
                 time=self.get_time(),
+                time_step=self.get_time_step(),
                 agent_id=agent_id,
                 item_name=item_name,
                 item_amount=item_amount,
@@ -477,6 +483,7 @@ class Environment(ABC, Generic[ObsT]):
             )
             order_log: OrderLog = OrderLog(
                 time=self.get_time(),
+                time_step=self.get_time_step(),
                 agent_id=agent_id,
                 counterparty_id=counterparty_id,
                 item_name=item_name,
@@ -527,6 +534,7 @@ class Environment(ABC, Generic[ObsT]):
             )
             proposal_log: ProposalLog = ProposalLog(
                 time=self.get_time(),
+                time_step=self.get_time_step(),
                 proposal_id=self.latest_proposal_id,
                 proposer_agent_id=agent_id,
                 responder_agent_id=responder_agent_id,
@@ -550,7 +558,7 @@ class Environment(ABC, Generic[ObsT]):
         if tweet is not None:
             self.social_network.tweet(agent_id=agent_id, message=tweet)
             tweet_log: TweetLog = TweetLog(
-                time=self.get_time(), agent_id=agent_id, message=tweet
+                time=self.get_time(), time_step=self.get_time_step(), agent_id=agent_id, message=tweet
             )
             if self.logger is not None:
                 tweet_log.read_and_write(logger=self.logger)
@@ -559,7 +567,7 @@ class Environment(ABC, Generic[ObsT]):
                 agent_id=agent_id, target_agent_id=follow_agent_id
             )
             follow_log: FollowLog = FollowLog(
-                time=self.get_time(), agent_id=agent_id, target_agent_id=follow_agent_id
+                time=self.get_time(), time_step=self.get_time_step(), agent_id=agent_id, target_agent_id=follow_agent_id
             )
             if self.logger is not None:
                 follow_log.read_and_write(logger=self.logger)
@@ -569,6 +577,7 @@ class Environment(ABC, Generic[ObsT]):
             )
             unfollow_log: UnfollowLog = UnfollowLog(
                 time=self.get_time(),
+                time_step=self.get_time_step(),
                 agent_id=agent_id,
                 target_agent_id=unfollow_agent_id,
             )
@@ -644,6 +653,7 @@ class Environment(ABC, Generic[ObsT]):
                         order.react(amount=accept_amount)
                         order_reaction_log: OrderReactionLog = OrderReactionLog(
                             time=self.get_time(),
+                            time_step=self.get_time_step(),
                             agent_id=agent_id,
                             counterparty_id=order.agent_id,
                             item_name=order.item_name,
@@ -668,6 +678,7 @@ class Environment(ABC, Generic[ObsT]):
                         proposal_reaction_log: ProposalReactionLog = (
                             ProposalReactionLog(
                                 time=self.get_time(),
+                                time_step=self.get_time_step(),
                                 proposal_id=proposal.proposal_id,
                                 proposer_agent_id=proposal.proposer_agent_id,
                                 responder_agent_id=proposal.responder_agent_id,
@@ -698,6 +709,7 @@ class Environment(ABC, Generic[ObsT]):
             item.set_price(price=price, set_by=agent_id)
             change_price_log: ChangePriceLog = ChangePriceLog(
                 time=self.get_time(),
+                time_step=self.get_time_step(),
                 agent_id=agent_id,
                 item_name=item_name,
                 old_price=old_price,
