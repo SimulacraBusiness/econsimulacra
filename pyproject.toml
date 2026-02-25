@@ -4,8 +4,6 @@ version = "0.1.0"
 description = ""
 authors = ["ryuji-hashimoto0110"]
 readme = "README.md"
-packages = [{ include = "econsimulacra", from = "src" }]
-include = ["src/econsimulacra/py.typed"]
 
 # ---------------------------------------------------------
 # Core dependencies (always installed)
@@ -60,10 +58,6 @@ exclude = ["src/econsimulacra/animations/"]
 
 [[tool.mypy.overrides]]
 module = ["manim", "manim.*"]
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = ["econsimulacra.animations", "econsimulacra.animations.*"]
 ignore_missing_imports = true
 
 [build-system]

@@ -114,14 +114,13 @@ class TestEnvironment:
     config = {
         "gridSpace": (10, 10),
         "simulation": {
-            "numSteps": 100,
+            "numSteps": 10,
         },
         "environment": {
             "gridSpace": (10, 10),
             "cashName": "Yen",
             "agents": ["DummyHousehold", "DummyRetailer"],
             "items": ["Yen", "Rice"],
-            "service": ["timeTranslator"],
         },
         "DummyHousehold": {
             "isHousehold": True,
@@ -151,12 +150,6 @@ class TestEnvironment:
             "type": "Item",
             "initialPrice": 1000.0,
         },
-        "timeTranslator": {
-            "type": "TimeTranslator",
-            "numSteps": 100,
-            "startDatetime": "2025-01-01 00:00:00",
-            "endDatetime": "2025-01-01 00:10:00"
-        }
     }
 
     def test___init__(self) -> None:
@@ -424,7 +417,7 @@ class TestEnvironment:
         for agent_id in env.agent_ids:
             obs: dict[str, Any] = env.get_observations(agent_id=agent_id)
             assert "time" in obs
-            assert obs["time"] == "2025-01-01 00:00:00"
+            assert obs["time"] == 0
             assert "self_agent_id" in obs
             assert obs["self_agent_id"] == agent_id
             assert "self_name" in obs
@@ -500,7 +493,7 @@ class TestEnvironment:
         env = DummyEnvironment(config=self.config, logger=DictLogger())
         env.register_classes([DummyHousehold, DummyRetailer])
         env.reset(seed=42)
-        for _ in range(self.config["simulation"]["numSteps"]):
+        for _ in range(100):
             all_actions_dic = {}
             for agent_id in env.agent_ids:
                 agent = env.agent_id2agent[agent_id]
@@ -512,7 +505,6 @@ class TestEnvironment:
                 action_dic = agent.act(obs=obs)
                 all_actions_dic[agent_id] = action_dic
             env.step(all_actions_dic=all_actions_dic)
-        assert env.get_time() == self.config["timeTranslator"]["endDatetime"]
         logger = env.logger
         assert isinstance(logger, DictLogger)
         assert len(logger.logs) > 12
