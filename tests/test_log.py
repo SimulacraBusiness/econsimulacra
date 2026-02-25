@@ -19,12 +19,13 @@ class TestDictLogger:
         logger = DictLogger()
         log1 = AgentGenerationLog(
             time=0,
+            time_step=0,
             agent_id=1,
             agent_type="DummyAgent",
             agent_name="AgentA",
             inventory_dic={"Cash": 100},
         )
-        log2 = MoveLog(time=1, agent_id=1, old_pos=(0, 0), new_pos=(1, 1))
+        log2 = MoveLog(time=1, time_step=1, agent_id=1, old_pos=(0, 0), new_pos=(1, 1))
         log1.read_and_write(logger)
         log2.read_and_write(logger)
         logger.process_logs()
@@ -32,6 +33,7 @@ class TestDictLogger:
             {
                 "type": "agent_generation",
                 "time": 0,
+                "time_step": 0,
                 "agent_id": 1,
                 "agent_type": "DummyAgent",
                 "agent_name": "AgentA",
@@ -40,6 +42,7 @@ class TestDictLogger:
             {
                 "type": "move",
                 "time": 1,
+                "time_step": 1,
                 "agent_id": 1,
                 "old_pos": (0, 0),
                 "new_pos": (1, 1),
@@ -53,6 +56,7 @@ class TestDictLogger:
             {
                 "type": "agent_generation",
                 "time": 0,
+                "time_step": 0,
                 "agent_id": 1,
                 "agent_type": "DummyAgent",
                 "agent_name": "AgentA",
@@ -61,6 +65,7 @@ class TestDictLogger:
             {
                 "type": "move",
                 "time": 1,
+                "time_step": 1,
                 "agent_id": 1,
                 "old_pos": (0, 0),
                 "new_pos": (1, 1),
