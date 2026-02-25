@@ -376,6 +376,8 @@ class Environment(ABC, Generic[ObsT]):
     def _move(
         self, agent_id: int, where_to_move: Optional[tuple[int, ...] | str] = None
     ) -> None:
+        if agent_id not in self.household_ids:
+            return
         current_pos: tuple[int, ...] = self.grid_space.get_pos(agent_id=agent_id)
         if where_to_move is None:
             return
@@ -558,7 +560,10 @@ class Environment(ABC, Generic[ObsT]):
         if tweet is not None:
             self.social_network.tweet(agent_id=agent_id, message=tweet)
             tweet_log: TweetLog = TweetLog(
-                time=self.get_time(), time_step=self.get_time_step(), agent_id=agent_id, message=tweet
+                time=self.get_time(),
+                time_step=self.get_time_step(),
+                agent_id=agent_id,
+                message=tweet,
             )
             if self.logger is not None:
                 tweet_log.read_and_write(logger=self.logger)
@@ -567,7 +572,10 @@ class Environment(ABC, Generic[ObsT]):
                 agent_id=agent_id, target_agent_id=follow_agent_id
             )
             follow_log: FollowLog = FollowLog(
-                time=self.get_time(), time_step=self.get_time_step(), agent_id=agent_id, target_agent_id=follow_agent_id
+                time=self.get_time(),
+                time_step=self.get_time_step(),
+                agent_id=agent_id,
+                target_agent_id=follow_agent_id,
             )
             if self.logger is not None:
                 follow_log.read_and_write(logger=self.logger)
