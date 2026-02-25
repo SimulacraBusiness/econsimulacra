@@ -45,7 +45,7 @@ class Agent(ABC, Generic[ObsT]):
                 },
                 "isRichInfoAllowed": False,
                 "requestObs": ["all"],
-                # built-in options: "time", "self_agent_id", "self_name", "self_pos", "self_init_pos", "self_is_moving",
+                # built-in options: "time", "timedelta", "self_agent_id", "self_name", "self_pos", "self_init_pos", "self_is_moving",
                 # "self_destination", "others_pos", "self_tweet", "visible_tl", "incoming_orders", "incoming_proposals",
                 # "item_name2price", "others_inventory",
                 "provideInfo4AllAgents": [], # built-in option: "self_pos",

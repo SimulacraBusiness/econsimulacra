@@ -29,19 +29,24 @@ class SocialNetworkAnimator(Animator):
         self.max_tweets_in_tl: int = self.animation_config.get("maxTweetsInTL", 5)
         self.fast_rendering: bool = self.animation_config.get("fastRendering", False)
 
-    def _get_time2social_interactions_dic(self) -> dict[int, list[dict[str, Any]]]:
+    def _get_time2social_interactions_dic(
+        self,
+    ) -> tuple[list[int | str], dict[int, list[dict[str, Any]]]]:
         time2social_interactions_dic: dict[int, list[dict[str, Any]]] = defaultdict(
             list
         )
+        times: list[int | str] = []
         for log_dic in self.log_dics:
             if log_dic.get("type") in [
                 "follow",
                 "unfollow",
                 "tweet",
             ]:
-                time: int = log_dic["time"]
+                time: int | str = log_dic["time"]
+                if time not in times:
+                    times.append(time)
                 time2social_interactions_dic[time].append(log_dic)
-        return time2social_interactions_dic
+        return times, time2social_interactions_dic
 
     def _make_social_layout(self, center: ndarray, radius: float) -> dict[int, ndarray]:
         num_agents: int = len(self.agent_ids)
@@ -56,11 +61,12 @@ class SocialNetworkAnimator(Animator):
 
     def construct(self) -> None:
         self.agent_id2name_dic: dict[int, str] = self._get_agent_id2name_dic()
-        self.time2social_interactions_dic: dict[int, list[dict[str, Any]]] = (
+        self.times, self.time2social_interactions_dic = (
             self._get_time2social_interactions_dic()
         )
+        self.times: list[int | str] = sorted(self.times)
         self.agent_ids: list[int] = sorted(list(self.agent_id2name_dic.keys()))
-        time_text = Text("t = 0", font_size=28).to_corner(UL)
+        time_text = Text(self.times[0], font_size=28).to_corner(UL)
         self.add(time_text)
         frame_w: int = manim_config.frame_width
         sns_w: float = frame_w * 0.6
@@ -116,8 +122,8 @@ class SocialNetworkAnimator(Animator):
             self.tl_group.is_tl = True
             self.add(self.tl_group)
         follow_edge_dic: dict[tuple[int, int], Arrow] = {}
-        for time in range(self.num_steps):
-            new_time_text: Text = Text(f"t = {time}", font_size=28).to_corner(UL)
+        for time in self.times:
+            new_time_text: Text = Text(time, font_size=28).to_corner(UL)
             self.play(Transform(time_text, new_time_text), run_time=0.2)
             anims: list[Mobject] = []
             for log_dic in self.time2social_interactions_dic.get(time, []):

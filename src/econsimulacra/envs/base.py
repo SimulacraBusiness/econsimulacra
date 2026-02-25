@@ -21,6 +21,7 @@ from .order import Order
 from .order import SwapProposal
 from .social_network import SocialNetwork
 from .space import GridSpace
+from .time_translator import TimeTranslator
 from typing import Any
 from typing import Callable
 from typing import Generic
@@ -55,21 +56,21 @@ class Environment(ABC, Generic[ObsT]):
                     "cashName": str,
                     "agents": ["Household", "Retailer", "Restaurant", ...],
                     "items": ["Yen", "Rice", ...],
-                    "service": ["promptBuilder", "llmClient", ...]
+                    "service": ["promptBuilder", "llmClient", "timeTranslator", ...], # Optional, default []
                 }
                 "Household": {
-                    "type": "Household",
+                    "type": "LLMAgent",
                     "isHousehold": bool,
                     "numAgents": int, # Optional, default 1
                     ...,
                 },
                 "Retailer": {
-                    "type": "Retailer",
+                    "type": "LLMAgent",
                     "isHousehold": bool, # Optional, default False
                     ...
                 },
                 "Restaurant": {
-                    "type": "Restaurant",
+                    "type": "LLMAgent",
                     "isHousehold": bool, # Optional, default False
                     ...
                 },
@@ -89,7 +90,12 @@ class Environment(ABC, Generic[ObsT]):
                     "type": "LLMClient", # Optional, default is the same as the service name
                     ...
                 },
-                ...
+                "timeTranslator": {
+                    "type": "TimeTranslator", # Optional, default is the same as the service name
+                    "numSteps": int, # must be the same as simulation.numSteps
+                    "startDatetime": str, # "%Y-%m-%d %H:%M:%S"
+                    "endDatetime": str, # "%Y-%m-%d %H:%M:%S"
+                }
             }
         """
         env_config: dict[str, Any] = config.get("environment", {})
@@ -104,9 +110,28 @@ class Environment(ABC, Generic[ObsT]):
         self.registered_classes: list[Type] = []
         self.logger: Optional[Logger] = logger
         self._time: int = -1
+        self.service_dic: dict[str, Any] = {}
 
-    def get_time(self) -> int:
+    def get_time_translator(self) -> Optional[TimeTranslator]:
+        for provider in self.service_dic.values():
+            if isinstance(provider, TimeTranslator):
+                return provider
+        return None
+
+    def get_time(self) -> int | str:
+        time_translator: Optional[TimeTranslator] = self.get_time_translator()
+        if time_translator is not None:
+            return time_translator.step_to_datetime(self._time)
         return self._time
+
+    def get_time_step(self) -> int:
+        return self._time
+
+    def get_timedelta(self) -> int | str:
+        time_translator: Optional[TimeTranslator] = self.get_time_translator()
+        if time_translator is not None:
+            return time_translator.get_timedelta()
+        return 1
 
     def register_classes(self, class_list: list[Type]) -> None:
         self.registered_classes.extend(class_list)
@@ -148,7 +173,6 @@ class Environment(ABC, Generic[ObsT]):
         Args:
             service_provider_keys (list[str]): name list of service provider types to be generated.
         """
-        self.service_dic: dict[str, Any] = {}
         for service_provider_key in service_provider_keys:
             if service_provider_key not in self.config:
                 raise ValueError(
@@ -202,6 +226,7 @@ class Environment(ABC, Generic[ObsT]):
                 log: AgentGenerationLog = AgentGenerationLog(
                     agent_id=current_agent_id,
                     time=self.get_time(),
+                    time_step=self.get_time_step(),
                     agent_type=agent_instance.agent_type,
                     agent_name=agent_name,
                     inventory_dic=agent_instance.inventory_dic.copy(),
@@ -351,6 +376,8 @@ class Environment(ABC, Generic[ObsT]):
     def _move(
         self, agent_id: int, where_to_move: Optional[tuple[int, ...] | str] = None
     ) -> None:
+        if agent_id not in self.household_ids:
+            return
         current_pos: tuple[int, ...] = self.grid_space.get_pos(agent_id=agent_id)
         if where_to_move is None:
             return
@@ -388,6 +415,7 @@ class Environment(ABC, Generic[ObsT]):
         self.grid_space.move_agent(agent_id=agent_id, new_pos=next_pos)
         log: MoveLog = MoveLog(
             time=self.get_time(),
+            time_step=self.get_time_step(),
             agent_id=agent_id,
             old_pos=current_pos,
             new_pos=next_pos,
@@ -414,6 +442,7 @@ class Environment(ABC, Generic[ObsT]):
             )
             log: ConsumptionLog = ConsumptionLog(
                 time=self.get_time(),
+                time_step=self.get_time_step(),
                 agent_id=agent_id,
                 item_name=item_name,
                 item_amount=item_amount,
@@ -456,6 +485,7 @@ class Environment(ABC, Generic[ObsT]):
             )
             order_log: OrderLog = OrderLog(
                 time=self.get_time(),
+                time_step=self.get_time_step(),
                 agent_id=agent_id,
                 counterparty_id=counterparty_id,
                 item_name=item_name,
@@ -506,6 +536,7 @@ class Environment(ABC, Generic[ObsT]):
             )
             proposal_log: ProposalLog = ProposalLog(
                 time=self.get_time(),
+                time_step=self.get_time_step(),
                 proposal_id=self.latest_proposal_id,
                 proposer_agent_id=agent_id,
                 responder_agent_id=responder_agent_id,
@@ -529,7 +560,10 @@ class Environment(ABC, Generic[ObsT]):
         if tweet is not None:
             self.social_network.tweet(agent_id=agent_id, message=tweet)
             tweet_log: TweetLog = TweetLog(
-                time=self.get_time(), agent_id=agent_id, message=tweet
+                time=self.get_time(),
+                time_step=self.get_time_step(),
+                agent_id=agent_id,
+                message=tweet,
             )
             if self.logger is not None:
                 tweet_log.read_and_write(logger=self.logger)
@@ -538,7 +572,10 @@ class Environment(ABC, Generic[ObsT]):
                 agent_id=agent_id, target_agent_id=follow_agent_id
             )
             follow_log: FollowLog = FollowLog(
-                time=self.get_time(), agent_id=agent_id, target_agent_id=follow_agent_id
+                time=self.get_time(),
+                time_step=self.get_time_step(),
+                agent_id=agent_id,
+                target_agent_id=follow_agent_id,
             )
             if self.logger is not None:
                 follow_log.read_and_write(logger=self.logger)
@@ -548,6 +585,7 @@ class Environment(ABC, Generic[ObsT]):
             )
             unfollow_log: UnfollowLog = UnfollowLog(
                 time=self.get_time(),
+                time_step=self.get_time_step(),
                 agent_id=agent_id,
                 target_agent_id=unfollow_agent_id,
             )
@@ -623,6 +661,7 @@ class Environment(ABC, Generic[ObsT]):
                         order.react(amount=accept_amount)
                         order_reaction_log: OrderReactionLog = OrderReactionLog(
                             time=self.get_time(),
+                            time_step=self.get_time_step(),
                             agent_id=agent_id,
                             counterparty_id=order.agent_id,
                             item_name=order.item_name,
@@ -647,6 +686,7 @@ class Environment(ABC, Generic[ObsT]):
                         proposal_reaction_log: ProposalReactionLog = (
                             ProposalReactionLog(
                                 time=self.get_time(),
+                                time_step=self.get_time_step(),
                                 proposal_id=proposal.proposal_id,
                                 proposer_agent_id=proposal.proposer_agent_id,
                                 responder_agent_id=proposal.responder_agent_id,
@@ -677,6 +717,7 @@ class Environment(ABC, Generic[ObsT]):
             item.set_price(price=price, set_by=agent_id)
             change_price_log: ChangePriceLog = ChangePriceLog(
                 time=self.get_time(),
+                time_step=self.get_time_step(),
                 agent_id=agent_id,
                 item_name=item_name,
                 old_price=old_price,
@@ -741,6 +782,7 @@ class Environment(ABC, Generic[ObsT]):
         # edit here to add new observation providers
         return {
             "time": lambda agent_id: self.get_time(),
+            "timedelta": lambda agent_id: self.get_timedelta(),
             "self_agent_id": lambda agent_id: agent_id,
             "self_name": lambda agent_id: self.agent_id2agent[agent_id].get_self_name(),
             "self_pos": lambda agent_id: self.grid_space.get_pos(agent_id),
