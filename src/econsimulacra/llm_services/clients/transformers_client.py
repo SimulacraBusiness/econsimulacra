@@ -66,6 +66,5 @@ class TransformersClient(LLMClient):
         self._lock = asyncio.Lock()
 
     async def generate_response(self, prompt: str) -> dict[str, Any]:
-        async with self._lock:
-            llm_response = await asyncio.to_thread(self.json_generator, prompt)
+        llm_response = await asyncio.to_thread(self.json_generator, prompt)
         return cast(dict[str, Any], llm_response)
