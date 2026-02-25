@@ -155,8 +155,8 @@ class TestEnvironment:
             "type": "TimeTranslator",
             "numSteps": 100,
             "startDatetime": "2025-01-01 00:00:00",
-            "endDatetime": "2025-01-01 00:10:00"
-        }
+            "endDatetime": "2025-01-01 00:10:00",
+        },
     }
 
     def test___init__(self) -> None:
