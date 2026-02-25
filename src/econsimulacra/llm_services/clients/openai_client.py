@@ -5,7 +5,6 @@ from outlines import models
 import os
 from typing import Any
 from typing import Callable
-from typing import cast
 from typing import Optional
 
 
@@ -48,5 +47,6 @@ class OpenAIClient(LLMClient):
         self._lock = asyncio.Lock()
 
     async def generate_response(self, prompt: str) -> dict[str, Any]:
-        llm_response = await asyncio.to_thread(self.json_generator, prompt)
-        return cast(dict[str, Any], llm_response)
+        async with self._lock:
+            llm_response = await asyncio.to_thread(self.json_generator, prompt)
+        return llm_response
