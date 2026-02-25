@@ -21,6 +21,7 @@ from .order import Order
 from .order import SwapProposal
 from .social_network import SocialNetwork
 from .space import GridSpace
+from .time_translator import TimeTranslator
 from typing import Any
 from typing import Callable
 from typing import Generic
@@ -55,21 +56,21 @@ class Environment(ABC, Generic[ObsT]):
                     "cashName": str,
                     "agents": ["Household", "Retailer", "Restaurant", ...],
                     "items": ["Yen", "Rice", ...],
-                    "service": ["promptBuilder", "llmClient", ...]
+                    "service": ["promptBuilder", "llmClient", "timeTranslator", ...], # Optional, default []
                 }
                 "Household": {
-                    "type": "Household",
+                    "type": "LLMAgent",
                     "isHousehold": bool,
                     "numAgents": int, # Optional, default 1
                     ...,
                 },
                 "Retailer": {
-                    "type": "Retailer",
+                    "type": "LLMAgent",
                     "isHousehold": bool, # Optional, default False
                     ...
                 },
                 "Restaurant": {
-                    "type": "Restaurant",
+                    "type": "LLMAgent",
                     "isHousehold": bool, # Optional, default False
                     ...
                 },
@@ -89,7 +90,12 @@ class Environment(ABC, Generic[ObsT]):
                     "type": "LLMClient", # Optional, default is the same as the service name
                     ...
                 },
-                ...
+                "timeTranslator": {
+                    "type": "TimeTranslator", # Optional, default is the same as the service name
+                    "numSteps": int, # must be the same as simulation.numSteps
+                    "startDatetime": str, # "%Y-%m-%d %H:%M:%S"
+                    "endDatetime": str, # "%Y-%m-%d %H:%M:%S"
+                }
             }
         """
         env_config: dict[str, Any] = config.get("environment", {})
@@ -104,9 +110,25 @@ class Environment(ABC, Generic[ObsT]):
         self.registered_classes: list[Type] = []
         self.logger: Optional[Logger] = logger
         self._time: int = -1
+        self.service_dic: dict[str, Any] = {}
 
-    def get_time(self) -> int:
+    def get_time_translator(self) -> Optional[TimeTranslator]:
+        for provider in self.service_dic.values():
+            if isinstance(provider, TimeTranslator):
+                return provider
+        return None
+
+    def get_time(self) -> int | str:
+        time_translator: Optional[TimeTranslator] = self.get_time_translator()
+        if time_translator is not None:
+            return time_translator.step_to_datetime(self._time)
         return self._time
+
+    def get_timedelta(self) -> int | str:
+        time_translator: Optional[TimeTranslator] = self.get_time_translator()
+        if time_translator is not None:
+            return time_translator.get_timedelta()
+        return 1
 
     def register_classes(self, class_list: list[Type]) -> None:
         self.registered_classes.extend(class_list)
@@ -148,7 +170,6 @@ class Environment(ABC, Generic[ObsT]):
         Args:
             service_provider_keys (list[str]): name list of service provider types to be generated.
         """
-        self.service_dic: dict[str, Any] = {}
         for service_provider_key in service_provider_keys:
             if service_provider_key not in self.config:
                 raise ValueError(
