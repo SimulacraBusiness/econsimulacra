@@ -762,6 +762,7 @@ class Environment(ABC, Generic[ObsT]):
         # edit here to add new observation providers
         return {
             "time": lambda agent_id: self.get_time(),
+            "timedelta": lambda agent_id: self.get_timedelta(),
             "self_agent_id": lambda agent_id: agent_id,
             "self_name": lambda agent_id: self.agent_id2agent[agent_id].get_self_name(),
             "self_pos": lambda agent_id: self.grid_space.get_pos(agent_id),
