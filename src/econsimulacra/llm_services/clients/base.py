@@ -40,7 +40,6 @@ class LLMClient(ABC):
         config: dict[str, Any],
     ) -> dict[str, Any]:
         assert "properties" in json_schema
-        print(config)
         if "gridSpace" in config:
             max_coordinate: int = max(config["gridSpace"])
             if "move" in json_schema["properties"]:
