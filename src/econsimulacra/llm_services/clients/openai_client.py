@@ -19,6 +19,8 @@ class OpenAIClient(LLMClient):
             config (dict): Configuration dictionary for the OpenAI client. This may include parameters such as:
                 - model_name: model name to use for generation (e.g., "gpt-4-0613").
                 - api_key: OpenAI API key (optional, can also be set via OPENAI_API_KEY environment variable).
+                - json_schema_path: path to a custom JSON schema file for structured generation (optional, if not provided, a default schema will be used).
+                - modify_schema: whether to modify the default JSON schema based on config (optional, default is False).
 
         Note: config example:
             {

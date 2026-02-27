@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+import copy
 from ..constant import DEFAULT_ACTION_JSON_SCHEMA
 import json
 import pathlib
@@ -26,6 +27,59 @@ class LLMClient(ABC):
                 schema_path.read_text(encoding="utf-8")
             )
         else:
-            json_schema = DEFAULT_ACTION_JSON_SCHEMA
+            json_schema = copy.deepcopy(DEFAULT_ACTION_JSON_SCHEMA)
+        modify_schema: bool = config.get("modify_schema", False)
+        if modify_schema:
+            json_schema = self._modify_json_schema(json_schema, config)
         json_schema_str: str = json.dumps(json_schema, ensure_ascii=False)
         return json_schema_str
+
+    def _modify_json_schema(
+        self,
+        json_schema: dict[str, Any],
+        config: dict[str, Any],
+    ) -> dict[str, Any]:
+        assert "properties" in json_schema
+        if "gridSpace" in config:
+            max_coordinate: int = max(config["gridSpace"])
+            if "move" in json_schema["properties"]:
+                json_schema["properties"]["move"]["items"]["minimum"] = 0
+                json_schema["properties"]["move"]["items"]["maximum"] = max_coordinate
+        if "items" in config:
+            item_names: list[str] = list(config["items"])
+            if "consumptions" in json_schema["properties"]:
+                json_schema["properties"]["consumptions"]["items"]["properties"][
+                    "item_name"
+                ]["enum"] = item_names
+            if "orders" in json_schema["properties"]:
+                json_schema["properties"]["orders"]["items"]["properties"]["item_name"][
+                    "enum"
+                ] = item_names
+            if "proposals" in json_schema["properties"]:
+                json_schema["properties"]["proposals"]["items"]["properties"][
+                    "give_item_name"
+                ]["enum"] = item_names
+                json_schema["properties"]["proposals"]["items"]["properties"][
+                    "get_item_name"
+                ]["enum"] = item_names
+            if "set_price" in json_schema["properties"]:
+                json_schema["properties"]["set_price"]["items"]["properties"][
+                    "item_name"
+                ]["enum"] = item_names
+        if "numAgents" in config:
+            num_agents: int = config["numAgents"]
+            if "orders" in json_schema["properties"]:
+                json_schema["properties"]["orders"]["items"]["properties"][
+                    "counterparty_id"
+                ]["minimum"] = 0
+                json_schema["properties"]["orders"]["items"]["properties"][
+                    "counterparty_id"
+                ]["maximum"] = num_agents - 1
+            if "proposals" in json_schema["properties"]:
+                json_schema["properties"]["proposals"]["items"]["properties"][
+                    "responder_agent_id"
+                ]["minimum"] = 0
+                json_schema["properties"]["proposals"]["items"]["properties"][
+                    "responder_agent_id"
+                ]["maximum"] = num_agents - 1
+        return json_schema

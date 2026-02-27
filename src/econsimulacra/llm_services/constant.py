@@ -5,14 +5,9 @@ DEFAULT_ACTION_JSON_SCHEMA: dict[str, Any] = {
     "additionalProperties": False,
     "properties": {
         "move": {
-            "anyOf": [
-                {
-                    "type": "array",
-                    "items": {"type": "integer"},
-                    "minItems": 2,
-                },
-                {"type": "string"},
-            ],
+            "type": "array",
+            "items": {"type": "integer", "minimum": 0},
+            "minItems": 2,
             "default": None,
         },
         "consumptions": {
@@ -22,7 +17,7 @@ DEFAULT_ACTION_JSON_SCHEMA: dict[str, Any] = {
                 "additionalProperties": False,
                 "properties": {
                     "item_name": {"type": "string"},
-                    "item_amount": {"type": "number"},
+                    "item_amount": {"type": "number", "minimum": 1},
                 },
                 "required": ["item_name", "item_amount"],
             },
@@ -34,9 +29,9 @@ DEFAULT_ACTION_JSON_SCHEMA: dict[str, Any] = {
                 "type": "object",
                 "additionalProperties": False,
                 "properties": {
-                    "counterparty_id": {"type": "integer"},
+                    "counterparty_id": {"type": "integer", "minimum": 0},
                     "item_name": {"type": "string"},
-                    "item_amount": {"type": "number"},
+                    "item_amount": {"type": "number", "minimum": 1},
                     "ttl": {"type": "integer", "minimum": 2},
                 },
                 "required": ["counterparty_id", "item_name", "item_amount", "ttl"],
@@ -49,11 +44,11 @@ DEFAULT_ACTION_JSON_SCHEMA: dict[str, Any] = {
                 "type": "object",
                 "additionalProperties": False,
                 "properties": {
-                    "responder_agent_id": {"type": "integer"},
+                    "responder_agent_id": {"type": "integer", "minimum": 0},
                     "give_item_name": {"type": "string"},
-                    "give_item_amount": {"type": "number"},
+                    "give_item_amount": {"type": "number", "minimum": 1},
                     "get_item_name": {"type": "string"},
-                    "get_item_amount": {"type": "number"},
+                    "get_item_amount": {"type": "number", "minimum": 1},
                     "ttl": {"type": "integer", "minimum": 2},
                 },
                 "required": [
@@ -89,7 +84,7 @@ DEFAULT_ACTION_JSON_SCHEMA: dict[str, Any] = {
                 "additionalProperties": False,
                 "properties": {
                     "item_name": {"type": "string"},
-                    "price": {"type": "number"},
+                    "price": {"type": "number", "minimum": 0},
                 },
                 "required": ["item_name", "price"],
             },
@@ -118,28 +113,83 @@ DEFAULT_OBS_DESCRIPTION: dict[str, str] = {
     "self_agent_id": "Your unique identifier.",
     "self_name": "Your name.",
     "self_pos": "Your current coordinates in the grid space, represented as a list of integers [x, y].",
-    "self_init_pos": "Your home in the grid space at the beginning of the simulation, represented as a list of integers [x, y].",
-    "self_is_moving": "A boolean indicating whether you are currently moving. If True, you will be moved to the target coordinates in the next time step. If False, you can choose whether to move elsewhere or stay in the same place in the next time step.",
-    "self_destination": "If you are currently moving, this is the target you will be moved to in the next time step. If you are not currently moving, this will be null.",
-    "others_pos": "A list of dictionaries representing the positions of other agents in the grid space. Each dictionary has 'agent_id', 'agent_name', and 'pos' (coordinates) of the other agent.",
-    "self_inventory": "A dictionary representing your inventory, where the keys are item names and the values are the amounts of each item you have.",
+    "self_init_pos": "Your home in the grid space, represented as a list of integers [x, y].",
+    "self_is_moving": "A boolean indicating whether you are currently moving. "
+    + "If True, you will automatically be moved to the target coordinates in the next time step. "
+    + "If False, you can choose whether to move elsewhere or stay in the same place in the next time step.",
+    "self_destination": "If you are currently moving (if self_is_moving is True), "
+    + "this is the target you will be moved to in the next time step. "
+    + "If you are not currently moving, this will be null.",
+    "others_pos": "A list of dictionaries representing the positions of other agents in the grid space. "
+    + "Each dictionary has 'agent_id', 'agent_name', and 'pos' (coordinates) of the other agent.",
+    "self_inventory": "A dictionary representing your inventory, where the keys are item names and the values are the amounts of each item you have. "
+    + "The items included in this inventory constitute the complete set of goods that exist in this world.",
     "self_tweet": "Your most recent tweet. If you have not tweeted yet, this will be null.",
-    "visible_tl": "A list of tweets that you can see in your timeline. Each tweet is represented as a dictionary with 'agent_id' (the id of the agent who tweeted), 'agent_name' (the name of the agent who tweeted), and 'tweet' (the content of the tweet).",
-    "recommended_follows": "A list of agent ids that you are not currently following. You may consider following these agents to receive more information from them.",
-    "incoming_orders": "A list of orders that other agents have made to you. Each order is represented as a dictionary with 'order_id', 'counterparty_id', 'counterparty_name', 'item_name', 'item_amount', and 'ttl' (time to live, i.e., how many more time steps this order will be valid).",
-    "incoming_proposals": "A list of proposals that other agents have made to you. Each proposal is represented as a dictionary with 'proposal_id', 'proposer_id', 'proposer_name', 'give_item_name', 'give_item_amount', 'get_item_name', 'get_item_amount', and 'ttl' (time to live, i.e., how many more time steps this proposal will be valid).",
-    "item_name2price": "A dictionary mapping item names to their current prices in the market. This can help you make informed decisions about trading.",
-    "others_inventory": "A list of dictionaries representing the inventories of other agents that are co-located with you in the same grid space. Each dictionary has 'agent_id', 'agent_name', and 'inventory' (which is itself a dictionary mapping item names to amounts) of the other agent.",
+    "visible_tl": "A list of tweets that you can see in your timeline. "
+    + "Each tweet is represented as a dictionary with 'agent_id' (the id of the agent who tweeted), "
+    + "'agent_name' (the name of the agent who tweeted), and 'tweet' (the content of the tweet).",
+    "recommended_follows": "A list of agent ids that you are not currently following. "
+    + "You may consider following these agents to receive more information from them.",
+    "incoming_orders": "A list of orders that other agents have made to you. "
+    + "Each order is represented as a dictionary with 'order_id', 'counterparty_id', 'counterparty_name', "
+    + "'item_name', 'item_amount', and 'ttl' (time to live, i.e., how many more time steps this order will be valid).",
+    "incoming_proposals": "A list of proposals that other agents have made to you. "
+    + "Each proposal is represented as a dictionary with 'proposal_id', 'proposer_id', 'proposer_name', "
+    + "'give_item_name', 'give_item_amount', 'get_item_name', 'get_item_amount', and 'ttl' (time to live, i.e., how many more time steps this proposal will be valid).",
+    "item_name2price": "A dictionary mapping item names to their current prices in the market. "
+    + "This can help you make informed decisions about trading.",
+    "others_inventory": "A list of dictionaries representing the inventories of other agents "
+    + "that are co-located with you in the same grid space. "
+    + "Each dictionary has 'agent_id', 'agent_name', and 'inventory' "
+    + "(which is itself a dictionary mapping item names to amounts) of the other agent.",
 }
 
 DEFAULT_ACTION_DESCRIPTION: dict[str, str] = {
-    "move": "The move action is a list of integers representing the coordinates to move to. You can only move to adjacent grid spaces or stay in the same place in the next time step. If you are a a corporation (e.g., retailer or restaurant), you cannot move and must set this to null.",
-    "consumptions": "The consumptions action is a list of items that you want to consume. Each item is represented as an object with 'item_name' and 'item_amount'. If you do not want to consume anything, it can set this to an empty list. You must have the item in your inventory to consume it, and the specified amount must not exceed the available quantity of that item in your inventory. You will be happy if you consume items that you like.",
-    "orders": "The orders action represents a purchase at a posted price offered by a corporation (e.g., retailer or restaurant). You accept the seller's price without negotiation. This action is used for person-to-corporation trades under a posted-price mechanism. Each order is represented as an object with 'counterparty_id', 'item_name', 'item_amount', and 'ttl' (must be more than 1). You must be located in the same grid space as the corporation to execute the order. You must have sufficient cash in your inventory to execute an order. The total cost of the order (posted price * item_amount) must not exceed your available cash balance.",
-    "proposals": "The proposals action represents a bilateral trade proposal made to another individual agent. The proposing agent explicitly specifies both what it gives and what it requests in return. This action is used for person-to-person negotiation and may include money as one of the exchanged items. Each proposal is represented as an object with 'responder_agent_id', 'give_item_name', 'give_item_amount', 'get_item_name', 'get_item_amount', and 'ttl' (must be more than 1). If you do not want to make any proposals, it can set this to an empty list. You must only specify items that exist in your own inventory (self_inventory) as give_item_name. Furthermore, the specified give_item_amount must not exceed the available quantity of that item in your inventory.",
-    "reactions": "The reactions action is a list of reactions that you want to make in response to incoming orders or proposals. If you are a household, ignore any orders. Each reaction is represented as an object with 'kind' (either 'order' or 'proposal'), 'id' (the id of the order or proposal, not the agent id), 'accept_amount' (the amount of item accepted, or null if not applicable), and 'accept' (a boolean indicating whether to accept the order/proposal, or null if not applicable). If you do not want to make any reactions, it can set this to an empty list. You must decline the order/proposal if you do not have sufficient inventory to fulfill the accepted amount in the order/proposal. For orders, you can only accept or reject the entire order.",
-    "set_prices": "The set_prices action is a list of items for which you want to set the price. Each item is represented as an object with 'item_name' and 'price'. This action is only available to agents that are corporations (e.g., retailers or restaurants) and is used to set the posted price for items that other agents can purchase from the corporation. You must have the item in your inventory to set its price, and the specified price must be a positive value.",
-    "tweet": "The tweet action is a string representing what you want to tweet.",
-    "follow": "The follow action is an integer representing the id of the agent that you want to follow.",
+    "move": "The move action is a list of integers representing the coordinates to move to. "
+    + "You can only move to adjacent grid spaces or stay in the same place in the next time step, "
+    + "but you may specify the destination to move to in the subsequent time steps. "
+    + "You can refer to the others_pos field in the observation to decide where to go if you want to visit a store. "
+    + "You can also refer to the self_init_pos field in the observation to go back home. "
+    + "If you are a corporation (e.g., retailer or restaurant), you cannot move and must set this to null.",
+    "consumptions": "The consumptions action is a list of items that you want to consume. "
+    + "Each item is represented as an object with 'item_name' and 'item_amount'. "
+    + "If you do not want to consume anything, it can set this to an empty list. "
+    + "Don't specify item_name that you don't have in your inventory. "
+    + "The specified item_amount must not exceed the available quantity of that item in your inventory. "
+    + "You will be happy if you consume items that you like.",
+    "orders": "The orders action represents a purchase at a posted price offered by a corporation (e.g., retailer or restaurant). "
+    + "When you order, you accept the seller's price without negotiation. "
+    + "Order is used for person-to-corporation trades under a posted-price mechanism. "
+    + "Each order is represented as an object with 'counterparty_id', 'item_name', 'item_amount', and 'ttl' (must be more than 1). "
+    + "You must be located in the same grid space as the corporation to execute the order. "
+    + "You must have sufficient cash in your inventory to execute an order. "
+    + "The total cost of the order (posted price * item_amount) must not exceed your available cash balance. "
+    + "For the available items and their posted prices, refer to the others_inventory field in the observation. "
+    + "Do not place an order for any item that does not exist in this world (i.e., any item not listed in self_inventory).",
+    "proposals": "The proposals action represents a bilateral trade proposal made to another individual agent. "
+    + "When you propose a trade, you explicitly specify both what you give and what you request in return. "
+    + "This action is used for person-to-person negotiation and may include money as one of the exchanged items. "
+    + "Each proposal is represented as an object with 'responder_agent_id', 'give_item_name', 'give_item_amount', 'get_item_name', 'get_item_amount', and 'ttl' (must be more than 1). "
+    + "If you do not want to make any proposals, it can set this to an empty list. "
+    + "You must only specify items that exist in your own inventory (self_inventory) as give_item_name. "
+    + "Furthermore, the specified give_item_amount must not exceed the available quantity of that item in your inventory. "
+    + "Do not propose a trade for any item that does not exist in this world (i.e., any item not listed in self_inventory).",
+    "reactions": "The reactions action is a list of reactions that you want to make in response to incoming orders or proposals. "
+    + "If you are a household, ignore any orders. "
+    + "Each reaction is represented as an object with 'kind' (either 'order' or 'proposal'), 'id' (the id of the order or proposal, not the agent id), 'accept_amount' (the amount of item accepted, or null if not applicable), and 'accept' (a boolean indicating whether to accept the order/proposal, or null if not applicable). "
+    + "If you do not want to make any reactions, it can set this to an empty list. "
+    + "You must reject the order/proposal if you do not have sufficient amount in your inventory to fulfill the accepted amount in the order/proposal. "
+    + "For orders, you can only accept or reject the entire order.",
+    "set_prices": "The set_prices action is a list of items for which you want to set the price. "
+    + "Each item is represented as an object with 'item_name' and 'price'. "
+    + "This action is only available to agents that are corporations (e.g., retailers or restaurants) "
+    + "and is used to set the posted price for items that other agents can purchase from the corporation. "
+    + "Do not specify any item_name that you don't have in your inventory. "
+    + "The specified price must be a positive value.",
+    "tweet": "The tweet action is a string representing what you want to tweet. "
+    + "Feel free to share your thoughts, feelings, or any information you want to share with others.",
+    "follow": "The follow action is an integer representing the id of the agent that you want to follow. "
+    + "You may refer to the recommended_follows field in the observation for agents that you are not currently following "
+    + "but may consider following to receive more information from them.",
     "unfollow": "The unfollow action is an integer representing the id of the agent that you want to unfollow.",
 }
