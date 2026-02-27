@@ -371,10 +371,11 @@ class Environment(ABC, Generic[ObsT]):
         if not move_allowed:
             self.invalid_action_dic["move"] += 1
             where_to_move = None
-        self._move(
-            agent_id=agent_id,
-            where_to_move=where_to_move,
-        )
+        if agent_id in self.household_ids:
+            self._move(
+                agent_id=agent_id,
+                where_to_move=where_to_move,
+            )
         consumptions: list[dict[str, Any]] = action_dic.get("consumptions", [])
         consumptions_allowed: bool = self._check_consumptions(
             agent_id=agent_id, consumptions=consumptions
