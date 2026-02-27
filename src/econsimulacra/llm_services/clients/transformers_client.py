@@ -68,5 +68,4 @@ class TransformersClient(LLMClient):
 
     async def generate_response(self, prompt: str) -> dict[str, Any]:
         llm_response = await asyncio.to_thread(self.json_generator, prompt)
-        print(f"LLM response: {llm_response}")
         return cast(dict[str, Any], llm_response)
