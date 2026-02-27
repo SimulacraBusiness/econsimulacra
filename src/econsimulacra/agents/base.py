@@ -118,6 +118,9 @@ class Agent(ABC, Generic[ObsT]):
             inventory_dic[item_name] = amount
         return inventory_dic
 
+    def get_item_amount(self, item_name: str) -> float | int:
+        return self.inventory_dic.get(item_name, 0)
+
     @abstractmethod
     async def act(self, obs: ObsT) -> dict[str, Any]:
         pass
