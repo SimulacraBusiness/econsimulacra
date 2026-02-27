@@ -1,6 +1,10 @@
+from typing import Optional
+
+
 class SocialNetwork:
-    def __init__(self) -> None:
+    def __init__(self, follow_cap: Optional[int] = None) -> None:
         self.nodes: set[int] = set()
+        self.follow_cap: Optional[int] = follow_cap
         self.agent_id2tweet: dict[int, str] = {}
         self.agent_id2followers: dict[int, set[int]] = {}
         self.agent_id2follows: dict[int, set[int]] = {}
@@ -29,6 +33,11 @@ class SocialNetwork:
             )
         if target_agent_id == agent_id:
             raise ValueError("An agent cannot follow itself.")
+        follow_count: int = len(self.agent_id2follows[agent_id])
+        if self.follow_cap is not None and follow_count >= self.follow_cap:
+            raise ValueError(
+                f"Agent ID {agent_id} has reached the follow cap of {self.follow_cap}."
+            )
         self.agent_id2follows[agent_id].add(target_agent_id)
         self.agent_id2followers[target_agent_id].add(agent_id)
 
@@ -55,10 +64,20 @@ class SocialNetwork:
             raise ValueError(f"Agent ID {agent_id} not found in the social network.")
         return self.agent_id2followers[agent_id]
 
+    def get_num_followers(self, agent_id: int) -> int:
+        if agent_id not in self.nodes:
+            raise ValueError(f"Agent ID {agent_id} not found in the social network.")
+        return len(self.agent_id2followers[agent_id])
+
     def get_follows(self, agent_id: int) -> set[int]:
         if agent_id not in self.nodes:
             raise ValueError(f"Agent ID {agent_id} not found in the social network.")
         return self.agent_id2follows[agent_id]
+
+    def get_num_follows(self, agent_id: int) -> int:
+        if agent_id not in self.nodes:
+            raise ValueError(f"Agent ID {agent_id} not found in the social network.")
+        return len(self.agent_id2follows[agent_id])
 
     def get_tweet(self, agent_id: int) -> str:
         if agent_id not in self.nodes:

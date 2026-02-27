@@ -118,6 +118,7 @@ class TestEnvironment:
         },
         "environment": {
             "gridSpace": (10, 10),
+            "followCap": 2,
             "cashName": "Yen",
             "agents": ["DummyHousehold", "DummyRetailer"],
             "items": ["Yen", "Rice"],
@@ -180,6 +181,7 @@ class TestEnvironment:
         assert len(env.household_ids) == 5
         assert len(env.others_ids) == 1
         assert len(env.item_name2item) == 2
+        assert env.social_network.follow_cap == 2
         for item_name, item in env.item_name2item.items():
             assert isinstance(item, Item)
             if item_name == "Yen":
@@ -329,6 +331,8 @@ class TestEnvironment:
         env.reset(seed=42)
         household_id0: int = env.household_ids[0]
         household_id1: int = env.household_ids[1]
+        household_id2: int = env.household_ids[2]
+        household_id3: int = env.household_ids[3]
         retailer_id: int = env.others_ids[0]
         household0: Agent = env.agent_id2agent[household_id0]
         rice0_amount: int = household0.inventory_dic["Rice"]
@@ -376,6 +380,18 @@ class TestEnvironment:
         assert env.social_network.agent_id2tweet[household_id1] == "Hello, world!"
         assert household_id1 in env.social_network.get_follows(household_id0)
         assert household_id0 in env.social_network.get_follows(household_id1)
+        action_dic00: dict[str, Any] = {"follow": household_id2}
+        action_dic01: dict[str, Any] = {"follow": household_id3}
+        env.apply_action_to_env(agent_id=household_id0, action_dic=action_dic00)
+        env.apply_action_to_env(agent_id=household_id0, action_dic=action_dic01)
+        assert household_id2 in env.social_network.get_follows(household_id0)
+        assert household_id3 not in env.social_network.get_follows(household_id0)
+        action_dic02: dict[str, Any] = {"unfollow": household_id2}
+        env.apply_action_to_env(agent_id=household_id0, action_dic=action_dic02)
+        assert household_id2 not in env.social_network.get_follows(household_id0)
+        action_dic03: dict[str, Any] = {"follow": household_id3}
+        env.apply_action_to_env(agent_id=household_id0, action_dic=action_dic03)
+        assert household_id3 in env.social_network.get_follows(household_id0)
         action_dic_retailer: dict[str, Any] = {
             "reactions": [
                 {
@@ -448,6 +464,12 @@ class TestEnvironment:
                 ]
             else:
                 assert obs["others_pos"] == []
+            assert "follow_cap" in obs
+            assert obs["follow_cap"] == 2
+            assert "num_followers" in obs
+            assert obs["num_followers"] == 0
+            assert "num_follows" in obs
+            assert obs["num_follows"] == 0
             assert "self_tweet" in obs
             assert obs["self_tweet"] == ""
             assert "visible_tl" in obs
