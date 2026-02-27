@@ -111,6 +111,7 @@ class Environment(ABC, Generic[ObsT]):
             raise ValueError("Simulation config must include 'cashName' key.")
         self.cash_name: str = env_config["cashName"]
         self.config: dict[str, Any] = config
+        self.seed: Optional[int] = None
         self.prng: Random = random.Random()
         self.registered_classes: list[Type] = []
         self.logger: Optional[Logger] = logger
@@ -146,6 +147,7 @@ class Environment(ABC, Generic[ObsT]):
         if self.logger is not None:
             self.logger.clear()
         if seed is not None:
+            self.seed = seed
             self.prng.seed(seed)
         self.grid_space: GridSpace = GridSpace(space_size=self.space_size)
         self.social_network: SocialNetwork = SocialNetwork()
@@ -291,6 +293,14 @@ class Environment(ABC, Generic[ObsT]):
                 config=item_config,
             )
             self.item_name2item[item_key] = item_instance
+
+    def get_total_amount(self, item_name: str) -> float | int:
+        if item_name not in self.item_name2item:
+            raise ValueError(f"Item name {item_name} not found in the environment.")
+        total_amount: float | int = 0
+        for agent in self.agent_id2agent.values():
+            total_amount += agent.get_item_amount(item_name=item_name)
+        return total_amount
 
     def _assign_agent_to_space(
         self, agent_id: int, coords: Optional[tuple[int, ...]] = None
