@@ -85,20 +85,15 @@ class Agent(ABC, Generic[ObsT]):
             self.request_obses = ["all"]
 
     def _setup_infos_to_provide(self) -> None:
-        if self.config is not None:
-            self.info4all_agents: list[str] = list(
-                self.config.get("provideInfo4AllAgents", [])
-            )
-            self.info4co_located_agents: list[str] = list(
-                self.config.get("provideInfo4CoLocatedAgents", [])
-            )
-            self.info4allowed_agents: list[str] = list(
-                self.config.get("provideInfo4AllowedAgents", [])
-            )
-        else:
-            self.info4all_agents = []
-            self.info4co_located_agents = []
-            self.info4allowed_agents = []
+        self.info4all_agents: list[str] = list(
+            self.config.get("provideInfo4AllAgents", [])
+        )
+        self.info4co_located_agents: list[str] = list(
+            self.config.get("provideInfo4CoLocatedAgents", [])
+        )
+        self.info4allowed_agents: list[str] = list(
+            self.config.get("provideInfo4AllowedAgents", [])
+        )
 
     def _setup_env_services(self, env_service_dic: dict[str, Any]) -> None:
         """setup environment services for the agent based on self.service_dic.
