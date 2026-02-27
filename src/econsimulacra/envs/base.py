@@ -87,8 +87,13 @@ class Environment(ABC, Generic[ObsT]):
                     ...
                 },
                 "llmClient": {
-                    "type": "LLMClient", # Optional, default is the same as the service name
-                    ...
+                    "type": "OpenAIClient", # Optional, default is the same as the service name
+                    "api_key": str, # Optional if OPENAI_API_KEY environment variable is set
+                    "json_schema_path": str, # Optional, path to a custom JSON schema file for structured generation
+                    "modify_schema": bool, # Optional, whether to modify the default JSON schema based on config
+                    "gridSpace": [int, ...], # Optional, only needed if modify_schema is True. Must be the same as environment.gridSpace
+                    "items": [str, ...], # Optional, only needed if modify_schema is True. Must include all item names used in the environment.items
+                    "numAgents": int, # Optional, only needed if modify_schema is True. Must be the total number of agents in the environment.
                 },
                 "timeTranslator": {
                     "type": "TimeTranslator", # Optional, default is the same as the service name
@@ -137,6 +142,7 @@ class Environment(ABC, Generic[ObsT]):
         self.registered_classes.extend(class_list)
 
     def reset(self, seed: Optional[int]) -> None:
+        self._set_invalid_action_dic()
         if self.logger is not None:
             self.logger.clear()
         if seed is not None:
@@ -166,6 +172,18 @@ class Environment(ABC, Generic[ObsT]):
         if self.logger is not None:
             self.logger.process_logs()
         self._time = 0
+
+    def _set_invalid_action_dic(self) -> None:
+        self.invalid_action_dic: dict[str, int] = {
+            "move": 0,
+            "consumptions": 0,
+            "orders": 0,
+            "proposals": 0,
+            "reactions": 0,
+            "set_prices": 0,
+            "follow": 0,
+            "unfollow": 0,
+        }
 
     def _generate_service_providers(self, service_provider_keys: list[str]) -> None:
         """generate service providers.
@@ -337,35 +355,79 @@ class Environment(ABC, Generic[ObsT]):
         }
         """
         where_to_move: Optional[tuple[int, ...] | str] = action_dic.get("move", None)
+        move_allowed: bool = self._check_move(where_to_move=where_to_move)
+        if not move_allowed:
+            self.invalid_action_dic["move"] += 1
+            where_to_move = None
         self._move(
             agent_id=agent_id,
             where_to_move=where_to_move,
         )
         consumptions: list[dict[str, Any]] = action_dic.get("consumptions", [])
+        consumptions_allowed: bool = self._check_consumptions(
+            agent_id=agent_id, consumptions=consumptions
+        )
+        if not consumptions_allowed:
+            self.invalid_action_dic["consumptions"] += 1
+            consumptions = []
         self._consume_items(
             agent_id=agent_id,
             consumptions=consumptions,
         )
         orders: list[dict[str, Any]] = action_dic.get("orders", [])
+        orders_allowed: bool = self._check_orders(agent_id=agent_id, orders=orders)
+        if not orders_allowed:
+            self.invalid_action_dic["orders"] += 1
+            orders = []
         proposals: list[dict[str, Any]] = action_dic.get("proposals", [])
+        proposals_allowed: bool = self._check_proposals(
+            agent_id=agent_id, proposals=proposals
+        )
+        if not proposals_allowed:
+            self.invalid_action_dic["proposals"] += 1
+            proposals = []
         self._add_new_orders_and_proposals(
             agent_id=agent_id,
             orders=orders,
             proposals=proposals,
         )
         reactions: list[dict[str, Any]] = action_dic.get("reactions", [])
+        reactions_allowed: bool = self._check_reactions(
+            agent_id=agent_id, reactions=reactions
+        )
+        if not reactions_allowed:
+            self.invalid_action_dic["reactions"] += 1
+            reactions = []
         self._process_reactions(
             agent_id=agent_id,
             reactions=reactions,
         )
         set_prices: list[dict[str, Any]] = action_dic.get("set_prices", [])
+        set_prices_allowed: bool = self._check_set_prices(
+            agent_id=agent_id, set_prices=set_prices
+        )
+        if not set_prices_allowed:
+            self.invalid_action_dic["set_prices"] += 1
+            set_prices = []
         self._set_prices(
             agent_id=agent_id,
             set_prices=set_prices,
         )
         tweet: Optional[str] = action_dic.get("tweet", None)
         follow_agent_id: Optional[int] = action_dic.get("follow", None)
+        follow_allowed: bool = self._check_follow(
+            agent_id=agent_id, follow_agent_id=follow_agent_id
+        )
+        if not follow_allowed:
+            self.invalid_action_dic["follow"] += 1
+            follow_agent_id = None
         unfollow_agent_id: Optional[int] = action_dic.get("unfollow", None)
+        unfollow_allowed: bool = self._check_unfollow(
+            agent_id=agent_id, unfollow_agent_id=unfollow_agent_id
+        )
+        if not unfollow_allowed:
+            self.invalid_action_dic["unfollow"] += 1
+            unfollow_agent_id = None
         self._act_in_social_network(
             agent_id=agent_id,
             tweet=tweet,
@@ -373,43 +435,45 @@ class Environment(ABC, Generic[ObsT]):
             unfollow_agent_id=unfollow_agent_id,
         )
 
+    def _check_move(self, where_to_move: Optional[tuple[int, ...] | str]) -> bool:
+        """check whether the move is valid.
+
+        Args:
+            where_to_move (Optional[tuple[int, ...] | str]): the target position or agent name to move to.
+
+        Returns:
+            bool: whether the move is valid.
+
+        Note:
+            Checked conditions:
+            - If where_to_move is None, the move is valid (agent stays in the current position).
+            - If where_to_move is a string, it must be the name of an existing agent.
+            - If where_to_move is a tuple, it must be within the bounds of the environment.
+        """
+        if where_to_move is None:
+            return True
+        destination_pos: Optional[tuple[int, ...]] = self._calc_destination_pos(
+            where_to_move=where_to_move
+        )
+        if destination_pos is None:
+            return False
+        for dim in range(len(destination_pos)):
+            if not (0 <= destination_pos[dim] < self.space_size[dim]):
+                return False
+        return True
+
     def _move(
         self, agent_id: int, where_to_move: Optional[tuple[int, ...] | str] = None
     ) -> None:
-        if agent_id not in self.household_ids:
-            return
         current_pos: tuple[int, ...] = self.grid_space.get_pos(agent_id=agent_id)
         if where_to_move is None:
             return
-        elif isinstance(where_to_move, str):
-            destination_name: str = where_to_move
-            destination_id: Optional[int] = self.agent_name2agent_id.get(
-                destination_name
-            )
-            if destination_id is None:
-                return
-            destination_pos: tuple[int, ...] = self.grid_space.get_pos(
-                agent_id=destination_id
-            )
-        elif isinstance(where_to_move, tuple):
-            destination_pos = where_to_move
-        else:
-            raise ValueError(
-                f"where_to_move must be either tuple[int, ...] or str, but got {type(where_to_move)}."
-            )
-
-        def calc_next_pos(
-            current_pos: tuple[int, ...], destination_pos: tuple[int, ...]
-        ) -> tuple[int, ...]:
-            next_pos: list[int] = list(current_pos)
-            for dim in range(len(current_pos)):
-                if current_pos[dim] < destination_pos[dim]:
-                    next_pos[dim] += 1
-                elif current_pos[dim] > destination_pos[dim]:
-                    next_pos[dim] -= 1
-            return tuple(next_pos)
-
-        next_pos: tuple[int, ...] = calc_next_pos(
+        destination_pos: Optional[tuple[int, ...]] = self._calc_destination_pos(
+            where_to_move=where_to_move
+        )
+        if destination_pos is None:
+            raise ValueError(f"Invalid move destination: {where_to_move}")
+        next_pos: tuple[int, ...] = self._calc_next_pos(
             current_pos=current_pos, destination_pos=destination_pos
         )
         self.grid_space.move_agent(agent_id=agent_id, new_pos=next_pos)
@@ -429,10 +493,71 @@ class Environment(ABC, Generic[ObsT]):
             self.agent_id2is_moving[agent_id] = True
             self.agent_id2destination[agent_id] = destination_pos
 
+    def _calc_destination_pos(
+        self, where_to_move: tuple[int, ...] | str
+    ) -> Optional[tuple[int, ...]]:
+        destination_pos: Optional[tuple[int, ...]]
+        if isinstance(where_to_move, str):
+            destination_name: str = where_to_move
+            destination_id: Optional[int] = self.agent_name2agent_id.get(
+                destination_name
+            )
+            if destination_id is None:
+                return None
+            destination_pos = self.grid_space.get_pos(agent_id=destination_id)
+        elif isinstance(where_to_move, tuple):
+            destination_pos = where_to_move
+        else:
+            destination_pos = None
+        return destination_pos
+
+    def _calc_next_pos(
+        self, current_pos: tuple[int, ...], destination_pos: tuple[int, ...]
+    ) -> tuple[int, ...]:
+        next_pos: list[int] = list(current_pos)
+        for dim in range(len(current_pos)):
+            if current_pos[dim] < destination_pos[dim]:
+                next_pos[dim] += 1
+            elif current_pos[dim] > destination_pos[dim]:
+                next_pos[dim] -= 1
+        return tuple(next_pos)
+
+    def _check_consumptions(
+        self, agent_id: int, consumptions: list[dict[str, Any]]
+    ) -> bool:
+        """check whether the consumptions are valid.
+
+        Args:
+            agent_id (int): agent id of the agent who performs the consumptions.
+            consumptions (list[dict[str, Any]]): list of consumption dictionaries.
+
+        Returns:
+            bool: whether the consumptions are valid.
+
+        Note:
+            Checked conditions:
+            - item_name in each consumption must be in the environment.
+            - item_amount in each consumption must be positive and not exceed the agent's inventory.
+        """
+        agent: Agent = self.agent_id2agent[agent_id]
+        for consumption in consumptions:
+            item_name: str = consumption.get("item_name", "")
+            item_amount: float | int = consumption.get("item_amount", 0)
+            if item_name not in self.item_name2item:
+                return False
+            allowed_amount: float | int = agent.get_item_amount(item_name)
+            if item_amount > allowed_amount:
+                return False
+            if item_amount <= 0:
+                return False
+        return True
+
     def _consume_items(self, agent_id: int, consumptions: list[dict[str, Any]]) -> None:
         agent: Agent = self.agent_id2agent[agent_id]
         for consumption in consumptions:
             item_name: str = consumption["item_name"]
+            if item_name not in self.item_name2item:
+                raise ValueError(f"Item {item_name} does not exist in the environment.")
             item_amount: float | int = consumption["item_amount"]
             agent.exchange_goods(
                 get_item_name=None,
@@ -450,9 +575,112 @@ class Environment(ABC, Generic[ObsT]):
             if self.logger is not None:
                 log.read_and_write(logger=self.logger)
 
+    def _check_orders(self, agent_id: int, orders: list[dict[str, Any]]) -> bool:
+        """check whether the orders are valid.
+
+        Args:
+            agent_id (int): agent id of the agent who places the orders.
+            orders (list[dict[str, Any]]): list of order dictionaries.
+
+        Returns:
+            bool: whether the orders are valid.
+
+        Note:
+            Checked conditions:
+            - counterparty_id or counterparty_name in each order must be provided.
+            - counterparty_id must be an existing agent id in the environment.
+            - item_name in each order must be an existing item in the environment.
+            - item_amount in each order must be positive
+            - The agent must have enough cash to buy all of the items.
+        """
+        total_cost: float | int = 0.0
+        for order_dic in orders:
+            counterparty_id: Optional[int] = order_dic.get("counterparty_id", None)
+            counterparty_name: Optional[str] = order_dic.get("counterparty_name", None)
+            if counterparty_id is None and counterparty_name is None:
+                return False
+            elif counterparty_id is None and counterparty_name is not None:
+                counterparty_id = self.agent_name2agent_id.get(counterparty_name, None)
+            if counterparty_id not in self.agent_ids:
+                return False
+            if "item_name" not in order_dic:
+                return False
+            item_name: str = order_dic["item_name"]
+            if item_name not in self.item_name2item:
+                return False
+            item_amount: float | int = order_dic.get("item_amount", 0)
+            if item_amount <= 0:
+                return False
+            item: Item = self.item_name2item[item_name]
+            expected_price: Optional[float] = item.get_price()
+            if expected_price is not None:
+                expected_price *= item_amount
+                total_cost += expected_price
+        agent: Agent = self.agent_id2agent[agent_id]
+        cash_amount: float | int = agent.get_item_amount(self.cash_name)
+        if total_cost > cash_amount:
+            return False
+        return True
+
+    def _check_proposals(self, agent_id: int, proposals: list[dict[str, Any]]) -> bool:
+        """check whether the proposals are valid.
+
+        Args:
+            agent_id (int): agent id of the agent who makes the proposals.
+            proposals (list[dict[str, Any]]): list of proposal dictionaries.
+
+        Returns:
+            bool: whether the proposals are valid.
+
+        Note:
+            Checked conditions:
+            - responder_agent_id or responder_agent_name in each proposal must be provided.
+            - responder_agent_id must be an existing agent id in the environment.
+            - give_item_name and get_item_name in each proposal must be existing items in the environment.
+            - give_item_amount and get_item_amount in each proposal must be positive.
+            - The agent must have enough inventory of give_item to make the proposals.
+        """
+        agent: Agent = self.agent_id2agent[agent_id]
+        for proposal_dic in proposals:
+            responder_agent_id: Optional[int] = proposal_dic.get(
+                "responder_agent_id", None
+            )
+            responder_agent_name: Optional[str] = proposal_dic.get(
+                "responder_agent_name", None
+            )
+            if responder_agent_id is None and responder_agent_name is None:
+                return False
+            elif responder_agent_id is None and responder_agent_name is not None:
+                responder_agent_id = self.agent_name2agent_id.get(
+                    responder_agent_name, None
+                )
+            if responder_agent_id not in self.agent_ids:
+                return False
+            if (
+                "give_item_name" not in proposal_dic
+                or "give_item_amount" not in proposal_dic
+                or "get_item_name" not in proposal_dic
+                or "get_item_amount" not in proposal_dic
+            ):
+                return False
+            give_item_name: str = proposal_dic["give_item_name"]
+            give_item_amount: float | int = proposal_dic["give_item_amount"]
+            get_item_name: str = proposal_dic["get_item_name"]
+            get_item_amount: float | int = proposal_dic["get_item_amount"]
+            if give_item_name not in self.item_name2item:
+                return False
+            if get_item_name not in self.item_name2item:
+                return False
+            if give_item_amount <= 0 or get_item_amount <= 0:
+                return False
+            allowed_give_amount: float | int = agent.get_item_amount(give_item_name)
+            if give_item_amount > allowed_give_amount:
+                return False
+        return True
+
     def _add_new_orders_and_proposals(
         self,
-        agent_id,
+        agent_id: int,
         orders: list[dict[str, Any]],
         proposals: list[dict[str, Any]],
     ) -> None:
@@ -461,14 +689,14 @@ class Environment(ABC, Generic[ObsT]):
             counterparty_name: Optional[str] = order_dic.get("counterparty_name", None)
             if counterparty_id is None and counterparty_name is not None:
                 counterparty_id = self.agent_name2agent_id[counterparty_name]
-            elif counterparty_id is None and counterparty_name is None:
-                raise ValueError(
-                    "Either counterparty_id or counterparty_name must be provided in order_dic."
-                )
             if "item_name" not in order_dic:
                 raise ValueError("item_name must be provided in order_dic.")
             assert counterparty_id is not None
             item_name: str = order_dic["item_name"]
+            if item_name not in self.item_name2item:
+                raise ValueError(
+                    f"item_name {item_name} in order_dic is not found in the environment."
+                )
             item_amount: float | int = order_dic["item_amount"]
             if "item_amount" not in order_dic:
                 raise ValueError("item_amount must be provided in order_dic.")
@@ -549,6 +777,24 @@ class Environment(ABC, Generic[ObsT]):
                 proposal_log.read_and_write(logger=self.logger)
             self.pending_swap_proposals.append(new_proposal)
             self.latest_proposal_id += 1
+
+    def _check_follow(self, agent_id: int, follow_agent_id: Optional[int]) -> bool:
+        if agent_id == follow_agent_id:
+            return False
+        if follow_agent_id not in self.agent_ids:
+            return False
+        if follow_agent_id in self.social_network.get_follows(agent_id=agent_id):
+            return False
+        return True
+
+    def _check_unfollow(self, agent_id: int, unfollow_agent_id: Optional[int]) -> bool:
+        if agent_id == unfollow_agent_id:
+            return False
+        if unfollow_agent_id not in self.agent_ids:
+            return False
+        if unfollow_agent_id not in self.social_network.get_follows(agent_id=agent_id):
+            return False
+        return True
 
     def _act_in_social_network(
         self,
@@ -638,6 +884,81 @@ class Environment(ABC, Generic[ObsT]):
                         give_item_amount=proposal.get_item_amount,
                     )
 
+    def _check_reactions(self, agent_id: int, reactions: list[dict[str, Any]]) -> bool:
+        """check whether the reactions are valid.
+
+        Args:
+            agent_id (int): agent id of the agent who makes the reactions.
+            reactions (list[dict[str, Any]]): list of reaction dictionaries.
+
+        Returns:
+            bool: whether the reactions are valid.
+
+        Note:
+            Checked conditions:
+            - Each reaction must include "kind" key, and its value must be either "order" or "proposal".
+            - For "order" reactions:
+                - "id" and "accept_amount" keys must be included.
+                - "id" must correspond to an existing pending order where the agent is the counterparty.
+                - "accept_amount" must be non-negative and not exceed the order's item amount.
+                - The agent must have enough of the item to fulfill the accept_amount.
+            - For "proposal" reactions:
+                - "id" and "accept" keys must be included.
+                - "id" must correspond to an existing pending proposal where the agent is the responder.
+                - If "accept" is True, the agent must have enough of the item to fulfill the proposal's get_item_amount.
+        """
+        agent: Agent = self.agent_id2agent[agent_id]
+        holding_amount: float | int
+        for reaction in reactions:
+            if "kind" not in reaction:
+                return False
+            kind: str = reaction["kind"]
+            if kind == "order":
+                if "id" not in reaction or "accept_amount" not in reaction:
+                    return False
+                order_id: int = reaction["id"]
+                accept_amount: float | int = reaction["accept_amount"]
+                if accept_amount < 0:
+                    return False
+                find_corresponding_order: bool = False
+                order: Order
+                for order in self.pending_orders:
+                    if order.order_id == order_id and order.counterparty_id == agent_id:
+                        if accept_amount > order.item_amount:
+                            return False
+                        holding_amount = agent.inventory_dic.get(order.item_name, 0)
+                        if accept_amount > holding_amount:
+                            return False
+                        find_corresponding_order = True
+                        break
+                if not find_corresponding_order:
+                    return False
+            elif kind == "proposal":
+                if "id" not in reaction or "accept" not in reaction:
+                    return False
+                proposal_id: int = reaction["id"]
+                accept: bool = reaction["accept"]
+                find_corresponding_proposal: bool = False
+                proposal: SwapProposal
+                for proposal in self.pending_swap_proposals:
+                    if (
+                        proposal.proposal_id == proposal_id
+                        and proposal.responder_agent_id == agent_id
+                    ):
+                        if accept:
+                            holding_amount = agent.inventory_dic.get(
+                                proposal.get_item_name, 0
+                            )
+                            if proposal.get_item_amount > holding_amount:
+                                return False
+                        find_corresponding_proposal = True
+                        break
+                if not find_corresponding_proposal:
+                    return False
+            else:
+                return False
+        return True
+
     def _process_reactions(
         self, agent_id: int, reactions: list[dict[str, Any]]
     ) -> None:
@@ -656,7 +977,7 @@ class Environment(ABC, Generic[ObsT]):
                     if order.order_id == order_id:
                         if order.counterparty_id != agent_id:
                             raise ValueError(
-                                f"Agent {agent_id} cannot react to order {order_id} as it is not the counterparty."
+                                f"Agent {agent_id} cannot react to order {order_id}."
                             )
                         order.react(amount=accept_amount)
                         order_reaction_log: OrderReactionLog = OrderReactionLog(
@@ -703,6 +1024,42 @@ class Environment(ABC, Generic[ObsT]):
                 raise ValueError(
                     f"Unknown reaction kind: {kind}. Must be either 'order' or 'proposal'."
                 )
+
+    def _check_set_prices(
+        self, agent_id: int, set_prices: list[dict[str, Any]]
+    ) -> bool:
+        """check whether the set_prices are valid.
+
+        Args:
+            agent_id (int): agent id of the agent who sets the prices.
+            set_prices (list[dict[str, Any]]): list of set_price dictionaries.
+
+        Returns:
+            bool: whether the set_prices are valid.
+
+        Note:
+            Checked conditions:
+            - The agent cannot set prices if it is a household (i.e., in household_ids).
+            - item_name in each set_price must be an existing item in the environment.
+            - The agent must have non-negative inventory of the item to set its price.
+            - price in each set_price must be non-negative.
+        """
+
+        if agent_id in self.household_ids:
+            return False
+        agent: Agent = self.agent_id2agent[agent_id]
+        for set_price in set_prices:
+            if "item_name" not in set_price or "price" not in set_price:
+                return False
+            item_name: str = set_price["item_name"]
+            price: float = set_price["price"]
+            if item_name not in self.item_name2item:
+                return False
+            if agent.get_item_amount(item_name) < 0:
+                return False
+            if price < 0:
+                return False
+        return True
 
     def _set_prices(self, agent_id: int, set_prices: list[dict[str, Any]]) -> None:
         for set_price in set_prices:
