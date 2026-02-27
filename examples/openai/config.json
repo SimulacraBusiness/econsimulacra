@@ -4,6 +4,7 @@
     },
     "environment": {
         "gridSpace": [10, 10],
+        "followCap": 3,
         "cashName": "Yen",
         "agents": ["Household", "Retailer", "Restaurant"],
         "items": ["Yen", "Rice", "Pizza"],

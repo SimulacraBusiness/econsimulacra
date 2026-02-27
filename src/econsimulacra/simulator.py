@@ -2,6 +2,7 @@ import asyncio
 import json
 from .agents.base import Agent
 from .logs.base import Logger
+from .llm_services import LLMClient
 from .envs.base import Environment
 from pathlib import Path
 from rich.console import Console
@@ -51,13 +52,15 @@ class Simulator(Generic[ObsT]):
         self,
         seed: Optional[int] = None,
         parallel_batch_size: Optional[int] = None,
+        print_summary: bool = True,
     ) -> None:
         def _chunked(seq: list[int], size: int) -> list[list[int]]:
             return [seq[i : i + size] for i in range(0, len(seq), size)]
 
         parallel_batch_size = 1 if parallel_batch_size is None else parallel_batch_size
         self.env.reset(seed=seed)
-        self.summarize_start(self.env)
+        if print_summary:
+            self.summarize_start(self.env)
         num_steps: int = self.config["simulation"]["numSteps"]
         for _ in tqdm(
             range(num_steps), desc="Simulating", unit="step", ncols=80, leave=True
@@ -79,7 +82,9 @@ class Simulator(Generic[ObsT]):
             self.env.step(all_actions_dic=all_actions_dic)
         if self.env.logger is not None:
             self.env.logger.save()
-        self.summarize_end(self.env)
+        if print_summary:
+            print()
+            self.summarize_end(self.env)
 
     def register_classes(self, class_list: list[Type]) -> None:
         self.env.register_classes(class_list)
@@ -92,6 +97,7 @@ class Simulator(Generic[ObsT]):
             f"[green]Number of Steps[/green]: {self.config['simulation']['numSteps']}"
         )
         tree.add(f"[green]Grid Space[/green]: {env.grid_space.space_size}")
+        tree.add(f"[green]Follow Cap[/green]: {env.social_network.follow_cap}")
         items_branch: Tree = tree.add("[green]Items[/green]")
         for item_name, item in env.item_name2item.items():
             item_branch: Tree = items_branch.add(f"[green]{item_name}[/green]")
@@ -130,6 +136,10 @@ class Simulator(Generic[ObsT]):
                 agent_branch.add(
                     f"[green]Provide Info for Allowed Agents[/green]: {agent.provide_info4allowed_agents()}"
                 )
+        if "llmClient" in env.service_dic:
+            client: LLMClient = env.service_dic["llmClient"]
+            llm_branch: Tree = tree.add("[green]LLM Client[/green]")
+            llm_branch.add(f"[green]Model[/green]: {client.config['model_name']}")
         console.print(Panel(tree, title="[bold green]Summary[/bold green]"))
 
     def summarize_end(self, env: Environment) -> None:

@@ -53,6 +53,7 @@ class Environment(ABC, Generic[ObsT]):
                 },
                 "environment": {
                     "gridSpace": [int, ...],
+                    "followCap": int, # Optional, default is no limit
                     "cashName": str,
                     "agents": ["Household", "Retailer", "Restaurant", ...],
                     "items": ["Yen", "Rice", ...],
@@ -150,11 +151,12 @@ class Environment(ABC, Generic[ObsT]):
             self.seed = seed
             self.prng.seed(seed)
         self.grid_space: GridSpace = GridSpace(space_size=self.space_size)
-        self.social_network: SocialNetwork = SocialNetwork()
         assert "environment" in self.config, "Config must include 'environment' key."
         assert isinstance(self.config["environment"], dict), (
             "'environment' key must be a dictionary."
         )
+        follow_cap: Optional[int] = self.config["environment"].get("followCap", None)
+        self.social_network: SocialNetwork = SocialNetwork(follow_cap=follow_cap)
         service_provider_keys: list[str] = self.config["environment"].get("service", [])
         self._generate_service_providers(service_provider_keys=service_provider_keys)
         assert "agents" in self.config["environment"], (
@@ -369,10 +371,11 @@ class Environment(ABC, Generic[ObsT]):
         if not move_allowed:
             self.invalid_action_dic["move"] += 1
             where_to_move = None
-        self._move(
-            agent_id=agent_id,
-            where_to_move=where_to_move,
-        )
+        if agent_id in self.household_ids:
+            self._move(
+                agent_id=agent_id,
+                where_to_move=where_to_move,
+            )
         consumptions: list[dict[str, Any]] = action_dic.get("consumptions", [])
         consumptions_allowed: bool = self._check_consumptions(
             agent_id=agent_id, consumptions=consumptions
@@ -466,6 +469,8 @@ class Environment(ABC, Generic[ObsT]):
             where_to_move=where_to_move
         )
         if destination_pos is None:
+            return False
+        if len(destination_pos) != len(self.space_size):
             return False
         for dim in range(len(destination_pos)):
             if not (0 <= destination_pos[dim] < self.space_size[dim]):
@@ -795,6 +800,12 @@ class Environment(ABC, Generic[ObsT]):
             return False
         if follow_agent_id in self.social_network.get_follows(agent_id=agent_id):
             return False
+        num_follows: int = self.social_network.get_num_follows(agent_id=agent_id)
+        if (
+            self.social_network.follow_cap is not None
+            and num_follows >= self.social_network.follow_cap
+        ):
+            return False
         return True
 
     def _check_unfollow(self, agent_id: int, unfollow_agent_id: Optional[int]) -> bool:
@@ -907,6 +918,7 @@ class Environment(ABC, Generic[ObsT]):
         Note:
             Checked conditions:
             - Each reaction must include "kind" key, and its value must be either "order" or "proposal".
+            - Reacting to the same order or proposal more than once in the same step is not allowed.
             - For "order" reactions:
                 - "id" and "accept_amount" keys must be included.
                 - "id" must correspond to an existing pending order where the agent is the counterparty.
@@ -919,6 +931,8 @@ class Environment(ABC, Generic[ObsT]):
         """
         agent: Agent = self.agent_id2agent[agent_id]
         holding_amount: float | int
+        reacted_order_ids: list[int] = []
+        reacted_proposal_ids: list[int] = []
         for reaction in reactions:
             if "kind" not in reaction:
                 return False
@@ -928,6 +942,9 @@ class Environment(ABC, Generic[ObsT]):
                     return False
                 order_id: int = reaction["id"]
                 accept_amount: float | int = reaction["accept_amount"]
+                if order_id in reacted_order_ids:
+                    return False
+                reacted_order_ids.append(order_id)
                 if accept_amount < 0:
                     return False
                 find_corresponding_order: bool = False
@@ -947,6 +964,9 @@ class Environment(ABC, Generic[ObsT]):
                 if "id" not in reaction or "accept" not in reaction:
                     return False
                 proposal_id: int = reaction["id"]
+                if proposal_id in reacted_proposal_ids:
+                    return False
+                reacted_proposal_ids.append(proposal_id)
                 accept: bool = reaction["accept"]
                 find_corresponding_proposal: bool = False
                 proposal: SwapProposal
@@ -1163,6 +1183,13 @@ class Environment(ABC, Generic[ObsT]):
             "self_tweet": lambda agent_id: self.social_network.get_tweet(
                 agent_id=agent_id
             ),
+            "follow_cap": lambda agent_id: self.social_network.follow_cap,
+            "num_followers": lambda agent_id: self.social_network.get_num_followers(
+                agent_id=agent_id
+            ),
+            "num_follows": lambda agent_id: self.social_network.get_num_follows(
+                agent_id=agent_id
+            ),
             "visible_tl": lambda agent_id: self._obs_visible_tl(agent_id),
             "recommended_follows": lambda agent_id: self._obs_recommended_follows(
                 agent_id
@@ -1259,7 +1286,15 @@ class Environment(ABC, Generic[ObsT]):
 
     def _obs_recommended_follows(self, agent_id: int) -> list[int]:
         recommended_follows: list[int] = []
+        cap_space: int
+        num_follows: int = self.social_network.get_num_follows(agent_id=agent_id)
+        if self.social_network.follow_cap is None:
+            cap_space = len(self.agent_ids) - 1
+        else:
+            cap_space = self.social_network.follow_cap - num_follows
         for other_agent_id in self.agent_ids:
+            if len(recommended_follows) >= cap_space:
+                break
             if other_agent_id == agent_id:
                 continue
             if other_agent_id not in self.social_network.get_follows(agent_id):
