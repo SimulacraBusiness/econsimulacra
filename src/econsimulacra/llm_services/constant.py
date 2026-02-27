@@ -32,7 +32,7 @@ DEFAULT_ACTION_JSON_SCHEMA: dict[str, Any] = {
                     "counterparty_id": {"type": "integer", "minimum": 0},
                     "item_name": {"type": "string"},
                     "item_amount": {"type": "number", "minimum": 1},
-                    "ttl": {"type": "integer", "minimum": 2},
+                    "ttl": {"type": "integer", "minimum": 2, "maximum": 10},
                 },
                 "required": ["counterparty_id", "item_name", "item_amount", "ttl"],
             },
@@ -49,7 +49,7 @@ DEFAULT_ACTION_JSON_SCHEMA: dict[str, Any] = {
                     "give_item_amount": {"type": "number", "minimum": 1},
                     "get_item_name": {"type": "string"},
                     "get_item_amount": {"type": "number", "minimum": 1},
-                    "ttl": {"type": "integer", "minimum": 2},
+                    "ttl": {"type": "integer", "minimum": 2, "maximum": 10},
                 },
                 "required": [
                     "responder_agent_id",
@@ -125,6 +125,9 @@ DEFAULT_OBS_DESCRIPTION: dict[str, str] = {
     "self_inventory": "A dictionary representing your inventory, where the keys are item names and the values are the amounts of each item you have. "
     + "The items included in this inventory constitute the complete set of goods that exist in this world.",
     "self_tweet": "Your most recent tweet. If you have not tweeted yet, this will be null.",
+    "follow_cap": "The maximum number of agents you can follow. If there is no limit, this will be null.",
+    "num_followers": "The number of agents that are currently following you.",
+    "num_follows": "The number of agents you are currently following.",
     "visible_tl": "A list of tweets that you can see in your timeline. "
     + "Each tweet is represented as a dictionary with 'agent_id' (the id of the agent who tweeted), "
     + "'agent_name' (the name of the agent who tweeted), and 'tweet' (the content of the tweet).",
@@ -190,6 +193,8 @@ DEFAULT_ACTION_DESCRIPTION: dict[str, str] = {
     + "Feel free to share your thoughts, feelings, or any information you want to share with others.",
     "follow": "The follow action is an integer representing the id of the agent that you want to follow. "
     + "You may refer to the recommended_follows field in the observation for agents that you are not currently following "
-    + "but may consider following to receive more information from them.",
+    + "but may consider following to receive more information from them. "
+    + "You cannot follow more agents than the follow_cap specified in the observation. "
+    + "Refer to the num_follows field in the observation to see how many agents you are currently following.",
     "unfollow": "The unfollow action is an integer representing the id of the agent that you want to unfollow.",
 }
