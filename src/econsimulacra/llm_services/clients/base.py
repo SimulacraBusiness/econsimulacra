@@ -41,10 +41,13 @@ class LLMClient(ABC):
     ) -> dict[str, Any]:
         assert "properties" in json_schema
         if "gridSpace" in config:
+            dim: int = len(config["gridSpace"])
             max_coordinate: int = max(config["gridSpace"])
             if "move" in json_schema["properties"]:
                 json_schema["properties"]["move"]["items"]["minimum"] = 0
                 json_schema["properties"]["move"]["items"]["maximum"] = max_coordinate
+                json_schema["properties"]["move"]["minItems"] = dim
+                json_schema["properties"]["move"]["maxItems"] = dim
         if "items" in config:
             item_names: list[str] = list(config["items"])
             if "consumptions" in json_schema["properties"]:
