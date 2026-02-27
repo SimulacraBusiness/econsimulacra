@@ -24,7 +24,8 @@ class TransformersClient(LLMClient):
                 - temperature: sampling temperature for generation.
                 - top_k: top-k sampling parameter.
                 - top_p: top-p (nucleus) sampling parameter.
-                - json_schema_path: path to the JSON schema file for structured generation (optional).
+                - json_schema_path: path to a custom JSON schema file for structured generation (optional, if not provided, a default schema will be used).
+                - modify_schema: whether to modify the default JSON schema based on config (optional, default is False).
 
         Note: config example:
             {
@@ -67,4 +68,5 @@ class TransformersClient(LLMClient):
 
     async def generate_response(self, prompt: str) -> dict[str, Any]:
         llm_response = await asyncio.to_thread(self.json_generator, prompt)
+        print(f"LLM response: {llm_response}")
         return cast(dict[str, Any], llm_response)
