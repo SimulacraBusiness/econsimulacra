@@ -14,6 +14,7 @@ MODIFIED_ACTION_JSON_SCHEMA = {
                 "maximum": 10,
             },
             "minItems": 2,
+            "maxItems": 2,
             "default": None,
         },
         "consumptions": {
@@ -38,7 +39,7 @@ MODIFIED_ACTION_JSON_SCHEMA = {
                     "counterparty_id": {"type": "integer", "minimum": 0, "maximum": 2},
                     "item_name": {"type": "string", "enum": ["item1", "item2"]},
                     "item_amount": {"type": "number", "minimum": 1},
-                    "ttl": {"type": "integer", "minimum": 2},
+                    "ttl": {"type": "integer", "minimum": 2, "maximum": 10},
                 },
                 "required": ["counterparty_id", "item_name", "item_amount", "ttl"],
             },
@@ -59,7 +60,7 @@ MODIFIED_ACTION_JSON_SCHEMA = {
                     "give_item_amount": {"type": "number", "minimum": 1},
                     "get_item_name": {"type": "string", "enum": ["item1", "item2"]},
                     "get_item_amount": {"type": "number", "minimum": 1},
-                    "ttl": {"type": "integer", "minimum": 2},
+                    "ttl": {"type": "integer", "minimum": 2, "maximum": 10},
                 },
                 "required": [
                     "responder_agent_id",
