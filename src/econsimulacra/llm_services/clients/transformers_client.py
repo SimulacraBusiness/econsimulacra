@@ -20,10 +20,6 @@ class TransformersClient(LLMClient):
                 - device: device to run the model on (e.g., "cpu", "cuda").
                 - dtype: data type for model weights (e.g., "float16", "int8").
                 - trust_remote_code: whether to trust remote code when loading the model.
-                - max_new_tokens: maximum number of tokens to generate in the response.
-                - temperature: sampling temperature for generation.
-                - top_k: top-k sampling parameter.
-                - top_p: top-p (nucleus) sampling parameter.
                 - json_schema_path: path to a custom JSON schema file for structured generation (optional, if not provided, a default schema will be used).
                 - modify_schema: whether to modify the default JSON schema based on config (optional, default is False).
 
@@ -33,9 +29,6 @@ class TransformersClient(LLMClient):
                 "device": "cuda",
                 "dtype": "float16",
                 "max_new_tokens": 256,
-                "temperature": 0.7,
-                "top_k": 50,
-                "top_p": 0.9,
                 "json_schema_path": "path/to/schema.json"
             }
         """
