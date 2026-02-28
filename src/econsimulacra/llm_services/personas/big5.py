@@ -5,7 +5,9 @@ from typing import Optional
 
 
 class Big5PersonaBuilder(PersonaBuilder):
-    def __init__(self, config: dict[str, Any], prng: Optional[random.Random] = None) -> None:
+    def __init__(
+        self, config: dict[str, Any], prng: Optional[random.Random] = None
+    ) -> None:
         super().__init__(config=config, prng=prng)
         self.max_magnitude: int = config.get("maxMagnitude", 1)
 

@@ -13,7 +13,9 @@ from typing import Optional
 class TransformersClient(LLMClient):
     """Transformers client using Outlines for structured generation."""
 
-    def __init__(self, config: dict[str, Any], prng: Optional[random.Random] = None) -> None:
+    def __init__(
+        self, config: dict[str, Any], prng: Optional[random.Random] = None
+    ) -> None:
         """initialization.
 
         Args:

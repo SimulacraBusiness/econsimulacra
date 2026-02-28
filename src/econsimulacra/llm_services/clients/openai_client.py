@@ -13,7 +13,9 @@ from typing import Optional
 class OpenAIClient(LLMClient):
     """OpenAI client for interacting with OpenAI's language models."""
 
-    def __init__(self, config: dict[str, Any], prng: Optional[random.Random] = None) -> None:
+    def __init__(
+        self, config: dict[str, Any], prng: Optional[random.Random] = None
+    ) -> None:
         """initialization.
 
         Args:
