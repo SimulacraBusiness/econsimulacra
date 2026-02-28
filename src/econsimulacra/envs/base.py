@@ -15,15 +15,36 @@ from ..logs import TweetLog
 from ..logs import FollowLog
 from ..logs import UnfollowLog
 from ..logs import Logger
-import random
-from random import Random
+from .obs_providers import ObsProvider
+from .obs_providers import ObsProviderForCoLocatedAgents
+from .obs_providers import TimeProvider
+from .obs_providers import TimeDeltaProvider
+from .obs_providers import SelfIDProvider
+from .obs_providers import SelfNameProvider
+from .obs_providers import SelfPosProvider
+from .obs_providers import SelfInitPosProvider
+from .obs_providers import SelfIsMovingProvider
+from .obs_providers import SelfDestinationProvider
+from .obs_providers import OthersPosProvider
+from .obs_providers import SelfInventoryProvider
+from .obs_providers import SelfTweetProvider
+from .obs_providers import FollowCapProvider
+from .obs_providers import NumFollowersProvider
+from .obs_providers import NumFollowsProvider
+from .obs_providers import VisibleTLProvider
+from .obs_providers import RecommendedFollowsProvider
+from .obs_providers import IncomingOrdersProvider
+from .obs_providers import IncomingSwapProposalsProvider
+from .obs_providers import ItemName2PriceProvider
+from .obs_providers import OthersInventoriesProvider
 from .order import Order
 from .order import SwapProposal
+import random
+from random import Random
 from .social_network import SocialNetwork
 from .space import GridSpace
 from .time_translator import TimeTranslator
 from typing import Any
-from typing import Callable
 from typing import Generic
 from typing import Literal
 from typing import Optional
@@ -31,7 +52,6 @@ from typing import Type
 from typing import TypeVar
 
 ObsT = TypeVar("ObsT")
-Provider = Callable[[int], Any]
 
 
 class Environment(ABC, Generic[ObsT]):
@@ -434,18 +454,16 @@ class Environment(ABC, Generic[ObsT]):
         )
         tweet: Optional[str] = action_dic.get("tweet", None)
         follow_agent_id: Optional[int] = action_dic.get("follow", None)
-        follow_allowed: bool = self._check_follow(
-            agent_id=agent_id, follow_agent_id=follow_agent_id
-        )
-        if not follow_allowed:
-            self.invalid_action_dic["follow"] += 1
-            follow_agent_id = None
         unfollow_agent_id: Optional[int] = action_dic.get("unfollow", None)
-        unfollow_allowed: bool = self._check_unfollow(
-            agent_id=agent_id, unfollow_agent_id=unfollow_agent_id
+        follow_unfollow_allowed: bool = self._check_follow_unfollow(
+            agent_id=agent_id,
+            follow_agent_id=follow_agent_id,
+            unfollow_agent_id=unfollow_agent_id,
         )
-        if not unfollow_allowed:
+        if not follow_unfollow_allowed:
+            self.invalid_action_dic["follow"] += 1
             self.invalid_action_dic["unfollow"] += 1
+            follow_agent_id = None
             unfollow_agent_id = None
         self._act_in_social_network(
             agent_id=agent_id,
@@ -799,27 +817,33 @@ class Environment(ABC, Generic[ObsT]):
             self.pending_swap_proposals.append(new_proposal)
             self.latest_proposal_id += 1
 
-    def _check_follow(self, agent_id: int, follow_agent_id: Optional[int]) -> bool:
+    def _check_follow_unfollow(
+        self,
+        agent_id: int,
+        follow_agent_id: Optional[int],
+        unfollow_agent_id: Optional[int],
+    ) -> bool:
         if agent_id == follow_agent_id:
             return False
-        if follow_agent_id not in self.agent_ids:
+        if follow_agent_id is not None:
+            if follow_agent_id not in self.agent_ids:
+                return False
+            if follow_agent_id in self.social_network.get_follows(agent_id=agent_id):
+                return False
+        if agent_id == unfollow_agent_id:
             return False
-        if follow_agent_id in self.social_network.get_follows(agent_id=agent_id):
-            return False
+        if unfollow_agent_id is not None:
+            if unfollow_agent_id not in self.agent_ids:
+                return False
+            if unfollow_agent_id not in self.social_network.get_follows(agent_id=agent_id):
+                return False
         num_follows: int = self.social_network.get_num_follows(agent_id=agent_id)
+        if unfollow_agent_id is not None:
+            num_follows -= 1
         if (
             self.social_network.follow_cap is not None
             and num_follows >= self.social_network.follow_cap
         ):
-            return False
-        return True
-
-    def _check_unfollow(self, agent_id: int, unfollow_agent_id: Optional[int]) -> bool:
-        if agent_id == unfollow_agent_id:
-            return False
-        if unfollow_agent_id not in self.agent_ids:
-            return False
-        if unfollow_agent_id not in self.social_network.get_follows(agent_id=agent_id):
             return False
         return True
 
@@ -1138,22 +1162,22 @@ class Environment(ABC, Generic[ObsT]):
 
     def get_observations(self, agent_id: int) -> ObsT:
         if not hasattr(self, "_obs_providers"):
-            self._obs_providers: dict[str, Provider] = (
+            self._obs_providers: dict[str, ObsProvider] = (
                 self._build_observation_registry()
             )
         if not hasattr(self, "_obs4allowed_agents_providers"):
-            self._obs4allowed_agents_providers: dict[str, Provider] = (
+            self._obs4allowed_agents_providers: dict[str, ObsProvider] = (
                 self._build_observation4allowed_agents_registry()
             )
         co_located_agents: set[int] = self.grid_space.get_colocated_agents(
             agent_id=agent_id
         )
-        self._obs4co_located_agents_providers: dict[str, Provider] = (
-            self._build_observation4co_located_agents_registry(
-                co_located_agents=co_located_agents
-            )
+        self._obs4co_located_agents_providers: dict[
+            str, ObsProviderForCoLocatedAgents
+        ] = self._build_observation4co_located_agents_registry(
+            co_located_agents=co_located_agents
         )
-        obs_providers: dict[str, Provider] = {}
+        obs_providers: dict[str, ObsProvider] = {}
         obs_providers.update(self._obs_providers)
         agent: Agent = self.agent_id2agent[agent_id]
         if agent.is_rich_info_allowed:
@@ -1167,180 +1191,43 @@ class Environment(ABC, Generic[ObsT]):
         for key in keys_to_request:
             if key not in obs_providers:
                 raise ValueError(f"Unknown observation key requested: {key}.")
-            provider: Provider = obs_providers[key]
-            observation[key] = provider(agent_id)
+            provider: ObsProvider | ObsProviderForCoLocatedAgents = obs_providers[key]
+            print(provider)
+            observation[key] = provider.get_obs(agent_id=agent_id)
         return observation  # type: ignore
 
-    def _build_observation_registry(self) -> dict[str, Provider]:
-        # edit here to add new observation providers
+    def _build_observation_registry(self) -> dict[str, ObsProvider]:
         return {
-            "time": lambda agent_id: self.get_time(),
-            "timedelta": lambda agent_id: self.get_timedelta(),
-            "self_agent_id": lambda agent_id: agent_id,
-            "self_name": lambda agent_id: self.agent_id2agent[agent_id].get_self_name(),
-            "self_pos": lambda agent_id: self.grid_space.get_pos(agent_id),
-            "self_init_pos": lambda agent_id: self.agent_id2initial_coords[agent_id],
-            "self_is_moving": lambda agent_id: self.agent_id2is_moving[agent_id],
-            "self_destination": lambda agent_id: self.agent_id2destination[agent_id],
-            "others_pos": lambda agent_id: self._obs_others_pos(agent_id),
-            "self_inventory": lambda agent_id: self.agent_id2agent[
-                agent_id
-            ].inventory_dic.copy(),
-            "self_tweet": lambda agent_id: self.social_network.get_tweet(
-                agent_id=agent_id
-            ),
-            "follow_cap": lambda agent_id: self.social_network.follow_cap,
-            "num_followers": lambda agent_id: self.social_network.get_num_followers(
-                agent_id=agent_id
-            ),
-            "num_follows": lambda agent_id: self.social_network.get_num_follows(
-                agent_id=agent_id
-            ),
-            "visible_tl": lambda agent_id: self._obs_visible_tl(agent_id),
-            "recommended_follows": lambda agent_id: self._obs_recommended_follows(
-                agent_id
-            ),
-            "incoming_orders": lambda agent_id: self._obs_incoming_orders(agent_id),
-            "incoming_proposals": lambda agent_id: self._obs_incoming_proposals(
-                agent_id
-            ),
+            "time": TimeProvider(env=self),
+            "timedelta": TimeDeltaProvider(env=self),
+            "self_agent_id": SelfIDProvider(env=self),
+            "self_name": SelfNameProvider(env=self),
+            "self_pos": SelfPosProvider(env=self),
+            "self_init_pos": SelfInitPosProvider(env=self),
+            "self_is_moving": SelfIsMovingProvider(env=self),
+            "self_destination": SelfDestinationProvider(env=self),
+            "others_pos": OthersPosProvider(env=self),
+            "self_inventory": SelfInventoryProvider(env=self),
+            "self_tweet": SelfTweetProvider(env=self),
+            "follow_cap": FollowCapProvider(env=self),
+            "num_followers": NumFollowersProvider(env=self),
+            "num_follows": NumFollowsProvider(env=self),
+            "visible_tl": VisibleTLProvider(env=self),
+            "recommended_follows": RecommendedFollowsProvider(env=self),
+            "incoming_orders": IncomingOrdersProvider(env=self),
+            "incoming_proposals": IncomingSwapProposalsProvider(env=self),
         }
 
-    def _build_observation4allowed_agents_registry(self) -> dict[str, Provider]:
-        # edit here to add new observation providers for allowed agents
+    def _build_observation4allowed_agents_registry(self) -> dict[str, ObsProvider]:
         return {
-            "item_name2price": lambda agent_id: self.item_name2price(),
+            "item_name2price": ItemName2PriceProvider(env=self),
         }
 
     def _build_observation4co_located_agents_registry(
         self, co_located_agents: set[int]
-    ) -> dict[str, Provider]:
-        # edit here to add new observation providers for co-located agents
+    ) -> dict[str, ObsProviderForCoLocatedAgents]:
         return {
-            "others_inventory": lambda agent_id: self._obs_others_inventory(
-                agent_id, co_located_agents=co_located_agents
+            "others_inventory": OthersInventoriesProvider(
+                env=self, co_located_agents=co_located_agents
             ),
         }
-
-    def _obs_visible_tl(self, agent_id: int) -> list[dict[str, Any]]:
-        follow_agent_ids: set[int] = self.social_network.get_follows(agent_id=agent_id)
-        visible_tl: list[dict[str, Any]] = []
-        for follow_agent_id in follow_agent_ids:
-            tweet: str = self.social_network.get_tweet(agent_id=follow_agent_id)
-            visible_tl.append(
-                {
-                    "agent_id": follow_agent_id,
-                    "agent_name": self.agent_id2agent[follow_agent_id].get_self_name(),
-                    "message": tweet,
-                }
-            )
-        return visible_tl
-
-    def _obs_incoming_orders(self, agent_id: int) -> list[dict[str, Any]]:
-        incoming_orders: list[dict[str, Any]] = []
-        for order in self.pending_orders:
-            if order.counterparty_id == agent_id:
-                incoming_orders.append(
-                    {
-                        "order_id": order.order_id,
-                        "agent_id": order.agent_id,
-                        "agent_name": self.agent_id2agent_name[order.agent_id],
-                        "item_name": order.item_name,
-                        "item_amount": order.item_amount,
-                        "price": order.price,
-                    }
-                )
-        return incoming_orders
-
-    def _obs_incoming_proposals(self, agent_id: int) -> list[dict[str, Any]]:
-        incoming_proposals: list[dict[str, Any]] = []
-        for proposal in self.pending_swap_proposals:
-            if proposal.responder_agent_id == agent_id:
-                incoming_proposals.append(
-                    {
-                        "proposal_id": proposal.proposal_id,
-                        "agent_id": proposal.proposer_agent_id,
-                        "agent_name": self.agent_id2agent_name[
-                            proposal.proposer_agent_id
-                        ],
-                        "give_item_name": proposal.give_item_name,
-                        "give_item_amount": proposal.give_item_amount,
-                        "get_item_name": proposal.get_item_name,
-                        "get_item_amount": proposal.get_item_amount,
-                        "description": "You are asked to give your "
-                        + f"{proposal.get_item_amount} of {proposal.get_item_name} "
-                        + f"in exchange for {proposal.give_item_amount} of {proposal.give_item_name}.",
-                    }
-                )
-        return incoming_proposals
-
-    def _obs_others_pos(self, agent_id: int) -> list[dict[str, Any]]:
-        others_pos_infos: list[dict[str, Any]] = []
-        for other_agent_id in self.agent_ids:
-            if other_agent_id == agent_id:
-                continue
-            other_agent: Agent = self.agent_id2agent[other_agent_id]
-            if "self_pos" in other_agent.provide_info4all_agents():
-                others_pos_infos.append(
-                    {
-                        "agent_id": other_agent_id,
-                        "agent_name": other_agent.get_self_name(),
-                        "pos": self.grid_space.get_pos(agent_id=other_agent_id),
-                    }
-                )
-        return others_pos_infos
-
-    def _obs_recommended_follows(self, agent_id: int) -> list[int]:
-        recommended_follows: list[int] = []
-        cap_space: int
-        num_follows: int = self.social_network.get_num_follows(agent_id=agent_id)
-        if self.social_network.follow_cap is None:
-            cap_space = len(self.agent_ids) - 1
-        else:
-            cap_space = self.social_network.follow_cap - num_follows
-        for other_agent_id in self.agent_ids:
-            if len(recommended_follows) >= cap_space:
-                break
-            if other_agent_id == agent_id:
-                continue
-            if other_agent_id not in self.social_network.get_follows(agent_id):
-                recommended_follows.append(other_agent_id)
-        return recommended_follows
-
-    def _obs_others_inventory(
-        self, agent_id: int, co_located_agents: set[int], mask_amount: bool = False
-    ) -> list[dict[str, Any]]:
-        inventory_infos: list[dict[str, Any]] = []
-        for other_agent_id in self.agent_ids:
-            if other_agent_id == agent_id or other_agent_id not in co_located_agents:
-                continue
-            other_agent: Agent = self.agent_id2agent[other_agent_id]
-            if "inventory" in other_agent.provide_info4co_located_agents():
-                inventory_info_dic: dict[
-                    str, str | int | dict[str, str | int | float]
-                ] = {
-                    "agent_id": other_agent_id,
-                    "agent_name": other_agent.get_self_name(),
-                }
-                for item_name, item_amount in other_agent.inventory_dic.items():
-                    if item_name == self.cash_name:
-                        continue
-                    price: float = self.item_name2item[item_name].price
-                    amount: str | float | int = (
-                        "Unknown" if mask_amount else item_amount
-                    )
-                    inventory_info_dic[item_name] = {"price": price, "amount": amount}
-                inventory_infos.append(inventory_info_dic)
-        return inventory_infos
-
-    def item_name2price(self) -> list[dict[str, Any]]:
-        item_name2prices: list[dict[str, Any]] = []
-        for item_name, item in self.item_name2item.items():
-            item_name2prices.append(
-                {
-                    "item_name": item_name,
-                    "price": item.price,
-                    "price_set_by": item.price_set_by,
-                }
-            )
-        return item_name2prices
