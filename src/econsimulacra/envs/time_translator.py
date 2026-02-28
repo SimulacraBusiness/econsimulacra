@@ -1,12 +1,16 @@
 from datetime import datetime
 from datetime import timedelta
+import random
 from typing import Any
+from typing import Optional
 
 
 class TimeTranslator:
     """Time Translator class. Usually used as environment service."""
 
-    def __init__(self, config: dict[str, Any]) -> None:
+    def __init__(
+        self, config: dict[str, Any], prng: Optional[random.Random] = None
+    ) -> None:
         """initialization.
 
         Args:

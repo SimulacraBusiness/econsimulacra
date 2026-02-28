@@ -57,13 +57,14 @@ class Environment(ABC, Generic[ObsT]):
                     "cashName": str,
                     "agents": ["Household", "Retailer", "Restaurant", ...],
                     "items": ["Yen", "Rice", ...],
-                    "service": ["promptBuilder", "llmClient", "timeTranslator", ...], # Optional, default []
+                    "service": ["promptBuilder", "llmClient", "timeTranslator", "personaBuilder"], # Optional, default []
                 }
                 "Household": {
                     "type": "LLMAgent",
                     "isHousehold": bool,
                     "numAgents": int, # Optional, default 1
                     ...,
+                    "personaConfig": dict, # Optional, default {}
                 },
                 "Retailer": {
                     "type": "LLMAgent",
@@ -101,7 +102,12 @@ class Environment(ABC, Generic[ObsT]):
                     "numSteps": int, # must be the same as simulation.numSteps
                     "startDatetime": str, # "%Y-%m-%d %H:%M:%S"
                     "endDatetime": str, # "%Y-%m-%d %H:%M:%S"
-                }
+                },
+                "personaBuilder": {
+                    "type": "Big5PersonaBuilder", # Optional, default is the same as the service name
+                    ...
+                },
+                ...,
             }
         """
         env_config: dict[str, Any] = config.get("environment", {})
@@ -208,7 +214,7 @@ class Environment(ABC, Generic[ObsT]):
                 name=instance_type, optional_class_list=self.registered_classes
             )
             service_provider_instance = service_provider_class(
-                config=service_provider_config
+                config=service_provider_config, prng=self.prng
             )
             self.service_dic[service_provider_key] = service_provider_instance
 

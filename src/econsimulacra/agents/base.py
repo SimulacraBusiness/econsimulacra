@@ -38,6 +38,7 @@ class Agent(ABC, Generic[ObsT]):
             {
                 "isHousehold": True,
                 "numAgents": 10,
+                "name": str, # optional, if not provided, the agent name will be "{agent_name}{agent_id}"
                 "inventory": {
                     "Yen": [1000000, 10000000],
                     "Rice": [3, 10],
@@ -78,7 +79,8 @@ class Agent(ABC, Generic[ObsT]):
         return self.agent_name
 
     def self_assign_name(self, config: dict[str, Any]) -> None:
-        pass
+        if "name" in config:
+            self.agent_name = config["name"] + str(self.agent_id)
 
     def _setup_request_obs(self) -> None:
         if self.config is not None and "requestObs" in self.config:

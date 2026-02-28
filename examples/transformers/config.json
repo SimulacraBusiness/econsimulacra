@@ -4,6 +4,7 @@
     },
     "environment": {
         "gridSpace": [10, 10],
+	    "followCap": 3,
         "cashName": "Yen",
         "agents": ["Household", "Retailer", "Restaurant"],
         "items": ["Yen", "Rice", "Pizza"],
@@ -70,8 +71,8 @@
     },
     "llmClient": {
         "type": "TransformersClient",
-        "model_name": "Qwen/Qwen2.5-7B-Instruct",
-        "other_choice": "mistralai/Mistral-7B-Instruct-v0.3",
+        "model_name": "mistralai/Mistral-7B-Instruct-v0.3",
+        "other_choice": "Qwen/Qwen2.5-7B-Instruct",
         "device": "cuda",
         "dtype": "float32",
         "max_new_tokens": 4096,
