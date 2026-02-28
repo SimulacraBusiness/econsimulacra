@@ -3,6 +3,7 @@ from .base import LLMClient
 from outlines import generate
 from outlines import models
 import os
+import random
 from typing import Any
 from typing import Callable
 from typing import cast
@@ -12,7 +13,7 @@ from typing import Optional
 class OpenAIClient(LLMClient):
     """OpenAI client for interacting with OpenAI's language models."""
 
-    def __init__(self, config: dict[str, Any]) -> None:
+    def __init__(self, config: dict[str, Any], prng: Optional[random.Random] = None) -> None:
         """initialization.
 
         Args:
@@ -28,7 +29,7 @@ class OpenAIClient(LLMClient):
                 "api_key": "your_openai_api_key" # Optional if OPENAI_API_KEY environment variable is set
             }
         """
-        super().__init__(config)
+        super().__init__(config, prng)
         if "model_name" not in config:
             raise ValueError(
                 "OpenAIClient: 'model_name' must be specified in the config."
