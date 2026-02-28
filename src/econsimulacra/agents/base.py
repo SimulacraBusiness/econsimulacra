@@ -38,7 +38,7 @@ class Agent(ABC, Generic[ObsT]):
             {
                 "isHousehold": True,
                 "numAgents": 10,
-                "name": str, # optional, if not provided, the agent name will be "{agent_name}{agent_id}"
+                "name": str, # optional, if not provided, the agent name will be agent_name
                 "inventory": {
                     "Yen": [1000000, 10000000],
                     "Rice": [3, 10],
