@@ -8,7 +8,7 @@
         "cashName": "Yen",
         "agents": ["Household", "Retailer", "Restaurant"],
         "items": ["Yen", "Rice", "Pizza"],
-        "service": ["promptBuilder", "llmClient", "timeTranslator"]
+        "service": ["promptBuilder", "llmClient", "timeTranslator", "personaBuilder"]
     },
     "Household": {
         "type": "LLMAgent",
@@ -89,6 +89,10 @@
         "numSteps": 72,
         "startDatetime": "2025-10-11 09:00:00",
         "endDatetime": "2025-10-12 21:00:00"
+    },
+    "personaBuilder": {
+        "type": "Big5PersonaBuilder",
+        "maxMagnitude": 3
     },
     "animation": {
         "cellSize": 1,

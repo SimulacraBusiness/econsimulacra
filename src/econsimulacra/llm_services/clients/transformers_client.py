@@ -2,16 +2,20 @@ import asyncio
 from .base import LLMClient
 from outlines import generate
 from outlines import models
+import random
 import torch
 from typing import Any
 from typing import Callable
 from typing import cast
+from typing import Optional
 
 
 class TransformersClient(LLMClient):
     """Transformers client using Outlines for structured generation."""
 
-    def __init__(self, config: dict[str, Any]) -> None:
+    def __init__(
+        self, config: dict[str, Any], prng: Optional[random.Random] = None
+    ) -> None:
         """initialization.
 
         Args:
@@ -32,7 +36,7 @@ class TransformersClient(LLMClient):
                 "json_schema_path": "path/to/schema.json"
             }
         """
-        super().__init__(config)
+        super().__init__(config, prng)
         if "model_name" not in config:
             raise ValueError(
                 "TransformersClient: 'model_name' must be specified in the config."

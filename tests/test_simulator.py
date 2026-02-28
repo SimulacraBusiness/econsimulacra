@@ -92,24 +92,6 @@ class DummyRetailer(Agent):
         return action_dic
 
 
-class DummyEnvironment(Environment):
-    def _build_observation_registry(self) -> dict[str, Provider]:
-        provider_dic: dict[str, Provider] = super()._build_observation_registry()
-        provider_dic["recommended_follows"] = (
-            lambda agent_id: self._obs_recommended_follows(agent_id)
-        )
-        return provider_dic
-
-    def _obs_recommended_follows(self, agent_id: int) -> list[int]:
-        recommended_follows: list[int] = []
-        for other_agent_id in self.agent_ids:
-            if other_agent_id == agent_id:
-                continue
-            if other_agent_id not in self.social_network.get_follows(agent_id):
-                recommended_follows.append(other_agent_id)
-        return recommended_follows
-
-
 class TestSimulator:
     config = {
         "gridSpace": (10, 10),
@@ -155,15 +137,15 @@ class TestSimulator:
     def test_init(self):
         simulator = Simulator(
             config=self.config,
-            env_class=DummyEnvironment,
+            env_class=Environment,
             logger=DictLogger(),
         )
-        assert isinstance(simulator.env, DummyEnvironment)
+        assert isinstance(simulator.env, Environment)
 
     def test_convert_list_to_tuple(self):
         simulator = Simulator(
             config=self.config,
-            env_class=DummyEnvironment,
+            env_class=Environment,
             logger=DictLogger(),
         )
         input_obj = {
@@ -183,7 +165,7 @@ class TestSimulator:
     def test_simulate(self):
         simulator = Simulator(
             config=self.config,
-            env_class=DummyEnvironment,
+            env_class=Environment,
             logger=DictLogger(),
         )
         simulator.register_classes(

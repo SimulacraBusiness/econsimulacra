@@ -1,10 +1,14 @@
 from .base import PersonaBuilder
+import random
 from typing import Any
+from typing import Optional
 
 
 class Big5PersonaBuilder(PersonaBuilder):
-    def __init__(self, config: dict[str, Any]) -> None:
-        super().__init__(config=config)
+    def __init__(
+        self, config: dict[str, Any], prng: Optional[random.Random] = None
+    ) -> None:
+        super().__init__(config=config, prng=prng)
         self.max_magnitude: int = config.get("maxMagnitude", 1)
 
     def build_persona(self, agent_id: int, agent_config: dict) -> None:
