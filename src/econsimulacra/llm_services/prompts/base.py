@@ -3,16 +3,28 @@ from ..constant import DEFAULT_OBS_DESCRIPTION
 import json
 import pathlib
 from pathlib import Path
+import random
 from typing import Any
 from typing import Optional
 
 
 class PromptBuilder:
-    def __init__(self, config: dict[str, Any]) -> None:
+    def __init__(
+        self, config: dict[str, Any], prng: Optional[random.Random] = None
+    ) -> None:
         self.config: dict[str, Any] = config
         self.obs_desc, self.action_desc = self._get_obs_action_description(config)
+        self.prng: random.Random = prng if prng is not None else random.Random()
 
     def build_prompt(self, obs: dict[str, Any]) -> str:
+        """translate the observation into a prompt for LLM input.
+
+        Args:
+            obs (dict[str, Any]): the observation to translate into a prompt for LLM input
+
+        Note:
+            Called by LLMAgent.act
+        """
         obs = self._truncate_floats(obs)
         obs_str: str = json.dumps(obs, ensure_ascii=False)
         prompt: str = (

@@ -4,13 +4,17 @@ from ..constant import DEFAULT_ACTION_JSON_SCHEMA
 import json
 import pathlib
 from pathlib import Path
+import random
 from typing import Any
 from typing import Optional
 
 
 class LLMClient(ABC):
-    def __init__(self, config: dict[str, Any]) -> None:
+    def __init__(
+        self, config: dict[str, Any], prng: Optional[random.Random] = None
+    ) -> None:
         self.config: dict[str, Any] = config
+        self.prng: random.Random = prng if prng is not None else random.Random()
 
     @abstractmethod
     async def generate_response(self, prompt: str) -> dict[str, Any]:
