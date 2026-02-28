@@ -19,9 +19,9 @@ class ObsProvider(ABC):
 
 
 class ObsProviderForCoLocatedAgents(ABC):
-    def __init__(self, env: Environment, co_located_agents: list[int]) -> None:
+    def __init__(self, env: Environment, co_located_agents: set[int]) -> None:
         self.env: Environment = env
-        self.co_located_agents: list[int] = co_located_agents
+        self.co_located_agents: set[int] = co_located_agents
 
     @abstractmethod
     def get_obs(self, agent_id: int) -> Any:
@@ -34,7 +34,7 @@ class TimeProvider(ObsProvider):
 
 
 class TimeDeltaProvider(ObsProvider):
-    def get_obs(self, agent_id: int) -> int:
+    def get_obs(self, agent_id: int) -> int | str:
         return self.env.get_timedelta()
 
 
@@ -64,7 +64,7 @@ class SelfIsMovingProvider(ObsProvider):
 
 
 class SelfDestinationProvider(ObsProvider):
-    def get_obs(self, agent_id: int) -> Optional[dict[str, Any]]:
+    def get_obs(self, agent_id: int) -> Optional[tuple[int, ...]]:
         return self.env.agent_id2destination[agent_id]
 
 
