@@ -21,7 +21,7 @@ class LLMAgent(Agent[dict[str, Any]]):
         self.llm_client: LLMClient = env_service_dic["llmClient"]
         self.persona_builder: Optional[PersonaBuilder] = None
         if "personaBuilder" in env_service_dic:
-            self.persona_builder: PersonaBuilder = env_service_dic["personaBuilder"]
+            self.persona_builder = env_service_dic["personaBuilder"]
             self.persona_builder.build_persona(
                 agent_id=self.agent_id,
                 agent_config=self.config.get("personaConfig", {}),
