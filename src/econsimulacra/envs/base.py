@@ -14,7 +14,9 @@ from ..logs import ChangePriceLog
 from ..logs import TweetLog
 from ..logs import FollowLog
 from ..logs import UnfollowLog
+from ..logs import Log
 from ..logs import Logger
+from .memory import MemoryHandler
 from .obs_providers import ObsProvider
 from .obs_providers import ObsProviderForCoLocatedAgents
 from .obs_providers import TimeProvider
@@ -37,6 +39,7 @@ from .obs_providers import IncomingOrdersProvider
 from .obs_providers import IncomingSwapProposalsProvider
 from .obs_providers import ItemName2PriceProvider
 from .obs_providers import OthersInventoriesProvider
+from .obs_providers import MemoryProvider
 from .order import Order
 from .order import SwapProposal
 import random
@@ -77,7 +80,7 @@ class Environment(ABC, Generic[ObsT]):
                     "cashName": str,
                     "agents": ["Household", "Retailer", "Restaurant", ...],
                     "items": ["Yen", "Rice", ...],
-                    "service": ["promptBuilder", "llmClient", "timeTranslator", "personaBuilder"], # Optional, default []
+                    "service": ["promptBuilder", "llmClient", "timeTranslator", "personaBuilder", "memoryHandler"], # Optional, default []
                 }
                 "Household": {
                     "type": "LLMAgent",
@@ -127,6 +130,10 @@ class Environment(ABC, Generic[ObsT]):
                     "type": "Big5PersonaBuilder", # Optional, default is the same as the service name
                     ...
                 },
+                "memoryHandler": {
+                    "type": "MemoryHandler", # Optional, default is the same as the service name
+                    "memoryLength": int, # the maximum number of logs to be stored in memory for each agent
+                },
                 ...,
             }
         """
@@ -148,6 +155,12 @@ class Environment(ABC, Generic[ObsT]):
     def get_time_translator(self) -> Optional[TimeTranslator]:
         for provider in self.service_dic.values():
             if isinstance(provider, TimeTranslator):
+                return provider
+        return None
+
+    def get_memory_handler(self) -> Optional[MemoryHandler]:
+        for provider in self.service_dic.values():
+            if isinstance(provider, MemoryHandler):
                 return provider
         return None
 
@@ -238,6 +251,11 @@ class Environment(ABC, Generic[ObsT]):
             )
             self.service_dic[service_provider_key] = service_provider_instance
 
+    def remember_log(self, log: Log) -> None:
+        memory_handler: Optional[MemoryHandler] = self.get_memory_handler()
+        if memory_handler is not None:
+            memory_handler.update(log)
+
     def _generate_agents(self, agent_keys: list[str]) -> None:
         """generate agents and place them in the grid space.
 
@@ -279,6 +297,7 @@ class Environment(ABC, Generic[ObsT]):
                     agent_name=agent_name,
                     inventory_dic=agent_instance.inventory_dic.copy(),
                 )
+                self.remember_log(log)
                 if self.logger is not None:
                     log.read_and_write(logger=self.logger)
                 while True:
@@ -341,6 +360,7 @@ class Environment(ABC, Generic[ObsT]):
         self.grid_space.place_agent(agent_id=agent_id, pos=coords)
         self.agent_id2initial_coords[agent_id] = coords
         log: SpaceAssignLog = SpaceAssignLog(agent_id=agent_id, pos=coords)
+        self.remember_log(log)
         if self.logger is not None:
             log.read_and_write(logger=self.logger)
 
@@ -523,6 +543,7 @@ class Environment(ABC, Generic[ObsT]):
             old_pos=current_pos,
             new_pos=next_pos,
         )
+        self.remember_log(log)
         if self.logger is not None:
             log.read_and_write(logger=self.logger)
         if next_pos == destination_pos:
@@ -611,6 +632,7 @@ class Environment(ABC, Generic[ObsT]):
                 item_name=item_name,
                 item_amount=item_amount,
             )
+            self.remember_log(log)
             if self.logger is not None:
                 log.read_and_write(logger=self.logger)
 
@@ -760,6 +782,7 @@ class Environment(ABC, Generic[ObsT]):
                 price=price,
                 order_id=self.latest_order_id,
             )
+            self.remember_log(order_log)
             if self.logger is not None:
                 order_log.read_and_write(logger=self.logger)
             self.pending_orders.append(new_order)
@@ -812,6 +835,7 @@ class Environment(ABC, Generic[ObsT]):
                 get_item_name=get_item_name,
                 get_item_amount=get_item_amount,
             )
+            self.remember_log(proposal_log)
             if self.logger is not None:
                 proposal_log.read_and_write(logger=self.logger)
             self.pending_swap_proposals.append(new_proposal)
@@ -863,7 +887,10 @@ class Environment(ABC, Generic[ObsT]):
                 time_step=self.get_time_step(),
                 agent_id=agent_id,
                 message=tweet,
+                num_follows=self.social_network.get_num_follows(agent_id=agent_id),
+                num_followers=self.social_network.get_num_followers(agent_id=agent_id),
             )
+            self.remember_log(tweet_log)
             if self.logger is not None:
                 tweet_log.read_and_write(logger=self.logger)
         if follow_agent_id is not None:
@@ -875,7 +902,10 @@ class Environment(ABC, Generic[ObsT]):
                 time_step=self.get_time_step(),
                 agent_id=agent_id,
                 target_agent_id=follow_agent_id,
+                num_follows=self.social_network.get_num_follows(agent_id=agent_id),
+                num_followers=self.social_network.get_num_followers(agent_id=agent_id),
             )
+            self.remember_log(follow_log)
             if self.logger is not None:
                 follow_log.read_and_write(logger=self.logger)
         if unfollow_agent_id is not None:
@@ -887,7 +917,10 @@ class Environment(ABC, Generic[ObsT]):
                 time_step=self.get_time_step(),
                 agent_id=agent_id,
                 target_agent_id=unfollow_agent_id,
+                num_follows=self.social_network.get_num_follows(agent_id=agent_id),
+                num_followers=self.social_network.get_num_followers(agent_id=agent_id),
             )
+            self.remember_log(unfollow_log)
             if self.logger is not None:
                 unfollow_log.read_and_write(logger=self.logger)
 
@@ -1045,14 +1078,18 @@ class Environment(ABC, Generic[ObsT]):
                         order_reaction_log: OrderReactionLog = OrderReactionLog(
                             time=self.get_time(),
                             time_step=self.get_time_step(),
-                            agent_id=agent_id,
-                            counterparty_id=order.agent_id,
+                            agent_id=order.agent_id,
+                            counterparty_id=agent_id,
                             item_name=order.item_name,
                             item_amount=order.item_amount,
-                            price=order.price,
+                            price=max(
+                                0 if order.price is None else order.price,
+                                self.item_name2item[order.item_name].price,
+                            ),
                             order_id=order.order_id,
                             accept_amount=accept_amount,
                         )
+                        self.remember_log(order_reaction_log)
                         if self.logger is not None:
                             order_reaction_log.read_and_write(logger=self.logger)
             elif kind == "proposal":
@@ -1080,6 +1117,7 @@ class Environment(ABC, Generic[ObsT]):
                                 accept=accept,
                             )
                         )
+                        self.remember_log(proposal_reaction_log)
                         if self.logger is not None:
                             proposal_reaction_log.read_and_write(logger=self.logger)
             else:
@@ -1142,6 +1180,7 @@ class Environment(ABC, Generic[ObsT]):
                 old_price=old_price,
                 new_price=price,
             )
+            self.remember_log(change_price_log)
             if self.logger is not None:
                 change_price_log.read_and_write(logger=self.logger)
 
@@ -1203,6 +1242,7 @@ class Environment(ABC, Generic[ObsT]):
             "timedelta": TimeDeltaProvider(env=self),
             "self_agent_id": SelfIDProvider(env=self),
             "self_name": SelfNameProvider(env=self),
+            "memory": MemoryProvider(env=self),
             "self_pos": SelfPosProvider(env=self),
             "self_init_pos": SelfInitPosProvider(env=self),
             "self_is_moving": SelfIsMovingProvider(env=self),

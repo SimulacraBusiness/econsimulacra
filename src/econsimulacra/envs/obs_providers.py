@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .base import Environment
+    from .memory import MemoryHandler
 
 
 class ObsProvider(ABC):
@@ -237,3 +238,12 @@ class OthersInventoriesProvider(ObsProviderForCoLocatedAgents):
                     inventory_info_dic[item_name] = {"price": price, "amount": amount}
                 inventory_infos.append(inventory_info_dic)
         return inventory_infos
+
+
+class MemoryProvider(ObsProvider):
+    def get_obs(self, agent_id: int) -> Optional[dict[str, Any]]:
+        memory_handler: Optional[MemoryHandler] = self.env.get_memory_handler()
+        if memory_handler is not None:
+            return memory_handler.get_memory(agent_id=agent_id)
+        else:
+            return None

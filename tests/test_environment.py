@@ -1,5 +1,6 @@
 from econsimulacra.agents import Agent
 from econsimulacra.envs import Environment
+from econsimulacra.envs import MemoryHandler
 from econsimulacra.envs import Order
 from econsimulacra.items import Item
 from econsimulacra.logs import DictLogger
@@ -92,6 +93,11 @@ class DummyRetailer(Agent):
         return action_dic
 
 
+class DummyMemoryHandler(MemoryHandler):
+    def get_memory(self, agent_id: int) -> Optional[dict[str, Any]]:
+        return {}
+
+
 class TestEnvironment:
     config = {
         "gridSpace": (10, 10),
@@ -104,7 +110,7 @@ class TestEnvironment:
             "cashName": "Yen",
             "agents": ["DummyHousehold", "DummyRetailer"],
             "items": ["Yen", "Rice"],
-            "service": ["timeTranslator"],
+            "service": ["timeTranslator", "memoryHandler"],
         },
         "DummyHousehold": {
             "isHousehold": True,
@@ -140,6 +146,10 @@ class TestEnvironment:
             "startDatetime": "2025-01-01 00:00:00",
             "endDatetime": "2025-01-01 00:10:00",
         },
+        "memoryHandler": {
+            "type": "DummyMemoryHandler",
+            "memoryLength": 2,
+        },
     }
 
     def test___init__(self) -> None:
@@ -151,19 +161,24 @@ class TestEnvironment:
 
     def test_register_classes(self) -> None:
         env = Environment(config=self.config)
-        env.register_classes([DummyHousehold, DummyRetailer])
+        env.register_classes([DummyHousehold, DummyRetailer, DummyMemoryHandler])
         assert DummyHousehold in env.registered_classes
         assert DummyRetailer in env.registered_classes
+        assert DummyMemoryHandler in env.registered_classes
 
     def test_reset(self) -> None:
         env = Environment(config=self.config)
-        env.register_classes([DummyHousehold, DummyRetailer])
+        env.register_classes([DummyHousehold, DummyRetailer, DummyMemoryHandler])
         env.reset(seed=42)
         assert len(env.agent_ids) == 6
         assert len(env.household_ids) == 5
         assert len(env.others_ids) == 1
         assert len(env.item_name2item) == 2
         assert env.social_network.follow_cap == 2
+        assert "timeTranslator" in env.service_dic
+        assert env.get_time_translator() is not None
+        assert "memoryHandler" in env.service_dic
+        assert env.get_memory_handler() is not None
         for item_name, item in env.item_name2item.items():
             assert isinstance(item, Item)
             if item_name == "Yen":
@@ -200,7 +215,7 @@ class TestEnvironment:
                 assert agent.inventory_dic == {"Yen": 500, "Rice": 10000}
                 assert agent.agent_name == "DummyRetailer"
         env = Environment(config=self.config, logger=DictLogger())
-        env.register_classes([DummyHousehold, DummyRetailer])
+        env.register_classes([DummyHousehold, DummyRetailer, DummyMemoryHandler])
         env.reset(seed=42)
         logger = env.logger
         assert isinstance(logger, DictLogger)
@@ -208,7 +223,7 @@ class TestEnvironment:
 
     def test_move(self) -> None:
         env = Environment(config=self.config)
-        env.register_classes([DummyHousehold, DummyRetailer])
+        env.register_classes([DummyHousehold, DummyRetailer, DummyMemoryHandler])
         env.reset(seed=42)
         household_id: int = env.household_ids[0]
         initial_pos: tuple[int, int] = env.grid_space.get_pos(household_id)
@@ -242,7 +257,7 @@ class TestEnvironment:
 
     def test_consume_items(self) -> None:
         env = Environment(config=self.config)
-        env.register_classes([DummyHousehold, DummyRetailer])
+        env.register_classes([DummyHousehold, DummyRetailer, DummyMemoryHandler])
         env.reset(seed=42)
         household_id: int = env.household_ids[0]
         initial_rice_amount: int = env.agent_id2agent[household_id].inventory_dic[
@@ -255,7 +270,7 @@ class TestEnvironment:
 
     def test_add_new_orders_and_proposals(self) -> None:
         env = Environment(config=self.config)
-        env.register_classes([DummyHousehold, DummyRetailer])
+        env.register_classes([DummyHousehold, DummyRetailer, DummyMemoryHandler])
         env.reset(seed=42)
         orders: list[dict[str, Any]] = [
             {
@@ -309,7 +324,7 @@ class TestEnvironment:
 
     def test_apply_action_to_env_and_process_orders_and_proposals(self) -> None:
         env = Environment(config=self.config)
-        env.register_classes([DummyHousehold, DummyRetailer])
+        env.register_classes([DummyHousehold, DummyRetailer, DummyMemoryHandler])
         env.reset(seed=42)
         household_id0: int = env.household_ids[0]
         household_id1: int = env.household_ids[1]
@@ -417,16 +432,20 @@ class TestEnvironment:
 
     def test_get_observations(self) -> None:
         env = Environment(config=self.config)
-        env.register_classes([DummyHousehold, DummyRetailer])
+        env.register_classes([DummyHousehold, DummyRetailer, DummyMemoryHandler])
         env.reset(seed=42)
         for agent_id in env.agent_ids:
             obs: dict[str, Any] = env.get_observations(agent_id=agent_id)
             assert "time" in obs
             assert obs["time"] == "2025-01-01 00:00:00"
+            assert "timedelta" in obs
+            assert obs["timedelta"] == "0:00:06"
             assert "self_agent_id" in obs
             assert obs["self_agent_id"] == agent_id
             assert "self_name" in obs
             assert obs["self_name"] == env.agent_id2agent[agent_id].get_self_name()
+            assert "memory" in obs
+            assert obs["memory"] == {}
             assert "self_pos" in obs
             assert obs["self_pos"] == env.grid_space.get_pos(agent_id)
             assert "self_init_pos" in obs
@@ -492,7 +511,7 @@ class TestEnvironment:
 
     def test_step(self) -> None:
         env = Environment(config=self.config)
-        env.register_classes([DummyHousehold, DummyRetailer])
+        env.register_classes([DummyHousehold, DummyRetailer, DummyMemoryHandler])
         env.reset(seed=42)
         all_actions_dic: dict[int, dict[str, Any]] = {}
         for agent_id in env.agent_ids:
@@ -502,7 +521,7 @@ class TestEnvironment:
             all_actions_dic[agent_id] = action_dic
         env.step(all_actions_dic=all_actions_dic)
         env = Environment(config=self.config, logger=DictLogger())
-        env.register_classes([DummyHousehold, DummyRetailer])
+        env.register_classes([DummyHousehold, DummyRetailer, DummyMemoryHandler])
         env.reset(seed=42)
         for _ in range(self.config["simulation"]["numSteps"]):
             all_actions_dic = {}
@@ -520,3 +539,13 @@ class TestEnvironment:
         logger = env.logger
         assert isinstance(logger, DictLogger)
         assert len(logger.logs) > 12
+        memory_handler = env.get_memory_handler()
+        for agent_id in env.agent_ids:
+            memory = memory_handler.agent_id2memory[agent_id]
+            if agent_id in env.household_ids:
+                assert len(memory.move_history) == 2
+                assert len(memory.purchase_history) == 2
+                assert len(memory.social_history) == 2
+            else:
+                assert len(memory.sale_history) == 2
+                assert len(memory.set_price_history) == 2

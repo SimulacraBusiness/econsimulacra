@@ -112,6 +112,7 @@ DEFAULT_OBS_DESCRIPTION: dict[str, str] = {
     "timedelta": "The time delta for each simulation step, represented as either an integer or a string in ISO format (e.g., '0:00:01' for 1 second).",
     "self_agent_id": "Your unique identifier.",
     "self_name": "Your name.",
+    "memory": "A dictionary representing your memory, where the keys are memory keys and the values are the corresponding memory values.",
     "self_pos": "Your current coordinates in the grid space, represented as a list of integers [x, y].",
     "self_init_pos": "Your home in the grid space, represented as a list of integers [x, y].",
     "self_is_moving": "A boolean indicating whether you are currently moving. "
