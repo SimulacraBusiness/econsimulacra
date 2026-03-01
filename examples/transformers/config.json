@@ -8,7 +8,7 @@
         "cashName": "Yen",
         "agents": ["Household", "Retailer", "Restaurant"],
         "items": ["Yen", "Rice", "Pizza"],
-        "service": ["promptBuilder", "llmClient", "timeTranslator", "personaBuilder"]
+        "service": ["promptBuilder", "llmClient", "timeTranslator", "personaBuilder", "memoryHandler"]
     },
     "Household": {
         "type": "LLMAgent",
@@ -93,6 +93,10 @@
     "personaBuilder": {
         "type": "Big5PersonaBuilder",
         "maxMagnitude": 3
+    },
+    "memoryHandler": {
+        "type": "MemoryHandler",
+        "memoryLength": 5
     },
     "animation": {
         "cellSize": 1,
