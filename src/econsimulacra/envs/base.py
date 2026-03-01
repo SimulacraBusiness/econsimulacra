@@ -893,21 +893,6 @@ class Environment(ABC, Generic[ObsT]):
             self.remember_log(tweet_log)
             if self.logger is not None:
                 tweet_log.read_and_write(logger=self.logger)
-        if follow_agent_id is not None:
-            self.social_network.follow_agent(
-                agent_id=agent_id, target_agent_id=follow_agent_id
-            )
-            follow_log: FollowLog = FollowLog(
-                time=self.get_time(),
-                time_step=self.get_time_step(),
-                agent_id=agent_id,
-                target_agent_id=follow_agent_id,
-                num_follows=self.social_network.get_num_follows(agent_id=agent_id),
-                num_followers=self.social_network.get_num_followers(agent_id=agent_id),
-            )
-            self.remember_log(follow_log)
-            if self.logger is not None:
-                follow_log.read_and_write(logger=self.logger)
         if unfollow_agent_id is not None:
             self.social_network.unfollow_agent(
                 agent_id=agent_id, target_agent_id=unfollow_agent_id
@@ -923,6 +908,21 @@ class Environment(ABC, Generic[ObsT]):
             self.remember_log(unfollow_log)
             if self.logger is not None:
                 unfollow_log.read_and_write(logger=self.logger)
+        if follow_agent_id is not None:
+            self.social_network.follow_agent(
+                agent_id=agent_id, target_agent_id=follow_agent_id
+            )
+            follow_log: FollowLog = FollowLog(
+                time=self.get_time(),
+                time_step=self.get_time_step(),
+                agent_id=agent_id,
+                target_agent_id=follow_agent_id,
+                num_follows=self.social_network.get_num_follows(agent_id=agent_id),
+                num_followers=self.social_network.get_num_followers(agent_id=agent_id),
+            )
+            self.remember_log(follow_log)
+            if self.logger is not None:
+                follow_log.read_and_write(logger=self.logger)
 
     def _process_orders_and_proposals(self) -> None:
         for order in self.pending_orders:
