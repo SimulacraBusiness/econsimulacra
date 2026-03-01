@@ -166,14 +166,20 @@ class MemoryHandler:
                 for item in agent_memory.exchange_history
             )
         if len(agent_memory.set_price_history) > 0:
-            summarized_memory["set_price_history"] = "You have changed price " + ", ".join(
-                f"{item.item_name}: {item.old_price} -> {item.new_price} at {item.time}"
-                for item in agent_memory.set_price_history
+            summarized_memory["set_price_history"] = (
+                "You have changed price "
+                + ", ".join(
+                    f"{item.item_name}: {item.old_price} -> {item.new_price} at {item.time}"
+                    for item in agent_memory.set_price_history
+                )
             )
         if len(agent_memory.social_history) > 0:
-            summarized_memory["social_history"] = "Your social actions are " + "; ".join(
-                f"{item.action} target_agent_id {item.target_agent_id} at {item.time} (num_followers: {item.num_followers}, num_follows: {item.num_follows})"
-                for item in agent_memory.social_history
+            summarized_memory["social_history"] = (
+                "Your social actions are "
+                + "; ".join(
+                    f"{item.action} target_agent_id {item.target_agent_id} at {item.time} (num_followers: {item.num_followers}, num_follows: {item.num_follows})"
+                    for item in agent_memory.social_history
+                )
             )
         return summarized_memory
 
