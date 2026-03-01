@@ -140,7 +140,7 @@ class OrderReactionLog(Log):
         counterparty_id: int,
         item_name: str,
         item_amount: float | int,
-        price: Optional[float],
+        price: float,
         order_id: Optional[int],
         accept_amount: float | int,
     ) -> None:
@@ -151,7 +151,7 @@ class OrderReactionLog(Log):
         self.counterparty_id: int = counterparty_id
         self.item_name: str = item_name
         self.item_amount: float | int = item_amount
-        self.price: Optional[float] = price
+        self.price: float = price
         self.order_id: Optional[int] = order_id
         self.accept_amount: float | int = accept_amount
 
@@ -204,35 +204,59 @@ class ChangePriceLog(Log):
 
 class TweetLog(Log):
     def __init__(
-        self, time: int | str, time_step: int, agent_id: int, message: str
+        self,
+        time: int | str,
+        time_step: int,
+        agent_id: int,
+        message: str,
+        num_follows: int,
+        num_followers: int,
     ) -> None:
         self.type: str = "tweet"
         self.time: int | str = time
         self.time_step: int = time_step
         self.agent_id: int = agent_id
         self.message: str = message
+        self.num_follows: int = num_follows
+        self.num_followers: int = num_followers
 
 
 class FollowLog(Log):
     def __init__(
-        self, time: int | str, time_step: int, agent_id: int, target_agent_id: int
+        self,
+        time: int | str,
+        time_step: int,
+        agent_id: int,
+        target_agent_id: int,
+        num_follows: int,
+        num_followers: int,
     ) -> None:
         self.type: str = "follow"
         self.time: int | str = time
         self.time_step: int = time_step
         self.agent_id: int = agent_id
         self.target_agent_id: int = target_agent_id
+        self.num_follows: int = num_follows
+        self.num_followers: int = num_followers
 
 
 class UnfollowLog(Log):
     def __init__(
-        self, time: int | str, time_step: int, agent_id: int, target_agent_id: int
+        self,
+        time: int | str,
+        time_step: int,
+        agent_id: int,
+        target_agent_id: int,
+        num_follows: int,
+        num_followers: int,
     ) -> None:
         self.type: str = "unfollow"
         self.time: int | str = time
         self.time_step: int = time_step
         self.agent_id: int = agent_id
         self.target_agent_id: int = target_agent_id
+        self.num_follows: int = num_follows
+        self.num_followers: int = num_followers
 
 
 class Logger:
