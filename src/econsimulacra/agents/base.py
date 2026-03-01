@@ -50,7 +50,7 @@ class Agent(ABC, Generic[ObsT]):
                 # "self_destination", "others_pos",
                 # "self_tweet", "visible_tl", "recommended_follows", "follow_cap", "num_followers", "num_follows",
                 # "incoming_orders", "incoming_proposals",
-                # "item_name2price", "others_inventory",
+                # "item_name2price", "others_inventory", "memory"
                 "provideInfo4AllAgents": [], # built-in option: "self_pos",
                 "provideInfo4CoLocatedAgents": [], # built-in option: "inventory"
                 "provideInfo4AllowedAgents": [], # built-in option: None,

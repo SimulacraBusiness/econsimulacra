@@ -1,4 +1,5 @@
 from .base import Environment as Environment
+from .memory import MemoryHandler as MemoryHandler
 from .obs_providers import ObsProvider as ObsProvider
 from .obs_providers import (
     ObsProviderForCoLocatedAgents as ObsProviderForCoLocatedAgents,
@@ -23,6 +24,7 @@ from .obs_providers import IncomingOrdersProvider as IncomingOrdersProvider
 from .obs_providers import (
     IncomingSwapProposalsProvider as IncomingSwapProposalsProvider,
 )
+from .obs_providers import MemoryProvider as MemoryProvider
 from .obs_providers import ItemName2PriceProvider as ItemName2PriceProvider
 from .obs_providers import OthersInventoriesProvider as OthersInventoriesProvider
 from .order import Order as Order
@@ -33,6 +35,7 @@ from .time_translator import TimeTranslator as TimeTranslator
 
 __all__ = [
     "Environment",
+    "MemoryHandler",
     "GridSpace",
     "SocialNetwork",
     "Order",
@@ -60,4 +63,5 @@ __all__ = [
     "IncomingSwapProposalsProvider",
     "ItemName2PriceProvider",
     "OthersInventoriesProvider",
+    "MemoryProvider",
 ]
