@@ -868,7 +868,7 @@ class Environment(ABC, Generic[ObsT]):
             num_follows -= 1
         if (
             self.social_network.follow_cap is not None
-            and num_follows >= self.social_network.follow_cap
+            and num_follows > self.social_network.follow_cap
         ):
             return False
         return True
