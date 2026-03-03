@@ -866,9 +866,11 @@ class Environment(ABC, Generic[ObsT]):
         num_follows: int = self.social_network.get_num_follows(agent_id=agent_id)
         if unfollow_agent_id is not None:
             num_follows -= 1
+        if follow_agent_id is not None:
+            num_follows += 1
         if (
             self.social_network.follow_cap is not None
-            and num_follows >= self.social_network.follow_cap
+            and num_follows > self.social_network.follow_cap
         ):
             return False
         return True

@@ -194,8 +194,10 @@ DEFAULT_ACTION_DESCRIPTION: dict[str, str] = {
     + "Feel free to share your thoughts, feelings, or any information you want to share with others.",
     "follow": "The follow action is an integer representing the id of the agent that you want to follow. "
     + "You may refer to the recommended_follows field in the observation for agents that you are not currently following "
-    + "but may consider following to receive more information from them. "
+    + "but may consider following to connect. "
     + "You cannot follow more agents than the follow_cap specified in the observation. "
-    + "Refer to the num_follows field in the observation to see how many agents you are currently following.",
+    + "Refer to the num_follows field in the observation to see how many agents you are currently following. "
+    + "Refer to the visible_tl field in the observation to see the tweets from agents you are currently following. "
+    + "Do not follow an agent that you are already following.",
     "unfollow": "The unfollow action is an integer representing the id of the agent that you want to unfollow.",
 }
