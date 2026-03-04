@@ -31,6 +31,7 @@ class LLMAgent(Agent[dict[str, Any]]):
                 f"LLMAgent {self.agent_name} requires 'promptBuilder' in env_service_dic."
             )
         self.prompt_builder: PromptBuilder = env_service_dic["promptBuilder"]
+        self.last_prompt: str = ""
 
     def self_assign_name(self, config):
         super().self_assign_name(config)
@@ -52,4 +53,5 @@ class LLMAgent(Agent[dict[str, Any]]):
         llm_response: dict[str, Any] = await self.llm_client.generate_response(
             prompt=prompt
         )
+        self.last_prompt = prompt
         return llm_response
