@@ -2,6 +2,7 @@ import asyncio
 from econsimulacra.envs import Environment
 from econsimulacra.logs import DictLogger
 from econsimulacra.simulator import Simulator
+from econsimulacra.simulator import SimulationSummarizer
 import json
 import os
 import pathlib
@@ -16,6 +17,7 @@ def conduct_simulation():
         config=config_dic_path,
         env_class=Environment,
         logger=logger,
+        summarizer_class=SimulationSummarizer,
     )
     asyncio.run(simulator.simulate(seed=42, parallel_batch_size=2))
     logs: list[dict] = logger.logs

@@ -1,9 +1,13 @@
+from __future__ import annotations
 import asyncio
 import json
 from .agents.base import Agent
-from .logs.base import Logger
-from .llm_services import LLMClient
 from .envs.base import Environment
+from .envs.time_translator import TimeTranslator
+from .llm_services.clients import LLMClient
+from .llm_services.personas import PersonaBuilder
+from .llm_services.prompts import PromptBuilder
+from .logs.base import Logger
 from pathlib import Path
 from rich.console import Console
 from rich.panel import Panel
@@ -25,6 +29,7 @@ class Simulator(Generic[ObsT]):
         config: dict[str, Any] | Path,
         env_class: Type[Environment],
         logger: Optional[Logger] = None,
+        summarizer_class: Optional[Type[SimulationSummarizer]] = None,
     ) -> None:
         self.config: dict[str, Any]
         if isinstance(config, Path):
@@ -34,6 +39,9 @@ class Simulator(Generic[ObsT]):
             self.config = config
         self.config = self._convert_list_to_tuple(self.config)
         self.env: Environment = env_class(config=self.config, logger=logger)
+        self.summarizer: Optional[SimulationSummarizer] = (
+            summarizer_class(self.env) if summarizer_class is not None else None
+        )
 
     def _convert_list_to_tuple(self, obj: Any) -> Any:
         if isinstance(obj, dict):
@@ -52,15 +60,14 @@ class Simulator(Generic[ObsT]):
         self,
         seed: Optional[int] = None,
         parallel_batch_size: Optional[int] = None,
-        print_summary: bool = True,
     ) -> None:
         def _chunked(seq: list[int], size: int) -> list[list[int]]:
             return [seq[i : i + size] for i in range(0, len(seq), size)]
 
         parallel_batch_size = 1 if parallel_batch_size is None else parallel_batch_size
         self.env.reset(seed=seed)
-        if print_summary:
-            self.summarize_start(self.env)
+        if self.summarizer is not None:
+            self.summarizer.summarize_start()
         num_steps: int = self.config["simulation"]["numSteps"]
         for _ in tqdm(
             range(num_steps), desc="Simulating", unit="step", ncols=80, leave=True
@@ -82,45 +89,49 @@ class Simulator(Generic[ObsT]):
             self.env.step(all_actions_dic=all_actions_dic)
         if self.env.logger is not None:
             self.env.logger.save()
-        if print_summary:
-            print()
-            self.summarize_end(self.env)
+        if self.summarizer is not None:
+            self.summarizer.summarize_end()
 
     def register_classes(self, class_list: list[Type]) -> None:
         self.env.register_classes(class_list)
 
-    def summarize_start(self, env: Environment) -> None:
+
+class SimulationSummarizer:
+    def __init__(self, env: Environment) -> None:
+        self.env: Environment = env
+
+    def summarize_start(self) -> None:
         console: Console = Console()
         tree: Tree = Tree("Simulation Configuration")
-        tree.add(f"[green]Seed[/green]: {env.seed}")
+        tree.add(f"[green]Seed[/green]: {self.env.seed}")
         tree.add(
-            f"[green]Number of Steps[/green]: {self.config['simulation']['numSteps']}"
+            f"[green]Number of Steps[/green]: {self.env.config['simulation']['numSteps']}"
         )
-        tree.add(f"[green]Grid Space[/green]: {env.grid_space.space_size}")
-        tree.add(f"[green]Follow Cap[/green]: {env.social_network.follow_cap}")
+        tree.add(f"[green]Grid Space[/green]: {self.env.grid_space.space_size}")
+        tree.add(f"[green]Follow Cap[/green]: {self.env.social_network.follow_cap}")
         items_branch: Tree = tree.add("[green]Items[/green]")
-        for item_name, item in env.item_name2item.items():
+        for item_name, item in self.env.item_name2item.items():
             item_branch: Tree = items_branch.add(f"[green]{item_name}[/green]")
             item_branch.add(
-                f"[green]Total Amount[/green]: {env.get_total_amount(item_name=item_name):.1f}"
+                f"[green]Total Amount[/green]: {self.env.get_total_amount(item_name=item_name):.1f}"
             )
-            if item_name == env.cash_name:
+            if item_name == self.env.cash_name:
                 item_branch.add("[green]Cash[/green]")
             else:
                 item_branch.add(
-                    f"[green]Initial Price[/green]: {item.price:.1f} {env.cash_name}"
+                    f"[green]Initial Price[/green]: {item.price:.1f} {self.env.cash_name}"
                 )
         agents_branch: Tree = tree.add("[green]Agents[/green]")
         agents_branch.add(
-            f"[green]Number of Households[/green]: {len(env.household_ids)}"
+            f"[green]Number of Households[/green]: {len(self.env.household_ids)}"
         )
-        for agent_id, agent in env.agent_id2agent.items():
-            if agent_id not in env.household_ids:
+        for agent_id, agent in self.env.agent_id2agent.items():
+            if agent_id not in self.env.household_ids:
                 agent_branch: Tree = agents_branch.add(
                     f"[green]Agent {agent_id}[/green]"
                 )
                 agent_branch.add(f"[green]Name[/green]: {agent.agent_name}")
-                for item_name in env.item_name2item.keys():
+                for item_name in self.env.item_name2item.keys():
                     agent_branch.add(
                         f"[green]{item_name}[/green]: {agent.get_item_amount(item_name=item_name):.1f}"
                     )
@@ -136,17 +147,65 @@ class Simulator(Generic[ObsT]):
                 agent_branch.add(
                     f"[green]Provide Info for Allowed Agents[/green]: {agent.provide_info4allowed_agents()}"
                 )
-        if "llmClient" in env.service_dic:
-            client: LLMClient = env.service_dic["llmClient"]
-            llm_branch: Tree = tree.add("[green]LLM Client[/green]")
-            llm_branch.add(f"[green]Model[/green]: {client.config['model_name']}")
+        if len(self.env.service_dic) > 0:
+            service_branch: Tree = tree.add("[green]Environment Services[/green]")
+            for service_name, service in self.env.service_dic.items():
+                if isinstance(service, LLMClient):
+                    llm_client_branch: Tree = service_branch.add(
+                        f"[green]LLM Client: {service.__class__.__name__}[/green]"
+                    )
+                    if hasattr(service, "model_name"):
+                        llm_client_branch.add(
+                            f"[green]Model Name[/green]: {service.model_name}"
+                        )
+                elif isinstance(service, PersonaBuilder):
+                    persona_builder_branch: Tree = service_branch.add(
+                        f"[green]Persona Builder: {service.__class__.__name__}[/green]"
+                    )
+                    if hasattr(service, "max_magnitude"):
+                        persona_builder_branch.add(
+                            f"[green]Max Magnitude[/green]: {service.max_magnitude}"
+                        )
+                elif isinstance(service, PromptBuilder):
+                    service_branch.add(
+                        f"[green]Prompt Builder: {service.__class__.__name__}[/green]"
+                    )
+                elif isinstance(service, TimeTranslator):
+                    time_translator_branch: Tree = service_branch.add(
+                        f"[green]Time Translator: {service.__class__.__name__}[/green]"
+                    )
+                    if hasattr(service, "start_datetime"):
+                        time_translator_branch.add(
+                            f"[green]Start Datetime[/green]: {str(service.start_datetime)}"
+                        )
+                    if hasattr(service, "end_datetime"):
+                        time_translator_branch.add(
+                            f"[green]End Datetime[/green]: {str(service.end_datetime)}"
+                        )
+                    if hasattr(service, "time_delta"):
+                        time_translator_branch.add(
+                            f"[green]Time Delta[/green]: {str(service.time_delta)}"
+                        )
+        print()
         console.print(Panel(tree, title="[bold green]Summary[/bold green]"))
+        print()
 
-    def summarize_end(self, env: Environment) -> None:
+    def summarize_end(self) -> None:
         console: Console = Console()
         table: Table = Table(title="Invalid Actions", show_lines=True)
         table.add_column("Action Type", justify="center", style="cyan", no_wrap=True)
         table.add_column("Number", justify="center", style="magenta")
-        for action_type, count in env.invalid_action_dic.items():
+        for action_type, count in self.env.invalid_action_dic.items():
             table.add_row(action_type, str(count))
+        print()
         console.print(table)
+        print()
+        example_agent_id: int = self.env.household_ids[0]
+        agent: Agent = self.env.agent_id2agent[example_agent_id]
+        if hasattr(agent, "last_prompt") and agent.last_prompt != "":
+            console.print(
+                Panel(
+                    agent.last_prompt,
+                    title=f"[bold green]Agent {example_agent_id}'s Last Prompt[/bold green]",
+                )
+            )
