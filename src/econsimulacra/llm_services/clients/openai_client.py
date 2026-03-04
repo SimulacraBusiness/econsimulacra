@@ -36,14 +36,14 @@ class OpenAIClient(LLMClient):
             raise ValueError(
                 "OpenAIClient: 'modelName' must be specified in the config."
             )
-        model_name: str = config["modelName"]
+        self.model_name: str = config["modelName"]
         api_key: Optional[str] = config.get("apiKey", os.getenv("OPENAI_API_KEY"))
         if api_key is None:
             raise ValueError(
                 "OpenAIClient: API key must be provided in the config or set in the OPENAI_API_KEY environment variable."
             )
         model = models.openai(
-            model_name,
+            self.model_name,
             api_key=api_key,
         )
         json_schema_str: str = self._get_json_schema(config)

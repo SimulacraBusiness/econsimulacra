@@ -40,7 +40,7 @@ class TransformersClient(LLMClient):
             raise ValueError(
                 "TransformersClient: 'modelName' must be specified in the config."
             )
-        model_name: str = config["modelName"]
+        self.model_name: str = config["modelName"]
         device_str: str = config.get("device", "cuda")
         dtype_str: str = config.get("dtype", "float16")
         dtype: torch.dtype = {
@@ -55,7 +55,7 @@ class TransformersClient(LLMClient):
         }
         if device_str == "cuda":
             model_kwargs["device_map"] = "auto"
-        model = models.transformers(model_name, model_kwargs=model_kwargs)
+        model = models.transformers(self.model_name, model_kwargs=model_kwargs)
         json_schema_str: str = self._get_json_schema(config)
         self.json_generator: Callable[[str], dict[str, Any]] = generate.json(
             model, schema_object=json_schema_str
