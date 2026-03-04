@@ -132,7 +132,7 @@ class TestLLMClient:
 
     def test_modify_json_schema(self) -> None:
         config = {
-            "modify_schema": True,
+            "modifySchema": True,
             "gridSpace": [9, 10],
             "items": ["item1", "item2"],
             "numAgents": 3,

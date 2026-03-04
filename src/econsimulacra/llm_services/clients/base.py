@@ -22,7 +22,7 @@ class LLMClient(ABC):
 
     def _get_json_schema(self, config: dict[str, Any]) -> str:
         """get JSON schema for structured generation from config or use default schema."""
-        schema_path_str: Optional[str] = config.get("json_schema_path")
+        schema_path_str: Optional[str] = config.get("jsonSchemaPath")
         if schema_path_str is not None:
             schema_path: Path = pathlib.Path(schema_path_str).resolve()
             if not schema_path.exists():
@@ -32,7 +32,7 @@ class LLMClient(ABC):
             )
         else:
             json_schema = copy.deepcopy(DEFAULT_ACTION_JSON_SCHEMA)
-        modify_schema: bool = config.get("modify_schema", False)
+        modify_schema: bool = config.get("modifySchema", False)
         if modify_schema:
             json_schema = self._modify_json_schema(json_schema, config)
         json_schema_str: str = json.dumps(json_schema, ensure_ascii=False)

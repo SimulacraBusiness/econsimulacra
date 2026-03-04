@@ -20,30 +20,30 @@ class OpenAIClient(LLMClient):
 
         Args:
             config (dict): Configuration dictionary for the OpenAI client. This may include parameters such as:
-                - model_name: model name to use for generation (e.g., "gpt-4-0613").
-                - api_key: OpenAI API key (optional, can also be set via OPENAI_API_KEY environment variable).
-                - json_schema_path: path to a custom JSON schema file for structured generation (optional, if not provided, a default schema will be used).
-                - modify_schema: whether to modify the default JSON schema based on config (optional, default is False).
+                - modelName: model name to use for generation (e.g., "gpt-4-0613").
+                - apiKey: OpenAI API key (optional, can also be set via OPENAI_API_KEY environment variable).
+                - jsonSchemaPath: path to a custom JSON schema file for structured generation (optional, if not provided, a default schema will be used).
+                - modifySchema: whether to modify the default JSON schema based on config (optional, default is False).
 
         Note: config example:
             {
-                "model_name": "gpt-4o-mini",
-                "api_key": "your_openai_api_key" # Optional if OPENAI_API_KEY environment variable is set
+                "modelName": "gpt-4o-mini",
+                "apiKey": "your_openai_api_key" # Optional if OPENAI_API_KEY environment variable is set
             }
         """
         super().__init__(config, prng)
-        if "model_name" not in config:
+        if "modelName" not in config:
             raise ValueError(
-                "OpenAIClient: 'model_name' must be specified in the config."
+                "OpenAIClient: 'modelName' must be specified in the config."
             )
-        model_name: str = config["model_name"]
-        api_key: Optional[str] = config.get("api_key", os.getenv("OPENAI_API_KEY"))
+        self.model_name: str = config["modelName"]
+        api_key: Optional[str] = config.get("apiKey", os.getenv("OPENAI_API_KEY"))
         if api_key is None:
             raise ValueError(
                 "OpenAIClient: API key must be provided in the config or set in the OPENAI_API_KEY environment variable."
             )
         model = models.openai(
-            model_name,
+            self.model_name,
             api_key=api_key,
         )
         json_schema_str: str = self._get_json_schema(config)

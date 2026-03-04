@@ -71,7 +71,8 @@
     },
     "llmClient": {
         "type": "OpenAIClient",
-        "model_name": "gpt-4o-mini"
+        "modelName": "gpt-4o-mini",
+        "modifySchema": true
     },
     "timeTranslator": {
         "type": "TimeTranslator",

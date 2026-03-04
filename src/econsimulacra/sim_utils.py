@@ -1,9 +1,11 @@
+from __future__ import annotations
 import json
 import math
 from random import Random
 from typing import Optional
 from typing import Type
 from typing import Union
+
 
 JsonValue = Union[dict, list, float, int]
 
