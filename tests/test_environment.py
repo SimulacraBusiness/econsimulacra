@@ -100,7 +100,6 @@ class DummyMemoryHandler(MemoryHandler):
 
 class TestEnvironment:
     config = {
-        "gridSpace": (10, 10),
         "simulation": {
             "numSteps": 100,
         },
@@ -119,6 +118,10 @@ class TestEnvironment:
         "socialNetwork": {
             "type": "SocialNetwork",
             "followCap": 2,
+            "recSys": {
+                "type": "TwoHopRecommenderSystem",
+                "maxRecommendations": 2,
+            },
         },
         "DummyHousehold": {
             "isHousehold": True,

@@ -94,7 +94,6 @@ class DummyRetailer(Agent):
 
 class TestSimulator:
     config = {
-        "gridSpace": (10, 10),
         "simulation": {
             "numSteps": 10,
         },
@@ -112,6 +111,10 @@ class TestSimulator:
         "socialNetwork": {
             "type": "SocialNetwork",
             "followCap": 2,
+            "recSys": {
+                "type": "TwoHopRecommenderSystem",
+                "maxRecommendations": 2,
+            },
         },
         "DummyHousehold": {
             "isHousehold": True,

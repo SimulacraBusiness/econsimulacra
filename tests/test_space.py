@@ -4,6 +4,7 @@ import pytest
 
 class TestGridSpace:
     config = {"gridSize": (10, 10)}
+
     def test___init__(self) -> None:
         grid_space = GridSpace(config=self.config)
         assert grid_space.space_size == (10, 10)
