@@ -1,13 +1,19 @@
 from collections import defaultdict
+from typing import Any
 from typing import DefaultDict
 
 
 class GridSpace:
-    def __init__(self, space_size: tuple[int, ...]) -> None:
-        self.space_size: tuple[int, ...] = space_size
+    def __init__(self, config: dict[str, Any]) -> None:
+        if "gridSize" not in config:
+            raise ValueError("GridSpace requires 'gridSize' in config.")
+        self.space_size: tuple[int, ...] = config["gridSize"]
         self.pos2agent_ids: DefaultDict[tuple[int, ...], set[int]] = defaultdict(set)
         self.agent_id2pos: dict[int, tuple[int, ...]] = {}
 
+    def get_space_size(self) -> tuple[int, ...]:
+        return self.space_size
+    
     def _check_bounds(self, pos: tuple[int, ...]) -> None:
         if len(pos) != len(self.space_size):
             raise ValueError(

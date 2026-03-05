@@ -75,13 +75,21 @@ class Environment(ABC, Generic[ObsT]):
                     "numSteps": int,
                 },
                 "environment": {
-                    "gridSpace": [int, ...],
-                    "followCap": int, # Optional, default is no limit
+                    "space": "gridSpace",
+                    "socialNetwork": "socialNetwork",
                     "cashName": str,
                     "agents": ["Household", "Retailer", "Restaurant", ...],
                     "items": ["Yen", "Rice", ...],
                     "service": ["promptBuilder", "llmClient", "timeTranslator", "personaBuilder", "memoryHandler"], # Optional, default []
                 }
+                "gridSpace": {
+                    "type": "GridSpace",
+                    "gridSize": [int, ...],
+                },
+                "socialNetwork": {
+                    "type": "SocialNetwork",
+                    "followCap": int, # Optional, default is no limit
+                },
                 "Household": {
                     "type": "LLMAgent",
                     "isHousehold": bool,
@@ -138,11 +146,8 @@ class Environment(ABC, Generic[ObsT]):
             }
         """
         env_config: dict[str, Any] = config.get("environment", {})
-        if "gridSpace" not in env_config:
-            raise ValueError("Environment config must include 'gridSpace' key.")
-        self.space_size: tuple[int, ...] = env_config["gridSpace"]
         if "cashName" not in env_config:
-            raise ValueError("Simulation config must include 'cashName' key.")
+            raise ValueError("Environment config must include 'cashName' key.")
         self.cash_name: str = env_config["cashName"]
         self.config: dict[str, Any] = config
         self.seed: Optional[int] = None
@@ -189,13 +194,21 @@ class Environment(ABC, Generic[ObsT]):
         if seed is not None:
             self.seed = seed
             self.prng.seed(seed)
-        self.grid_space: GridSpace = GridSpace(space_size=self.space_size)
         assert "environment" in self.config, "Config must include 'environment' key."
         assert isinstance(self.config["environment"], dict), (
             "'environment' key must be a dictionary."
         )
-        follow_cap: Optional[int] = self.config["environment"].get("followCap", None)
-        self.social_network: SocialNetwork = SocialNetwork(follow_cap=follow_cap)
+        if "space" not in self.config["environment"]:
+            raise ValueError("Environment config must include 'space' key.")
+        space_key: str = self.config["environment"]["space"]
+        self.grid_space: GridSpace = self._generate_space(space_key=space_key)
+
+        if "socialNetwork" not in self.config["environment"]:
+            raise ValueError("Environment config must include 'socialNetwork' key.")
+        social_network_key: str = self.config["environment"]["socialNetwork"]
+        self.social_network: SocialNetwork = self._generate_social_network(
+            social_network_key=social_network_key
+        )
         service_provider_keys: list[str] = self.config["environment"].get("service", [])
         self._generate_service_providers(service_provider_keys=service_provider_keys)
         assert "agents" in self.config["environment"], (
@@ -227,6 +240,36 @@ class Environment(ABC, Generic[ObsT]):
             "follow": 0,
             "unfollow": 0,
         }
+
+    def _generate_space(self, space_key: str) -> GridSpace:
+        """generate the grid space.
+        """
+        space_config: dict[str, Any] = self.config[space_key]
+        space_type: str = space_config.get("type", space_key)
+        space_class: Type[GridSpace] = find_class(
+            name=space_type, optional_class_list=self.registered_classes
+        )
+        grid_space: GridSpace = space_class(space_config)
+        return grid_space
+    
+    def _generate_social_network(self, social_network_key: str) -> SocialNetwork:
+        """generate the social network.
+
+        Args:
+            social_network_key (str): name of the social network type to be generated.
+
+        Returns:
+            SocialNetwork: the generated social network instance.
+        """
+        social_network_config: dict[str, Any] = self.config[social_network_key]
+        social_network_type: str = social_network_config.get(
+            "type", social_network_key
+        )
+        social_network_class: Type[SocialNetwork] = find_class(
+            name=social_network_type, optional_class_list=self.registered_classes
+        )
+        social_network: SocialNetwork = social_network_class(social_network_config)
+        return social_network
 
     def _generate_service_providers(self, service_provider_keys: list[str]) -> None:
         """generate service providers.
@@ -352,10 +395,11 @@ class Environment(ABC, Generic[ObsT]):
     def _assign_agent_to_space(
         self, agent_id: int, coords: Optional[tuple[int, ...]] = None
     ) -> None:
+        space_size: tuple[int, ...] = self.grid_space.get_space_size()
         if coords is None:
             coords = tuple(
-                self.prng.randint(0, self.space_size[dim] - 1)
-                for dim in range(len(self.space_size))
+                self.prng.randint(0, space_size[dim] - 1)
+                for dim in range(len(space_size))
             )
         self.grid_space.place_agent(agent_id=agent_id, pos=coords)
         self.agent_id2initial_coords[agent_id] = coords
@@ -514,10 +558,11 @@ class Environment(ABC, Generic[ObsT]):
         )
         if destination_pos is None:
             return False
-        if len(destination_pos) != len(self.space_size):
+        space_size: tuple[int, ...] = self.grid_space.get_space_size()
+        if len(destination_pos) != len(space_size):
             return False
         for dim in range(len(destination_pos)):
-            if not (0 <= destination_pos[dim] < self.space_size[dim]):
+            if not (0 <= destination_pos[dim] < space_size[dim]):
                 return False
         return True
 

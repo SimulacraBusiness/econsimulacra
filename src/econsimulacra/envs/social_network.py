@@ -1,10 +1,11 @@
+from typing import Any
 from typing import Optional
 
 
 class SocialNetwork:
-    def __init__(self, follow_cap: Optional[int] = None) -> None:
+    def __init__(self, config: dict[str, Any]) -> None:
         self.nodes: set[int] = set()
-        self.follow_cap: Optional[int] = follow_cap
+        self.follow_cap: Optional[int] = config.get("followCap")
         self.agent_id2tweet: dict[int, str] = {}
         self.agent_id2followers: dict[int, set[int]] = {}
         self.agent_id2follows: dict[int, set[int]] = {}
