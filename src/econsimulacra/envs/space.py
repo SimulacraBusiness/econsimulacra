@@ -5,6 +5,7 @@ from typing import DefaultDict
 
 class GridSpace:
     def __init__(self, config: dict[str, Any]) -> None:
+        self.config: dict[str, Any] = config
         if "gridSize" not in config:
             raise ValueError("GridSpace requires 'gridSize' in config.")
         self.space_size: tuple[int, ...] = config["gridSize"]
@@ -13,7 +14,7 @@ class GridSpace:
 
     def get_space_size(self) -> tuple[int, ...]:
         return self.space_size
-    
+
     def _check_bounds(self, pos: tuple[int, ...]) -> None:
         if len(pos) != len(self.space_size):
             raise ValueError(

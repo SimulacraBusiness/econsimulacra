@@ -44,7 +44,7 @@ from .order import Order
 from .order import SwapProposal
 import random
 from random import Random
-from .social_network import SocialNetwork
+from .social_networks import SocialNetwork
 from .space import GridSpace
 from .time_translator import TimeTranslator
 from typing import Any
@@ -89,6 +89,10 @@ class Environment(ABC, Generic[ObsT]):
                 "socialNetwork": {
                     "type": "SocialNetwork",
                     "followCap": int, # Optional, default is no limit
+                    "recSys": {
+                        "type": "TwoHopRecommenderSystem",
+                        ...
+                    }
                 },
                 "Household": {
                     "type": "LLMAgent",
@@ -242,8 +246,7 @@ class Environment(ABC, Generic[ObsT]):
         }
 
     def _generate_space(self, space_key: str) -> GridSpace:
-        """generate the grid space.
-        """
+        """generate the grid space."""
         space_config: dict[str, Any] = self.config[space_key]
         space_type: str = space_config.get("type", space_key)
         space_class: Type[GridSpace] = find_class(
@@ -251,7 +254,7 @@ class Environment(ABC, Generic[ObsT]):
         )
         grid_space: GridSpace = space_class(space_config)
         return grid_space
-    
+
     def _generate_social_network(self, social_network_key: str) -> SocialNetwork:
         """generate the social network.
 
@@ -262,13 +265,15 @@ class Environment(ABC, Generic[ObsT]):
             SocialNetwork: the generated social network instance.
         """
         social_network_config: dict[str, Any] = self.config[social_network_key]
-        social_network_type: str = social_network_config.get(
-            "type", social_network_key
-        )
+        social_network_type: str = social_network_config.get("type", social_network_key)
         social_network_class: Type[SocialNetwork] = find_class(
             name=social_network_type, optional_class_list=self.registered_classes
         )
-        social_network: SocialNetwork = social_network_class(social_network_config)
+        social_network: SocialNetwork = social_network_class(
+            config=social_network_config,
+            registered_classes=self.registered_classes,
+            prng=self.prng,
+        )
         return social_network
 
     def _generate_service_providers(self, service_provider_keys: list[str]) -> None:
