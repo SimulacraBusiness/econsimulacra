@@ -3,12 +3,24 @@
         "numSteps": 72
     },
     "environment": {
-        "gridSpace": [10, 10],
-	    "followCap": 3,
+        "space": "gridSpace",
+        "socialNetwork": "socialNetwork",
         "cashName": "Yen",
         "agents": ["Household", "Retailer", "Restaurant"],
         "items": ["Yen", "Rice", "Pizza"],
         "service": ["promptBuilder", "llmClient", "timeTranslator", "personaBuilder", "memoryHandler"]
+    },
+    "gridSpace": {
+        "type": "GridSpace",
+        "gridSize": [10, 10]
+    },
+    "socialNetwork": {
+        "type": "SocialNetwork",
+        "followCap": 3,
+        "recSys": {
+            "type": "TwoHopRecommenderSystem",
+            "maxRecommendations": 2
+        }
     },
     "Household": {
         "type": "LLMAgent",
@@ -72,7 +84,7 @@
     "llmClient": {
         "type": "TransformersClient",
         "modelName": "mistralai/Mistral-7B-Instruct-v0.3",
-        "other_choice": "Qwen/Qwen2.5-7B-Instruct",
+        "other_choice": "Qwen/Qwen2.5-7B-Instruct, meta-llama/Meta-Llama-3-7B-Instruct-v0.1",
         "device": "cuda",
         "dtype": "float32",
         "modifySchema": true,

@@ -94,15 +94,27 @@ class DummyRetailer(Agent):
 
 class TestSimulator:
     config = {
-        "gridSpace": (10, 10),
         "simulation": {
             "numSteps": 10,
         },
         "environment": {
-            "gridSpace": (10, 10),
+            "space": "gridSpace",
+            "socialNetwork": "socialNetwork",
             "cashName": "Yen",
             "agents": ["DummyHousehold", "DummyRetailer"],
             "items": ["Yen", "Rice"],
+        },
+        "gridSpace": {
+            "type": "GridSpace",
+            "gridSize": [10, 10],
+        },
+        "socialNetwork": {
+            "type": "SocialNetwork",
+            "followCap": 2,
+            "recSys": {
+                "type": "TwoHopRecommenderSystem",
+                "maxRecommendations": 2,
+            },
         },
         "DummyHousehold": {
             "isHousehold": True,

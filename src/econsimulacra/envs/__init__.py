@@ -30,7 +30,9 @@ from .obs_providers import OthersInventoriesProvider as OthersInventoriesProvide
 from .order import Order as Order
 from .order import SwapProposal as SwapProposal
 from .space import GridSpace as GridSpace
-from .social_network import SocialNetwork as SocialNetwork
+from .social_networks import SocialNetwork as SocialNetwork
+from .social_networks import RecommenderSystem as RecommenderSystem
+from .social_networks import TwoHopRecommenderSystem as TwoHopRecommenderSystem
 from .time_translator import TimeTranslator as TimeTranslator
 
 __all__ = [
@@ -38,6 +40,8 @@ __all__ = [
     "MemoryHandler",
     "GridSpace",
     "SocialNetwork",
+    "RecommenderSystem",
+    "TwoHopRecommenderSystem",
     "Order",
     "SwapProposal",
     "TimeTranslator",

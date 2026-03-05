@@ -134,20 +134,9 @@ class VisibleTLProvider(ObsProvider):
 
 class RecommendedFollowsProvider(ObsProvider):
     def get_obs(self, agent_id: int) -> list[int]:
-        recommended_follows: list[int] = []
-        cap_space: int
-        num_follows: int = self.env.social_network.get_num_follows(agent_id=agent_id)
-        if self.env.social_network.follow_cap is None:
-            cap_space = len(self.env.agent_ids) - 1
-        else:
-            cap_space = self.env.social_network.follow_cap - num_follows
-        for other_agent_id in self.env.agent_ids:
-            if len(recommended_follows) >= cap_space:
-                break
-            if other_agent_id == agent_id:
-                continue
-            if other_agent_id not in self.env.social_network.get_follows(agent_id):
-                recommended_follows.append(other_agent_id)
+        recommended_follows: list[int] = (
+            self.env.social_network.get_recommended_follows(agent_id=agent_id)
+        )
         return recommended_follows
 
 

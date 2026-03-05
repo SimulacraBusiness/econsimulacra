@@ -100,17 +100,28 @@ class DummyMemoryHandler(MemoryHandler):
 
 class TestEnvironment:
     config = {
-        "gridSpace": (10, 10),
         "simulation": {
             "numSteps": 100,
         },
         "environment": {
-            "gridSpace": (10, 10),
-            "followCap": 2,
+            "space": "gridSpace",
+            "socialNetwork": "socialNetwork",
             "cashName": "Yen",
             "agents": ["DummyHousehold", "DummyRetailer"],
             "items": ["Yen", "Rice"],
             "service": ["timeTranslator", "memoryHandler"],
+        },
+        "gridSpace": {
+            "type": "GridSpace",
+            "gridSize": [10, 10],
+        },
+        "socialNetwork": {
+            "type": "SocialNetwork",
+            "followCap": 2,
+            "recSys": {
+                "type": "TwoHopRecommenderSystem",
+                "maxRecommendations": 2,
+            },
         },
         "DummyHousehold": {
             "isHousehold": True,
@@ -154,7 +165,6 @@ class TestEnvironment:
 
     def test___init__(self) -> None:
         env = Environment(config=self.config)
-        assert env.space_size == (10, 10)
         assert env.config == self.config
         assert env.cash_name == "Yen"
         assert isinstance(env.prng, type(pytest.importorskip("random").Random()))
@@ -227,21 +237,22 @@ class TestEnvironment:
         env.reset(seed=42)
         household_id: int = env.household_ids[0]
         initial_pos: tuple[int, int] = env.grid_space.get_pos(household_id)
+        space_size: tuple[int, int] = env.grid_space.get_space_size()
         destination_pos: tuple[int, int] = (
-            min(initial_pos[0] + 2, env.space_size[0] - 1),
-            min(initial_pos[1] + 3, env.space_size[1] - 1),
+            min(initial_pos[0] + 2, space_size[0] - 1),
+            min(initial_pos[1] + 3, space_size[1] - 1),
         )
         env._move(agent_id=household_id, where_to_move=destination_pos)
         new_pos: tuple[int, int] = env.grid_space.get_pos(household_id)
         assert new_pos == (
-            min(initial_pos[0] + 1, env.space_size[0] - 1),
-            min(initial_pos[1] + 1, env.space_size[1] - 1),
+            min(initial_pos[0] + 1, space_size[0] - 1),
+            min(initial_pos[1] + 1, space_size[1] - 1),
         )
         assert env.agent_id2is_moving[household_id] is True
         assert env.agent_id2destination[household_id] == destination_pos
         destination_pos: tuple[int, int] = (
-            min(initial_pos[0] + 1, env.space_size[0] - 1),
-            min(initial_pos[1] + 1, env.space_size[1] - 1),
+            min(initial_pos[0] + 1, space_size[0] - 1),
+            min(initial_pos[1] + 1, space_size[1] - 1),
         )
         env._move(agent_id=household_id, where_to_move=destination_pos)
         new_pos = env.grid_space.get_pos(household_id)

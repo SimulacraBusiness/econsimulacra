@@ -3,12 +3,24 @@
         "numSteps": 72
     },
     "environment": {
-        "gridSpace": [10, 10],
-        "followCap": 3,
+        "space": "gridSpace",
+        "socialNetwork": "socialNetwork",
         "cashName": "Yen",
         "agents": ["Household", "Retailer", "Restaurant"],
         "items": ["Yen", "Rice", "Pizza"],
         "service": ["promptBuilder", "llmClient", "timeTranslator", "personaBuilder", "memoryHandler"]
+    },
+    "gridSpace": {
+        "type": "GridSpace",
+        "gridSize": [10, 10]
+    },
+    "socialNetwork": {
+        "type": "SocialNetwork",
+        "followCap": 3,
+        "recSys": {
+            "type": "TwoHopRecommenderSystem",
+            "maxRecommendations": 2
+        }
     },
     "Household": {
         "type": "LLMAgent",
