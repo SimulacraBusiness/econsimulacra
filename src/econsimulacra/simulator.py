@@ -107,8 +107,16 @@ class SimulationSummarizer:
         tree.add(
             f"[green]Number of Steps[/green]: {self.env.config['simulation']['numSteps']}"
         )
-        tree.add(f"[green]Grid Space[/green]: {self.env.grid_space.space_size}")
-        tree.add(f"[green]Follow Cap[/green]: {self.env.social_network.follow_cap}")
+        tree.add(f"[green]Grid Space[/green]: {self.env.grid_space.get_space_size()}")
+        social_network_branch: Tree = tree.add("[green]Social Network[/green]")
+        social_network_branch.add(
+            f"[green]Follow Cap[/green]: {self.env.social_network.follow_cap}"
+        )
+        recsys = self.env.social_network.rec_sys
+        recsys_branch: Tree = social_network_branch.add(
+            f"[green]Recommender System: {recsys.__class__.__name__}[/green]"
+        )
+        recsys_branch.add(f"[green]Max Recommendations[/green]: {recsys.max_recs}")
         items_branch: Tree = tree.add("[green]Items[/green]")
         for item_name, item in self.env.item_name2item.items():
             item_branch: Tree = items_branch.add(f"[green]{item_name}[/green]")
