@@ -120,6 +120,7 @@ class GridSpaceAnimator(Animator):
             x_length=num_cells_x * self.cell_size,
             y_length=num_cells_y * self.cell_size,
             background_line_style={"stroke_opacity": 0.25},
+            axis_config={"include_numbers": False, "stroke_opacity": 0.0},
         )
         number_plane.move_to(ORIGIN)
         self.add(number_plane)
