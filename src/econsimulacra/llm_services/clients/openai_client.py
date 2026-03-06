@@ -32,11 +32,6 @@ class OpenAIClient(LLMClient):
             }
         """
         super().__init__(config, prng)
-        if "modelName" not in config:
-            raise ValueError(
-                "OpenAIClient: 'modelName' must be specified in the config."
-            )
-        self.model_name: str = config["modelName"]
         api_key: Optional[str] = config.get("apiKey", os.getenv("OPENAI_API_KEY"))
         if api_key is None:
             raise ValueError(
@@ -50,8 +45,8 @@ class OpenAIClient(LLMClient):
         self.json_generator: Callable[[str], dict[str, Any]] = generate.json(
             model, schema_object=json_schema_str
         )
-        self._lock = asyncio.Lock()
 
     async def generate_response(self, prompt: str) -> dict[str, Any]:
-        llm_response = await asyncio.to_thread(self.json_generator, prompt)
+        async with self._sem:
+            llm_response = await self.json_generator(prompt)
         return cast(dict[str, Any], llm_response)

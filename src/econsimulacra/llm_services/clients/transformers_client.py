@@ -36,32 +36,47 @@ class TransformersClient(LLMClient):
             }
         """
         super().__init__(config, prng)
-        if "modelName" not in config:
-            raise ValueError(
-                "TransformersClient: 'modelName' must be specified in the config."
-            )
-        self.model_name: str = config["modelName"]
         device_str: str = config.get("device", "cuda")
-        dtype_str: str = config.get("dtype", "float16")
+        self.max_concurrent_generations: int = config.get("maxConcurrentGenerations", 2)
+        if device_str == "cuda":
+            if not torch.cuda.is_available():
+                raise ValueError("CUDA device specified but not available.")
+            num_gpus: int = torch.cuda.device_count()
+            gpu_ids: list[int] = config.get("gpuIds", list(range(num_gpus)))
+            self.json_generators: list[Callable[[str], dict[str, Any]]] = [
+                self._make_json_generator(gpu_id) for gpu_id in gpu_ids
+            ]
+            self.sems = [
+                asyncio.Semaphore(self.max_concurrent_generations)
+                for _ in gpu_ids
+            ]
+        else:
+            raise ValueError(f"Unsupported device specified: {device_str}")
+        self._rr: int = 0
+
+    def _make_json_generator(self, gpu_id: int) -> Callable[[str], dict[str, Any]]:
+        """create a JSON generator for a specific GPU."""
+        device_str: str = f"cuda:{gpu_id}"
+        dtype_str: str = self.config.get("dtype", "float16")
         dtype: torch.dtype = {
             "float16": torch.float16,
             "bfloat16": torch.bfloat16,
             "float32": torch.float32,
         }.get(dtype_str, torch.bfloat16)
-        trust_remote_code: bool = config.get("trustRemoteCode", False)
+        trust_remote_code: bool = self.config.get("trustRemoteCode", False)
         model_kwargs: dict[str, Any] = {
             "dtype": dtype,
             "trust_remote_code": trust_remote_code,
+            "device_map": {"": device_str},
         }
-        if device_str == "cuda":
-            model_kwargs["device_map"] = "auto"
         model = models.transformers(self.model_name, model_kwargs=model_kwargs)
-        json_schema_str: str = self._get_json_schema(config)
-        self.json_generator: Callable[[str], dict[str, Any]] = generate.json(
-            model, schema_object=json_schema_str
-        )
-        self._lock = asyncio.Lock()
+        json_schema_str: str = self._get_json_schema(self.config)
+        return generate.json(model, schema_object=json_schema_str)
 
     async def generate_response(self, prompt: str) -> dict[str, Any]:
-        llm_response = await asyncio.to_thread(self.json_generator, prompt)
+        async with self._lock:
+            i = self._rr
+            self._rr = (self._rr + 1) % len(self.json_generators)
+        async with self.sems[i]:
+            llm_response = await asyncio.to_thread(self.json_generators[i], prompt)
         return cast(dict[str, Any], llm_response)

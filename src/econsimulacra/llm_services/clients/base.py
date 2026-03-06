@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+import asyncio
 import copy
 from ..constant import DEFAULT_ACTION_JSON_SCHEMA
 import json
@@ -14,7 +15,12 @@ class LLMClient(ABC):
         self, config: dict[str, Any], prng: Optional[random.Random] = None
     ) -> None:
         self.config: dict[str, Any] = config
+        if "modelName" not in config:
+            raise ValueError("'modelName' must be specified in the LLMClient config.")
+        self.model_name: str = config["modelName"]
         self.prng: random.Random = prng if prng is not None else random.Random()
+        self._lock = asyncio.Lock()
+        self._sem = asyncio.Semaphore(config.get("maxConcurrentGenerations", 4))
 
     @abstractmethod
     async def generate_response(self, prompt: str) -> dict[str, Any]:
