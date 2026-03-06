@@ -49,7 +49,7 @@ class PromptBuilder:
 
     def _get_obs_action_description(self, config: dict[str, Any]) -> tuple[str, str]:
         """get description of observations and actions from config for better LLM understanding."""
-        obs_desc_path_str: Optional[str] = config.get("obs_description_path")
+        obs_desc_path_str: Optional[str] = config.get("obsDescriptionPath")
         obs_desc: str
         if obs_desc_path_str is not None:
             obs_desc_path: Path = pathlib.Path(obs_desc_path_str).resolve()
@@ -60,7 +60,7 @@ class PromptBuilder:
             obs_desc = obs_desc_path.read_text(encoding="utf-8")
         else:
             obs_desc = json.dumps(DEFAULT_OBS_DESCRIPTION, ensure_ascii=False)
-        action_desc_path_str: Optional[str] = config.get("action_description_path")
+        action_desc_path_str: Optional[str] = config.get("actionDescriptionPath")
         action_desc: str
         if action_desc_path_str is not None:
             action_desc_path: Path = pathlib.Path(action_desc_path_str).resolve()
