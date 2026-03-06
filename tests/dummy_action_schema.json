@@ -1,0 +1,107 @@
+{
+    "dummy": "dummy",
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+        "move": {
+            "type": "array",
+            "items": {"type": "integer", "minimum": 0},
+            "minItems": 2,
+            "default": null
+        },
+        "consumptions": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                    "item_name": {"type": "string"},
+                    "item_amount": {"type": "number", "minimum": 1}
+                },
+                "required": ["item_name", "item_amount"]
+            },
+            "default": []
+        },
+        "orders": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                    "counterparty_id": {"type": "integer", "minimum": 0},
+                    "item_name": {"type": "string"},
+                    "item_amount": {"type": "number", "minimum": 1},
+                    "ttl": {"type": "integer", "minimum": 2, "maximum": 10}
+                },
+                "required": ["counterparty_id", "item_name", "item_amount", "ttl"]
+            },
+            "default": []
+        },
+        "proposals": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                    "responder_agent_id": {"type": "integer", "minimum": 0},
+                    "give_item_name": {"type": "string"},
+                    "give_item_amount": {"type": "number", "minimum": 1},
+                    "get_item_name": {"type": "string"},
+                    "get_item_amount": {"type": "number", "minimum": 1},
+                    "ttl": {"type": "integer", "minimum": 2, "maximum": 10}
+                },
+                "required": [
+                    "responder_agent_id",
+                    "give_item_name",
+                    "give_item_amount",
+                    "get_item_name",
+                    "get_item_amount",
+                    "ttl"
+                ]
+            },
+            "default": []
+        },
+        "reactions": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                    "kind": {"type": "string", "enum": ["order", "proposal"]},
+                    "id": {"type": "integer"},
+                    "accept_amount": {"type": "number"},
+                    "accept": {"type": "boolean"}
+                },
+                "required": ["kind", "id", "accept_amount", "accept"]
+            },
+            "default": []
+        },
+        "set_price": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                    "item_name": {"type": "string"},
+                    "price": {"type": "number", "minimum": 0}
+                },
+                "required": ["item_name", "price"]
+            },
+            "default": []
+        },
+        "tweet": {"anyOf": [{"type": "string"}, {"type": "null"}]},
+        "follow": {"anyOf": [{"type": "integer"}, {"type": "null"}]},
+        "unfollow": {"anyOf": [{"type": "integer"}, {"type": "null"}]}
+    },
+    "required": [
+        "move",
+        "consumptions",
+        "orders",
+        "proposals",
+        "reactions",
+        "set_price",
+        "tweet",
+        "follow",
+        "unfollow"
+    ]
+}
