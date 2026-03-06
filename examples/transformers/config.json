@@ -35,7 +35,7 @@
             "Pizza": 0
         },
         "svgPath": "../../imgs/human.svg",
-        "iconScale": 0.01
+        "iconScale": 0.2
     },
     "Retailer": {
         "type": "LLMAgent",
@@ -51,7 +51,7 @@
         "provideInfo4CoLocatedAgents": ["inventory"],
         "provideInfo4AllAgents": ["self_pos"],
         "svgPath": "../../imgs/store.svg",
-        "iconScale": 0.01
+        "iconScale": 0.2
     },
     "Restaurant": {
         "type": "LLMAgent",

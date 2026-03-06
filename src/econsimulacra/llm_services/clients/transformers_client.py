@@ -47,8 +47,7 @@ class TransformersClient(LLMClient):
                 self._make_json_generator(gpu_id) for gpu_id in gpu_ids
             ]
             self.sems = [
-                asyncio.Semaphore(self.max_concurrent_generations)
-                for _ in gpu_ids
+                asyncio.Semaphore(self.max_concurrent_generations) for _ in gpu_ids
             ]
         else:
             raise ValueError(f"Unsupported device specified: {device_str}")
