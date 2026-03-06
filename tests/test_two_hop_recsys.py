@@ -17,8 +17,7 @@ class TestTwoHopRecommenderSystem:
     """
 
     recsys = TwoHopRecommenderSystem(
-        config={"maxRecommendations": 2, "isRandomized": False},
-        prng=random.Random(0)
+        config={"maxRecommendations": 2, "isRandomized": False}, prng=random.Random(0)
     )
     for i in range(11):
         recsys.hook_add_agent(i)
