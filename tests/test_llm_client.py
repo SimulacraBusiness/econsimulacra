@@ -128,7 +128,20 @@ class TestLLMClient:
     def test_init(self) -> None:
         client = DummyClient({"modelName": "dummy"})
         assert client.config == {"modelName": "dummy"}
-        assert client._get_json_schema({}) == json.dumps(DEFAULT_ACTION_JSON_SCHEMA)
+        assert client._get_json_schema() == json.dumps(DEFAULT_ACTION_JSON_SCHEMA)
+        client = DummyClient(
+            config={
+                "modelName": "dummy",
+                "jsonSchemaPath": "tests/dummy_action_schema.json",
+            }
+        )
+        assert client._get_json_schema() != json.dumps(DEFAULT_ACTION_JSON_SCHEMA)
+        obtained_schema = json.loads(client._get_json_schema())
+        assert obtained_schema == json.load(
+            open("tests/dummy_action_schema.json", "r", encoding="utf-8")
+        )
+        del obtained_schema["dummy"]
+        assert obtained_schema == DEFAULT_ACTION_JSON_SCHEMA
 
     def test_modify_json_schema(self) -> None:
         config = {
@@ -139,7 +152,7 @@ class TestLLMClient:
             "numAgents": 3,
         }
         client = DummyClient(config)
-        modified_schema_str = client._get_json_schema(config)
+        modified_schema_str = client._get_json_schema()
         assert modified_schema_str != json.dumps(DEFAULT_ACTION_JSON_SCHEMA)
         modified_schema = json.loads(modified_schema_str)
         assert modified_schema == MODIFIED_ACTION_JSON_SCHEMA

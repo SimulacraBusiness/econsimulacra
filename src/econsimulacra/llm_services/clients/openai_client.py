@@ -41,7 +41,7 @@ class OpenAIClient(LLMClient):
             self.model_name,
             api_key=api_key,
         )
-        json_schema_str: str = self._get_json_schema(config)
+        json_schema_str: str = self._get_json_schema()
         self.json_generator: Callable[[str], dict[str, Any]] = generate.json(
             model, schema_object=json_schema_str
         )

@@ -149,11 +149,14 @@ DEFAULT_OBS_DESCRIPTION: dict[str, str] = {
 }
 
 DEFAULT_ACTION_DESCRIPTION: dict[str, str] = {
-    "move": "The move action is a list of integers representing the coordinates to move to. "
-    + "You can only move to adjacent grid spaces or stay in the same place in the next time step, "
-    + "but you may specify the destination to move to in the subsequent time steps. "
+    "move": "The move action is a list of integers representing the destination coordinates you want to head toward. "
+    + "Even if the destination is far away, you may specify any coordinates on the grid as your target. "
+    + "The environment will automatically move you one step toward that destination at each time step "
+    + "(i.e., movement per step is limited to adjacent grid spaces or staying in place). "
+    + "Therefore, you do not need to manually specify intermediate positions; simply choose the location you ultimately want to reach. "
     + "You can refer to the others_pos field in the observation to decide where to go if you want to visit a store. "
     + "You can also refer to the self_init_pos field in the observation to go back home. "
+    + "Example: If the current position is [2, 3] and you want to go to [10, 5], you can specify [10, 5] as your move action. "
     + "If you are a corporation (e.g., retailer or restaurant), you cannot move and must set this to null.",
     "consumptions": "The consumptions action is a list of items that you want to consume. "
     + "Each item is represented as an object with 'item_name' and 'item_amount'. "

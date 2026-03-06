@@ -69,7 +69,7 @@ class TransformersClient(LLMClient):
             "device_map": {"": device_str},
         }
         model = models.transformers(self.model_name, model_kwargs=model_kwargs)
-        json_schema_str: str = self._get_json_schema(self.config)
+        json_schema_str: str = self._get_json_schema()
         return generate.json(model, schema_object=json_schema_str)
 
     async def generate_response(self, prompt: str) -> dict[str, Any]:
