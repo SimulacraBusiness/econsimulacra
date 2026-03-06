@@ -1,6 +1,7 @@
 {
     "simulation": {
-        "numSteps": 72
+        "numSteps": 72,
+        "parallelBatchSize": 4
     },
     "environment": {
         "space": "gridSpace",
@@ -12,59 +13,61 @@
     },
     "gridSpace": {
         "type": "GridSpace",
-        "gridSize": [10, 10]
+        "gridSize": [50, 50]
     },
     "socialNetwork": {
         "type": "SocialNetwork",
         "followCap": 3,
         "recSys": {
             "type": "TwoHopRecommenderSystem",
-            "maxRecommendations": 2
+            "maxRecommendations": 2,
+            "isRandomized": true,
+            "temperature": 0.4
         }
     },
     "Household": {
         "type": "LLMAgent",
         "isHousehold": true,
-        "numAgents": 8,
+        "numAgents": 118,
         "inventory": {
             "Yen": [100000, 200000],
             "Rice": [3, 10],
             "Pizza": 0
         },
         "svgPath": "../../imgs/human.svg",
-        "iconScale": 0.2
+        "iconScale": 0.01
     },
     "Retailer": {
         "type": "LLMAgent",
         "isRichInfoAllowed": true,
         "isHousehold": false,
-        "initialCoords": [3, 5],
+        "initialCoords": [15, 25],
         "numAgents": 1,
         "inventory": {
-            "Yen": 100000,
-            "Rice": 1000,
+            "Yen": 1000000,
+            "Rice": 10000,
             "Pizza": 0
         },
         "provideInfo4CoLocatedAgents": ["inventory"],
         "provideInfo4AllAgents": ["self_pos"],
         "svgPath": "../../imgs/store.svg",
-        "iconScale": 0.2
+        "iconScale": 0.01
     },
     "Restaurant": {
         "type": "LLMAgent",
         "isRichInfoAllowed": true,
         "isHousehold": false,
-        "initialCoords": [8, 5],
+        "initialCoords": [35, 25],
         "numAgents": 1,
         "inventory": {
-            "Yen": 100000,
-            "Pizza": 1000,
+            "Yen": 1000000,
+            "Pizza": 10000,
             "Rice": 0
         },
         "provideInfo4CoLocatedAgents": ["inventory"],
         "provideInfo4AllAgents": ["self_pos"],
         "svgPath": "../../imgs/store.svg",
-        "iconScale": 0.2
+        "iconScale": 0.01
     },
     "Yen": {
         "type": "Item",
@@ -85,7 +88,9 @@
         "type": "TransformersClient",
         "modelName": "mistralai/Mistral-7B-Instruct-v0.3",
         "other_choice": "Qwen/Qwen2.5-7B-Instruct, meta-llama/Meta-Llama-3-7B-Instruct-v0.1",
+        "maxConcurrentGenerations": 2,
         "device": "cuda",
+        "gpuIds": [0, 1],
         "dtype": "float32",
         "modifySchema": true,
         "gridSpace": [10, 10],

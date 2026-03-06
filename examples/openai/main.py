@@ -6,7 +6,7 @@ import json
 import os
 import pathlib
 from pathlib import Path
-# export LOG_TXT_PATH="log.txt"
+# export LOG_TXT_PATH="log_gpt-4o-mini.txt"
 
 
 def conduct_simulation():
@@ -17,7 +17,7 @@ def conduct_simulation():
         env_class=Environment,
         logger=logger,
     )
-    asyncio.run(simulator.simulate(seed=42, parallel_batch_size=10))
+    asyncio.run(simulator.simulate(seed=42))
     logs: list[dict] = logger.logs
     log_txt_path: Path = pathlib.Path(os.environ["LOG_TXT_PATH"])
     with open(log_txt_path, "w", encoding="utf-8") as f:

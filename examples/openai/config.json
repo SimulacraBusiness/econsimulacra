@@ -1,6 +1,7 @@
 {
     "simulation": {
-        "numSteps": 72
+        "numSteps": 72,
+        "parallelBatchSize": 4
     },
     "environment": {
         "space": "gridSpace",
@@ -19,7 +20,9 @@
         "followCap": 3,
         "recSys": {
             "type": "TwoHopRecommenderSystem",
-            "maxRecommendations": 2
+            "maxRecommendations": 2,
+            "isRandomized": true,
+            "temperature": 0.4
         }
     },
     "Household": {
