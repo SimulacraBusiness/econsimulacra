@@ -1,6 +1,7 @@
 from .base import Animator
 from collections import defaultdict
 from manim import AnimationGroup
+from manim import config as manim_config
 from manim import Dot
 from manim import FadeIn
 from manim import LaggedStart
@@ -111,15 +112,24 @@ class GridSpaceAnimator(Animator):
             -self.draw_margin_cells,
             self.space_height - 1 + self.draw_margin_cells,
         )
+        num_cells_x: int = xmax - xmin + 1
+        num_cells_y: int = ymax - ymin + 1
         number_plane: NumberPlane = NumberPlane(
             x_range=[xmin, xmax + 1, 1],
             y_range=[ymin, ymax + 1, 1],
-            x_length=(xmax - xmin + 1) * self.cell_size,
-            y_length=(ymax - ymin + 1) * self.cell_size,
+            x_length=num_cells_x * self.cell_size,
+            y_length=num_cells_y * self.cell_size,
             background_line_style={"stroke_opacity": 0.25},
         )
         number_plane.move_to(ORIGIN)
+        self.add(number_plane)
         self.wait()
+        frame_width: float = manim_config.frame_width * 0.98
+        frame_height: float = manim_config.frame_height * 0.98
+        number_plane_width: float = number_plane.get_width()
+        number_plane_height: float = number_plane.get_height()
+        number_plane.stretch(frame_width / number_plane_width, dim=0)
+        number_plane.stretch(frame_height / number_plane_height, dim=1)
         self.mapper: GridMapper = GridMapper(
             number_plane=number_plane,
             xmin=xmin,
@@ -194,11 +204,15 @@ class GridSpaceAnimator(Animator):
                     ),
                     1.0,
                 )
-                * self.cell_size
+                * min(self.mapper.cell_width, self.mapper.cell_height)
+                * 2
             )
             agent_manim_obj.set_color("WHITE")
             agent_manim_obj.move_to(manim_coord)
-            label: Text = Text(agent_name, font_size=18)
+            label: Text = Text(
+                agent_name,
+                font_size=20 * min(self.mapper.cell_width, self.mapper.cell_height),
+            )
             label.next_to(agent_manim_obj, UP, buff=0.05)
             label.add_updater(
                 lambda m, dt, d=agent_manim_obj: m.next_to(d, UP, buff=0.05)
