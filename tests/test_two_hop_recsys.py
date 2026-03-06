@@ -15,7 +15,10 @@ class TestTwoHopRecommenderSystem:
                6 -> 9 -> 10
     """
 
-    recsys = TwoHopRecommenderSystem(config={"maxRecommendations": 2}, prng=None)
+    recsys = TwoHopRecommenderSystem(
+        config={"maxRecommendations": 2, "isRandomized": False},
+        prng=None
+    )
     for i in range(11):
         recsys.hook_add_agent(i)
     recsys.hook_follow_agent(0, 1)
