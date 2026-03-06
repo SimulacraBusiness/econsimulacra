@@ -58,11 +58,11 @@ class GridMapper:
 class GridSpaceAnimator(Animator):
     def _get_log_configs(self, config: dict[str, Any]):
         super()._get_log_configs(config)
-        assert "gridSpace" in config["environment"]
-        if len(config["environment"]["gridSpace"]) != 2:
+        assert "gridSpace" in config
+        if len(config["gridSpace"]["gridSize"]) != 2:
             raise ValueError("Only 2D grid space is supported in GridSpaceAnimator.")
-        self.space_width: int = config["environment"]["gridSpace"][0]
-        self.space_height: int = config["environment"]["gridSpace"][1]
+        self.space_width: int = config["gridSpace"]["gridSize"][0]
+        self.space_height: int = config["gridSpace"]["gridSize"][1]
         self.cell_size: int = self.animation_config.get("cellSize", 1)
         self.draw_margin_cells: int = self.animation_config.get("drawMarginCells", 2)
 
