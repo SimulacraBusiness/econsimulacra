@@ -28,9 +28,9 @@ class PromptBuilder:
         obs = self._truncate_floats(obs)
         obs_str: str = json.dumps(obs, ensure_ascii=False)
         prompt: str = (
-            "You are a member of the society. Based on the following observation, decide the action to take.\n"
+            "\nYou are a member of the society. Based on the following observation, decide the action to take.\n"
             + f"Observation description: {self.obs_desc}\nAction description: {self.action_desc}"
-            + f"\nObservation: {obs_str}\n\n Respond in JSON format."
+            + f"\nObservation: {obs_str}\nRespond in JSON format."
         )
         return prompt
 
