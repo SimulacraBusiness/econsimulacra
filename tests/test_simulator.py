@@ -96,6 +96,7 @@ class TestSimulator:
     config = {
         "simulation": {
             "numSteps": 10,
+            "parallelBatchSize": 4,
         },
         "environment": {
             "space": "gridSpace",
@@ -186,7 +187,7 @@ class TestSimulator:
                 DummyRetailer,
             ]
         )
-        asyncio.run(simulator.simulate(seed=42, parallel_batch_size=4))
+        asyncio.run(simulator.simulate(seed=42))
         logger: DictLogger = simulator.env.logger
         assert logger is not None
         assert len(logger.logs) > 0

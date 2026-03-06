@@ -18,7 +18,7 @@ class TestLLMAgent:
     def test_init(self):
         prompt_builder = PromptBuilder(config={})
         persona_builder = Big5PersonaBuilder(config={"maxMagnitude": 5})
-        llm_client = DummyClient(config={})
+        llm_client = DummyClient(config={"modelName": "dummy"})
         env_service_dic = {
             "promptBuilder": prompt_builder,
             "personaBuilder": persona_builder,
@@ -57,7 +57,7 @@ class TestLLMAgent:
             agent = LLMAgent(
                 agent_id=agent_id,
                 agent_name=f"Agent{agent_id}",
-                config={"name": "TestAgent"},
+                config={"name": "TestAgent", "modelName": "dummy"},
                 env_service_dic=env_service_dic,
             )
             assert agent.agent_name == f"TestAgent{agent_id}"
@@ -68,7 +68,7 @@ class TestLLMAgent:
             agent = LLMAgent(
                 agent_id=agent_id,
                 agent_name=f"Agent{agent_id}",
-                config={},
+                config={"modelName": "dummy"},
                 env_service_dic=env_service_dic,
             )
             assert agent.agent_name == f"Dummy{agent_id}"

@@ -38,6 +38,9 @@ class Simulator(Generic[ObsT]):
         else:
             self.config = config
         self.config = self._convert_list_to_tuple(self.config)
+        self.parallel_batch_size: Optional[int] = self.config["simulation"].get(
+            "parallelBatchSize"
+        )
         self.env: Environment = env_class(config=self.config, logger=logger)
         self.summarizer: Optional[SimulationSummarizer] = (
             summarizer_class(self.env) if summarizer_class is not None else None
@@ -59,12 +62,13 @@ class Simulator(Generic[ObsT]):
     async def simulate(
         self,
         seed: Optional[int] = None,
-        parallel_batch_size: Optional[int] = None,
     ) -> None:
         def _chunked(seq: list[int], size: int) -> list[list[int]]:
             return [seq[i : i + size] for i in range(0, len(seq), size)]
 
-        parallel_batch_size = 1 if parallel_batch_size is None else parallel_batch_size
+        parallel_batch_size = (
+            1 if self.parallel_batch_size is None else self.parallel_batch_size
+        )
         self.env.reset(seed=seed)
         if self.summarizer is not None:
             self.summarizer.summarize_start()
@@ -104,6 +108,10 @@ class SimulationSummarizer:
         console: Console = Console()
         tree: Tree = Tree("Simulation Configuration")
         tree.add(f"[green]Seed[/green]: {self.env.seed}")
+        if "parallelBatchSize" in self.env.config["simulation"]:
+            tree.add(
+                f"[green]Parallel Batch Size[/green]: {self.env.config['simulation']['parallelBatchSize']}"
+            )
         tree.add(
             f"[green]Number of Steps[/green]: {self.env.config['simulation']['numSteps']}"
         )
@@ -117,6 +125,11 @@ class SimulationSummarizer:
             f"[green]Recommender System: {recsys.__class__.__name__}[/green]"
         )
         recsys_branch.add(f"[green]Max Recommendations[/green]: {recsys.max_recs}")
+        recsys_branch.add(
+            f"[green]Randomized Recommendations[/green]: {recsys.is_randomized}"
+        )
+        if recsys.is_randomized:
+            recsys_branch.add(f"[green]Temperature[/green]: {recsys.temperature}")
         items_branch: Tree = tree.add("[green]Items[/green]")
         for item_name, item in self.env.item_name2item.items():
             item_branch: Tree = items_branch.add(f"[green]{item_name}[/green]")
@@ -162,9 +175,12 @@ class SimulationSummarizer:
                     llm_client_branch: Tree = service_branch.add(
                         f"[green]LLM Client: {service.__class__.__name__}[/green]"
                     )
-                    if hasattr(service, "model_name"):
+                    llm_client_branch.add(
+                        f"[green]Model Name[/green]: {service.model_name}"
+                    )
+                    if hasattr(service, "max_concurrent_generations"):
                         llm_client_branch.add(
-                            f"[green]Model Name[/green]: {service.model_name}"
+                            f"[green]Max Concurrent Generations[/green]: {service.max_concurrent_generations}"
                         )
                 elif isinstance(service, PersonaBuilder):
                     persona_builder_branch: Tree = service_branch.add(

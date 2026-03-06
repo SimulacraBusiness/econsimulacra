@@ -15,6 +15,9 @@ class RecommenderSystem(ABC):
     def __init__(self, config: dict[str, Any], prng: Random) -> None:
         self.config: dict[str, Any] = config
         self.max_recs: int = config.get("maxRecommendations", 1)
+        self.is_randomized: bool = config.get("isRandomized", False)
+        if self.is_randomized:
+            self.temperature: float = config.get("temperature", 1.0)
         self.prng: Random = prng
         self._sn: Optional[SocialNetwork] = None
 
@@ -127,7 +130,9 @@ class TwoHopRecommenderSystem(RecommenderSystem):
             candidates,
             key=lambda candidate: (
                 self.agent_id2two_hop_follows[agent_id].get(candidate, 0),
-                self.agent_id2num_followers.get(candidate, 0),
+                self.agent_id2num_followers.get(candidate, 0)
+                + self.prng.random()
+                * (self.temperature if self.is_randomized else 0.0),
             ),
         )
         recommendations: list[int] = sorted_candidates[: self.max_recs]

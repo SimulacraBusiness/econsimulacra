@@ -126,12 +126,13 @@ class DummyClient(LLMClient):
 
 class TestLLMClient:
     def test_init(self) -> None:
-        client = DummyClient({})
-        assert client.config == {}
+        client = DummyClient({"modelName": "dummy"})
+        assert client.config == {"modelName": "dummy"}
         assert client._get_json_schema({}) == json.dumps(DEFAULT_ACTION_JSON_SCHEMA)
 
     def test_modify_json_schema(self) -> None:
         config = {
+            "modelName": "dummy",
             "modifySchema": True,
             "gridSpace": [9, 10],
             "items": ["item1", "item2"],
