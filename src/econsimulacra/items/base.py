@@ -9,7 +9,7 @@ class Item:
         item_name: str,
         config: Optional[dict[str, Any]] = None,
     ) -> None:
-        """initialization.
+        """Initialization.
 
         Args:
             item_id (int): The unique id for the item.
@@ -40,17 +40,9 @@ class Item:
         Args:
             price (float): The new price of the item.
             set_by (int, Optional): The id of the agent who set the price. Defaults to None.
-
-        Returns:
-            None
         """
         self.price = price
         self.price_set_by = set_by
 
     def __repr__(self):
-        """Return a readable string representation of the item.
-
-        Returns:
-            str: A string containing the item id, name, price, and who set the price.
-        """
         return f"Item(id={self.item_id}, name={self.item_name}, price={self.price}, price_set_by={self.price_set_by})"
