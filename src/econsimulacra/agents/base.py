@@ -64,6 +64,8 @@ class Agent(ABC, Generic[ObsT]):
                 # built-in option: "inventory" <- If set, co-located agents know the inventory of the agent at each step.
                 "provideInfo4AllowedAgents": [],
                 # built-in option: None,
+                "personaConfig": {}
+                # optional, see also econsimulacra.agents.llm_agent.LLMAgent.self_assign_name
             }
         """
         self.agent_id: int = agent_id
