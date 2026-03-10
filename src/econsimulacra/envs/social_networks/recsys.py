@@ -24,7 +24,7 @@ class RecommenderSystem(ABC):
 
     def __init__(self, config: dict[str, Any], prng: Random) -> None:
         """Initialization.
-        
+
         Args:
             config (dict[str, Any]): Configuration dictionary for the recommender system. Expected keys include
                 - "maxRecommendations" (int, optional): The maximum number of recommendations to generate for each agent.
@@ -43,10 +43,10 @@ class RecommenderSystem(ABC):
 
     def bind(self, social_network: SocialNetwork) -> None:
         """Inject the social network instance into the recommender system.
-        
+
         Args:
             social_network (SocialNetwork): The social network instance to bind to the recommender system.
-        
+
         Note:
             This method is called when the SocialNetwork is initialized,
             allowing the recommender system to access the social network's state
@@ -69,7 +69,7 @@ class RecommenderSystem(ABC):
 
     def hook_add_agent(self, agent_id: int) -> None:
         """Event hook called when a new agent is added to the social network.
-        
+
         Args:
             agent_id (int): The unique identifier of the agent that was added.
 
@@ -81,7 +81,7 @@ class RecommenderSystem(ABC):
 
     def hook_follow_agent(self, agent_id: int, target_agent_id: int) -> None:
         """Event hook called when an agent follows another agent in the social network.
-        
+
         Args:
             agent_id (int): The unique identifier of the agent that initiated the follow action.
             target_agent_id (int): The unique identifier of the agent that is being followed.
@@ -94,7 +94,7 @@ class RecommenderSystem(ABC):
 
     def hook_unfollow_agent(self, agent_id: int, target_agent_id: int) -> None:
         """Event hook called when an agent unfollows another agent in the social network.
-        
+
         Args:
             agent_id (int): The unique identifier of the agent that initiated the unfollow action.
             target_agent_id (int): The unique identifier of the agent that is being unfollowed.
@@ -107,7 +107,7 @@ class RecommenderSystem(ABC):
 
     def hook_tweet(self, agent_id: int, message: str) -> None:
         """Event hook called when an agent tweets in the social network.
-        
+
         Args:
             agent_id (int): The unique identifier of the agent that tweeted.
             message (str): The content of the tweet.
@@ -121,10 +121,10 @@ class RecommenderSystem(ABC):
 
 class TwoHopRecommenderSystem(RecommenderSystem):
     """A simple recommender system that recommends agents based on two-hop connections in the social network."""
-    
+
     def __init__(self, config: dict[str, Any], prng: Random) -> None:
         """Initialization.
-        
+
         Args:
             config (dict[str, Any]): Configuration dictionary for the recommender system. Expected keys include
                 - "maxRecommendations" (int, optional): The maximum number of recommendations to generate for each agent.
@@ -132,7 +132,7 @@ class TwoHopRecommenderSystem(RecommenderSystem):
                 - "temperature" (float, optional): The temperature parameter controlling the level of randomness.
                     (only relevant if "isRandomized" is True).
             prng (Random): A pseudo-random number generator instance for any stochastic behavior in the recommender system.
-        
+
         Note:
             self.agent_id2two_hop_follows[i][j] = number of i -> * -> j paths, where * is any intermediate agent.
             If agent i does not follow agent j, but there exists an intermediate agent * that agent i follows and that follows agent j,
@@ -150,7 +150,7 @@ class TwoHopRecommenderSystem(RecommenderSystem):
 
     def hook_add_agent(self, agent_id: int) -> None:
         """Event hook called when a new agent is added to the social network.
-        
+
         Args:
             agent_id (int): The unique identifier of the agent that was added.
         """
@@ -162,11 +162,11 @@ class TwoHopRecommenderSystem(RecommenderSystem):
 
     def hook_follow_agent(self, agent_id: int, target_agent_id: int) -> None:
         """Event hook called when an agent follows another agent in the social network.
-        
+
         Args:
             agent_id (int): The unique identifier of the agent that is following.
             target_agent_id (int): The unique identifier of the agent being followed.
-        
+
         Note:
             When agent_id follows target_agent_id, we need to update the two-hop follow counts for
                 agent_id -> target_agent_id -> * and
@@ -189,11 +189,11 @@ class TwoHopRecommenderSystem(RecommenderSystem):
 
     def hook_unfollow_agent(self, agent_id: int, target_agent_id: int) -> None:
         """Event hook called when an agent unfollows another agent in the social network.
-        
+
         Args:
             agent_id (int): The unique identifier of the agent that is unfollowing.
             target_agent_id (int): The unique identifier of the agent being unfollowed.
-        
+
         Note:
             When agent_id unfollows target_agent_id, we need to update the two-hop follow counts for
                 agent_id -> target_agent_id -> * and
@@ -227,11 +227,11 @@ class TwoHopRecommenderSystem(RecommenderSystem):
 
     def get_recommendations(self, agent_id: int) -> list[int]:
         """Generate recommendations for the given agent based on two-hop connections.
-        
+
         Args:
             agent_id (int): The unique identifier of the agent for whom to generate recommendations.
-        
-            
+
+
         Note:
             The recommendation score for a candidate agent is based on:
                 1) The number of two-hop paths from the given agent to the candidate agent (higher is better).
