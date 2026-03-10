@@ -1,4 +1,3 @@
-from abc import ABC
 from ..agents import Agent
 from ..sim_utils import find_class
 from ..items import Item
@@ -57,7 +56,18 @@ from typing import TypeVar
 ObsT = TypeVar("ObsT")
 
 
-class Environment(ABC, Generic[ObsT]):
+class Environment(Generic[ObsT]):
+    """Environment class.
+
+    The environment in EconSimulacra contains a grid space where agents are placed and can move around,
+    a social network where agents can follow each other and interact, a set of items that agents can trade with each other,
+    and services that support LLM-based agents in performing various actions and making decisions.
+    The main implemented methods in this class include:
+        - .reset(self): reset the environment to the initial state.
+        - .get_observations(self, agent_id): get the observation for the given agent id.
+        - .step(self, all_actions_dic): execute one step of the environment with the given actions from agents.
+    """
+
     def __init__(
         self,
         config: dict[str, Any],
@@ -66,36 +76,47 @@ class Environment(ABC, Generic[ObsT]):
         """Initialization.
 
         Args:
-            config (dict[str, Any]): Environment configuration dictionary.
+            config (dict[str, Any]): Environment configuration dictionary. Expected keys include:
+                - "simulation": dict, with keys related to the overall simulation settings, such as "numSteps".
+                - "environment": dict, with keys related to the environment settings,
+                    such as "space", "socialNetwork", "cashName", "agents", "items", and "service".
+                and other detailed settings for each component specified in "environment" entry.
+            logger (Logger, optional): Logger instance for logging environment events.
+                If None, no logging will be performed. Defaults to None.
 
         Note:
             config example:
             {
                 "simulation": {
-                    "numSteps": int,
+                    "numSteps": int, # Required, total number of steps for the simulation.
+                    "parallelBatchSize": 2
                 },
                 "environment": {
-                    "space": "gridSpace",
-                    "socialNetwork": "socialNetwork",
-                    "cashName": str,
-                    "agents": ["Household", "Retailer", "Restaurant", ...],
-                    "items": ["Yen", "Rice", ...],
-                    "service": ["promptBuilder", "llmClient", "timeTranslator", "personaBuilder", "memoryHandler"], # Optional, default []
+                    "space": "gridSpace", # Required, the key of the space configuration.
+                    "socialNetwork": "socialNetwork", # Required, the key of the social network configuration.
+                    "cashName": str, # Required, the name of the cash item in the environment, must be included in "items" values.
+                    "agents": ["Household", "Retailer", "Restaurant", ...], # Required, the keys of the agent configurations.
+                    "items": ["Yen", "Rice", ...], # Required, must include the cashName specified above.
+                    "service": ["promptBuilder", "llmClient", "timeTranslator", "personaBuilder", "memoryHandler"],
+                    # Optional, the common environment services provided for the agents. Default to [].
                 }
                 "gridSpace": {
-                    "type": "GridSpace",
+                    "type": "GridSpace", # See also: econsimulacra.envs.space.GridSpace
                     "gridSize": [int, ...],
                 },
                 "socialNetwork": {
-                    "type": "SocialNetwork",
+                    "type": "SocialNetwork", # See also: econsimulacra.envs.social_networks.base.SocialNetwork
                     "followCap": int, # Optional, default is no limit
                     "recSys": {
-                        "type": "TwoHopRecommenderSystem",
+                        "type": "TwoHopRecommenderSystem", # See also: econsimulacra.envs.social_networks.recsys.TwoHopRecommenderSystem
                         ...
                     }
                 },
                 "Household": {
                     "type": "LLMAgent",
+                    # Requires "llmClient", "promptBuilder", and optionally "personaBuilder"
+                    # to be included in the environment services.
+                    # See also: econsimulacra.envs.agents.llm_agent.LLMAgent
                     "isHousehold": bool,
                     "numAgents": int, # Optional, default 1
                     ...,
@@ -112,7 +133,7 @@ class Environment(ABC, Generic[ObsT]):
                     ...
                 },
                 "Yen": {
-                    "type": "Item",
+                    "type": "Item", # See also: econsimulacra.envs.items.base.Item
                     "initialPrice": float,
                 },
                 "Rice": {
@@ -120,12 +141,13 @@ class Environment(ABC, Generic[ObsT]):
                     "initialPrice": float,
                 },
                 "promptBuilder": {
-                    "type": "PromptBuilder", # Optional, default is the same as the service name
+                    "type": "PromptBuilder", # See also: econsimulacra.envs.prompt_builder.PromptBuilder
                     ...
                 },
                 "llmClient": {
-                    "type": "OpenAIClient", # Optional, default is the same as the service name
+                    "type": "OpenAIClient", # See also: econsimulacra.envs.llm_client.OpenAIClient
                     "api_key": str, # Optional if OPENAI_API_KEY environment variable is set
+                    "maxConcurrentGenerations": 2, # Optional, maximum number of concurrent generations allowed for the LLM client. Default is 1 (no concurrency).
                     "json_schema_path": str, # Optional, path to a custom JSON schema file for structured generation
                     "modify_schema": bool, # Optional, whether to modify the default JSON schema based on config
                     "gridSpace": [int, ...], # Optional, only needed if modify_schema is True. Must be the same as environment.gridSpace
@@ -133,17 +155,19 @@ class Environment(ABC, Generic[ObsT]):
                     "numAgents": int, # Optional, only needed if modify_schema is True. Must be the total number of agents in the environment.
                 },
                 "timeTranslator": {
-                    "type": "TimeTranslator", # Optional, default is the same as the service name
+                    "type": "TimeTranslator", # See also: econsimulacra.envs.time_translator.TimeTranslator
                     "numSteps": int, # must be the same as simulation.numSteps
                     "startDatetime": str, # "%Y-%m-%d %H:%M:%S"
                     "endDatetime": str, # "%Y-%m-%d %H:%M:%S"
                 },
                 "personaBuilder": {
-                    "type": "Big5PersonaBuilder", # Optional, default is the same as the service name
-                    ...
+                    "type": "Big5PersonaBuilder", # See also: econsimulacra.envs.persona_builder.big5.Big5PersonaBuilder
+                    "numSteps": int, # must be the same as simulation.numSteps
+                    "startDatetime": str, # "%Y-%m-%d %H:%M:%S"
+                    "endDatetime": str, # "%Y-%m-%d %H:%M:%S"
                 },
                 "memoryHandler": {
-                    "type": "MemoryHandler", # Optional, default is the same as the service name
+                    "type": "MemoryHandler", # See also: econsimulacra.envs.memory.MemoryHandler
                     "memoryLength": int, # the maximum number of logs to be stored in memory for each agent
                 },
                 ...,
@@ -162,36 +186,72 @@ class Environment(ABC, Generic[ObsT]):
         self.service_dic: dict[str, Any] = {}
 
     def get_time_translator(self) -> Optional[TimeTranslator]:
+        """Get the TimeTranslator service provider from the environment's service dictionary, if it exists."""
         for provider in self.service_dic.values():
             if isinstance(provider, TimeTranslator):
                 return provider
         return None
 
     def get_memory_handler(self) -> Optional[MemoryHandler]:
+        """Get the MemoryHandler service provider from the environment's service dictionary, if it exists."""
         for provider in self.service_dic.values():
             if isinstance(provider, MemoryHandler):
                 return provider
         return None
 
     def get_time(self) -> int | str:
+        """Get the current time in the environment.
+
+        Note:
+            If a TimeTranslator service provider is available, use it to convert the internal time step
+            to a datetime string; otherwise, return the internal time step as an integer.
+        """
         time_translator: Optional[TimeTranslator] = self.get_time_translator()
         if time_translator is not None:
             return time_translator.step_to_datetime(self._time)
         return self._time
 
     def get_time_step(self) -> int:
+        """Get the current time step in the environment as an integer."""
         return self._time
 
     def get_timedelta(self) -> int | str:
+        """Get the time delta for each step in the environment.
+
+        Note:
+            If a TimeTranslator service provider is available, use it to get the time delta
+            in a suitable format (e.g., "1 day", "2 hours", etc.);
+            otherwise, return the default time delta of 1 (which can be interpreted as 1 step).
+        """
         time_translator: Optional[TimeTranslator] = self.get_time_translator()
         if time_translator is not None:
             return time_translator.get_timedelta()
         return 1
 
     def register_classes(self, class_list: list[Type]) -> None:
+        """Register classes to the environment for dynamic instantiation from config.
+
+        Args:
+            class_list (list[Type]): a list of classes to be registered.
+                These classes can then be referred to by their class names in the environment config for dynamic instantiation.
+
+        Note:
+            Use this method to register your custom classes.
+        """
         self.registered_classes.extend(class_list)
 
     def reset(self, seed: Optional[int]) -> None:
+        """Reset the environment to the initial state.
+
+        Args:
+            seed (Optional[int]): random seed for environment initialization. If None, no specific seed is set.
+
+        Note:
+            This method
+            - resets the random seed,
+            - generates the grid space and social network according to the config,
+            - generates service providers, agents, and items according to the config,
+        """
         self._set_invalid_action_dic()
         if self.logger is not None:
             self.logger.clear()
@@ -234,6 +294,13 @@ class Environment(ABC, Generic[ObsT]):
         self._time = 0
 
     def _set_invalid_action_dic(self) -> None:
+        """Initialize the dictionary for counting invalid actions.
+
+        Note:
+            When the agents take invalid actions (e.g., moving to an invalid destination, placing an order with invalid parameters, etc.),
+            the environment will ignore the invalid part of the action and execute the rest valid part (if any),
+            and count the invalid action in this dictionary for later analysis.
+        """
         self.invalid_action_dic: dict[str, int] = {
             "move": 0,
             "consumptions": 0,
@@ -246,7 +313,15 @@ class Environment(ABC, Generic[ObsT]):
         }
 
     def _generate_space(self, space_key: str) -> GridSpace:
-        """generate the grid space."""
+        """Generate the grid space.
+
+        Args:
+            space_key (str): name of the grid space type to be generated.
+                It is "gridSpace" in the provided example config.
+
+        Returns:
+            GridSpace: the generated grid space instance.
+        """
         space_config: dict[str, Any] = self.config[space_key]
         space_type: str = space_config.get("type", space_key)
         space_class: Type[GridSpace] = find_class(
@@ -256,10 +331,11 @@ class Environment(ABC, Generic[ObsT]):
         return grid_space
 
     def _generate_social_network(self, social_network_key: str) -> SocialNetwork:
-        """generate the social network.
+        """Generate the social network.
 
         Args:
             social_network_key (str): name of the social network type to be generated.
+                It is "socialNetwork" in the provided example config.
 
         Returns:
             SocialNetwork: the generated social network instance.
@@ -277,10 +353,17 @@ class Environment(ABC, Generic[ObsT]):
         return social_network
 
     def _generate_service_providers(self, service_provider_keys: list[str]) -> None:
-        """generate service providers.
+        """Generate service providers.
 
         Args:
             service_provider_keys (list[str]): name list of service provider types to be generated.
+                It is ["promptBuilder", "llmClient", "timeTranslator", "personaBuilder", "memoryHandler"] in the provided example config.
+
+        Note:
+            The current econsimulacra.agents.llm_agent.LLMAgent implementation requires:
+            "llmClient", promptBuilder", and "personaBuilder" (optional) to be included
+            in the service_provider_keys.
+            See also: econsimulacra.agents.llm_agent.LLMAgent.__init__
         """
         for service_provider_key in service_provider_keys:
             if service_provider_key not in self.config:
@@ -300,15 +383,35 @@ class Environment(ABC, Generic[ObsT]):
             self.service_dic[service_provider_key] = service_provider_instance
 
     def remember_log(self, log: Log) -> None:
+        """Call MemoryHandler.update(log) to update the memory with the given log, if MemoryHandler is available in the environment services.
+
+        Args:
+            log (Log): the log to be remembered in memory.
+
+        Note:
+            Called when any kind of log (e.g., AgentGenerationLog, MoveLog, ConsumptionLog, OrderLog, ProposalLog, etc.)
+            is generated in the environment.
+        """
         memory_handler: Optional[MemoryHandler] = self.get_memory_handler()
         if memory_handler is not None:
             memory_handler.update(log)
 
     def _generate_agents(self, agent_keys: list[str]) -> None:
-        """generate agents and place them in the grid space.
+        """Generate agents and place them in the grid space.
 
         Args:
             agent_types (list[str]): name list of agent types to be generated.
+
+        Note:
+            agent_config optionally includes:
+            - "type": str, the type of the agent, which can be used to find the corresponding agent class for instantiation.
+            - "isHousehold": bool, whether the agent belongs to the household group.
+                If True, the agent is added to the household_ids list.
+            - "initialCoords": tuple[int, ...], the initial coordinates of the agent in the grid space.
+                If not provided, the agent will be placed in a random empty cell in the grid space.
+            See also:
+                econsimulacra.envs.agents.base.Agent.__init__
+                econsimulacra.envs.agents.llm_agent.LLMAgent.__init__
         """
         current_agent_id: int = 0
         self.agent_ids: list[int] = []
@@ -370,10 +473,17 @@ class Environment(ABC, Generic[ObsT]):
                 current_agent_id += 1
 
     def _generate_items(self, item_keys: list[str]) -> None:
-        """generate items.
+        """Generate items.
 
         Args:
             item_keys (list[str]): name list of items to be generated.
+
+        Note:
+            item_config optionally includes:
+            - "type": str, the type of the item, which can be used to find the corresponding item class for instantiation.
+            - "initialPrice": float, the initial price of the item. If not provided, the initial price is set to 0.
+            See also:
+                econsimulacra.items.base.Item.__init__
         """
         self.item_name2item: dict[str, Item] = {}
         for item_key in item_keys:
@@ -390,6 +500,11 @@ class Environment(ABC, Generic[ObsT]):
             self.item_name2item[item_key] = item_instance
 
     def get_total_amount(self, item_name: str) -> float | int:
+        """Get the total amount of the specified item in the environment.
+
+        Args:
+            item_name (str): the name of the item to get the total amount for.
+        """
         if item_name not in self.item_name2item:
             raise ValueError(f"Item name {item_name} not found in the environment.")
         total_amount: float | int = 0
@@ -400,6 +515,17 @@ class Environment(ABC, Generic[ObsT]):
     def _assign_agent_to_space(
         self, agent_id: int, coords: Optional[tuple[int, ...]] = None
     ) -> None:
+        """Assign the agent to the grid space at the specified coordinates, or at random empty coordinates if not specified.
+
+        Args:
+            agent_id (int): The ID of the agent to assign.
+            coords (Optional[tuple[int, ...]]): The coordinates to assign the agent to.
+                If None, a random empty coordinate will be chosen.
+
+        Note:
+            Called when generating agents in the reset() method.
+            The initial coordinates can be specified in the agent config with the "initialCoords" key.
+        """
         space_size: tuple[int, ...] = self.grid_space.get_space_size()
         if coords is None:
             coords = tuple(
@@ -414,10 +540,15 @@ class Environment(ABC, Generic[ObsT]):
             log.read_and_write(logger=self.logger)
 
     def step(self, all_actions_dic: dict[int, dict[str, Any]]) -> None:
-        """execute one step of the environment.
+        """Execute one step of the environment.
 
         Args:
-            all_actions_dic (dict[int, dict[str, Any]]): _description_
+            all_actions_dic (dict[int, dict[str, Any]]): a dictionary mapping agent IDs
+                to their respective action dictionaries for this step.
+
+        Note:
+            See also:
+            econsimulacra.envs.base.Environment.apply_action_to_env for the expected format of each agent's action dictionary.
         """
         for agent_id, action_dic in all_actions_dic.items():
             self.apply_action_to_env(
@@ -431,35 +562,49 @@ class Environment(ABC, Generic[ObsT]):
             self.logger.process_logs()
 
     def apply_action_to_env(self, agent_id: int, action_dic: dict[str, Any]) -> None:
-        """
-        action_dic example:
-        {
-            "move": list[int, ...] | str, # destination coordinates or destination name. Optional, default None
-            "consumptions": [
-                {"item_name": str, "item_amount": float | int},
-                ...
-            ], # Optional, default []
-            "orders": [
-                {"counterparty_id": int, "counterparty_name": str, "item_name": str, "item_amount": float | int, "ttl": int},
-                ...
-            ] , # Optional, default []
-            "proposals": [
-                {"responder_agent_id": int, "responder_agent_name": str, "give_item_name": str, "give_item_amount": float | int, "get_item_name": str, "get_item_amount": float | int, "ttl": int},
-                ...
-            ] , # Optional, default []
-            "reactions": [
-                {"kind": "order", "id": int, "accept_amount": float | int},
-                {"kind": "proposal", "id": int, "accept": bool},
-                ...
-            ], # Optional, default []
-            "set_prices": [
-                {"item_name": str, "price": float},
-                ...
-            ], # Optional, default []
-            "tweet": str, # Optional, default None
-            "follow": int, # agent_id to follow. Optional, default None
-            "unfollow": int, # agent_id to unfollow. Optional, default None
-        }
+        """Apply the action of a single agent to the environment.
+
+        Args:
+            agent_id (int): the ID of the agent whose action is to be applied.
+            action_dic (dict[str, Any]): the action dictionary of the agent for this step.
+
+        Note:
+            This method processes the action dictionary of a single agent by
+            - checking the validity of each part of the action,
+            - executing the valid part of the action
+
+            action_dic example:
+            {
+                "move": tuple[int, ...] | str,
+                # destination coordinates or destination name. Optional, default None
+                "consumptions": [
+                    {"item_name": str, "item_amount": float | int},
+                    ...
+                ], # Optional, default []
+                "orders": [
+                    {"counterparty_id": int, "counterparty_name": str, "item_name": str, "item_amount": float | int, "ttl": int},
+                    ...
+                ] , # Optional, default []
+                "proposals": [
+                    {"responder_agent_id": int, "responder_agent_name": str, "give_item_name": str, "give_item_amount": float | int, "get_item_name": str, "get_item_amount": float | int, "ttl": int},
+                    ...
+                ], # Optional, default []
+                "reactions": [
+                    {"kind": "order", "id": int, "accept_amount": float | int},
+                    {"kind": "proposal", "id": int, "accept": bool},
+                    ...
+                ], # Optional, default []
+                "set_prices": [
+                    {"item_name": str, "price": float},
+                    ...
+                ], # Optional, default []
+                "tweet": str, # Optional, default None
+                "follow": int, # agent_id to follow. Optional, default None
+                "unfollow": int, # agent_id to unfollow. Optional, default None
+            }
+            See also:
+            econsimulacra.llm_services.constant.DEFAULT_ACTION_JSON_SCHEMA for the expected format
+            of the action dictionary, which is used for validating the generated actions from LLM-based agents.
         """
         where_to_move: Optional[tuple[int, ...] | str] = action_dic.get("move", None)
         move_allowed: bool = self._check_move(where_to_move=where_to_move)
@@ -542,7 +687,7 @@ class Environment(ABC, Generic[ObsT]):
         )
 
     def _check_move(self, where_to_move: Optional[tuple[int, ...] | str]) -> bool:
-        """check whether the move is valid.
+        """Check whether the move is valid.
 
         Args:
             where_to_move (Optional[tuple[int, ...] | str]): the target position or agent name to move to.
@@ -574,6 +719,21 @@ class Environment(ABC, Generic[ObsT]):
     def _move(
         self, agent_id: int, where_to_move: Optional[tuple[int, ...] | str] = None
     ) -> None:
+        """Apply move action to the environment by moving the agent one step towards the destination.
+
+        Args:
+            agent_id (int): the ID of the agent to move.
+            where_to_move (Optional[tuple[int, ...] | str]): the target position or agent name to move to.
+                If None, the agent will stay in the current position.
+
+        Note:
+            Move action example:
+            {
+                "move": tuple[int, ...] | str # <- corresponds to the where_to_move argument
+            }
+            Currently, the agent can only move one step (i.e., to an adjacent cell)
+            towards the destination in one step of the environment.
+        """
         current_pos: tuple[int, ...] = self.grid_space.get_pos(agent_id=agent_id)
         if where_to_move is None:
             return
@@ -606,6 +766,14 @@ class Environment(ABC, Generic[ObsT]):
     def _calc_destination_pos(
         self, where_to_move: tuple[int, ...] | str
     ) -> Optional[tuple[int, ...]]:
+        """Calculate the destination position based on the move target specified in the action dictionary.
+
+        Args:
+            where_to_move (tuple[int, ...] | str): the target position or agent name to move to.
+
+        Returns:
+            Optional[tuple[int, ...]]: the calculated destination position, or None if the input is invalid.
+        """
         destination_pos: Optional[tuple[int, ...]]
         if isinstance(where_to_move, str):
             destination_name: str = where_to_move
@@ -624,6 +792,21 @@ class Environment(ABC, Generic[ObsT]):
     def _calc_next_pos(
         self, current_pos: tuple[int, ...], destination_pos: tuple[int, ...]
     ) -> tuple[int, ...]:
+        """Calculate the next position for the agent to move towards the destination.
+
+        Args:
+            current_pos (tuple[int, ...]): the current position of the agent.
+            destination_pos (tuple[int, ...]): the target position of the agent.
+
+        Returns:
+            tuple[int, ...]: the next position for the agent to move towards the destination.
+
+        Note:
+            The agent can only move one step (i.e., to an adjacent cell) towards
+            the destination in one step of the environment.
+            This method calculate the nearest adjacent cell to the destination and return
+            its coordinates as the next position.
+        """
         next_pos: list[int] = list(current_pos)
         for dim in range(len(current_pos)):
             if current_pos[dim] < destination_pos[dim]:
@@ -635,7 +818,7 @@ class Environment(ABC, Generic[ObsT]):
     def _check_consumptions(
         self, agent_id: int, consumptions: list[dict[str, Any]]
     ) -> bool:
-        """check whether the consumptions are valid.
+        """Check whether the consumptions are valid.
 
         Args:
             agent_id (int): agent id of the agent who performs the consumptions.
@@ -663,6 +846,21 @@ class Environment(ABC, Generic[ObsT]):
         return True
 
     def _consume_items(self, agent_id: int, consumptions: list[dict[str, Any]]) -> None:
+        """Apply the consumption action to the environment by reducing the agent's inventory of the consumed items.
+
+        Args:
+            agent_id (int): agent id of the agent who performs the consumptions.
+            consumptions (list[dict[str, Any]]): list of consumption dictionaries.
+
+        Note:
+            Consumption action example:
+            {
+                "consumptions": [
+                    {"item_name": str, "item_amount": float | int},
+                    ...
+                ] # <- corresponds to the consumptions list in the arguments.
+            }
+        """
         agent: Agent = self.agent_id2agent[agent_id]
         for consumption in consumptions:
             item_name: str = consumption["item_name"]
@@ -687,7 +885,7 @@ class Environment(ABC, Generic[ObsT]):
                 log.read_and_write(logger=self.logger)
 
     def _check_orders(self, agent_id: int, orders: list[dict[str, Any]]) -> bool:
-        """check whether the orders are valid.
+        """Check whether the orders are valid.
 
         Args:
             agent_id (int): agent id of the agent who places the orders.
@@ -734,7 +932,7 @@ class Environment(ABC, Generic[ObsT]):
         return True
 
     def _check_proposals(self, agent_id: int, proposals: list[dict[str, Any]]) -> bool:
-        """check whether the proposals are valid.
+        """Check whether the proposals are valid.
 
         Args:
             agent_id (int): agent id of the agent who makes the proposals.
@@ -795,6 +993,28 @@ class Environment(ABC, Generic[ObsT]):
         orders: list[dict[str, Any]],
         proposals: list[dict[str, Any]],
     ) -> None:
+        """Add the new orders and proposals to the environment.
+
+        Args:
+            agent_id (int): agent id of the agent who places the orders and makes the proposals.
+            orders (list[dict[str, Any]]): list of order dictionaries.
+            proposals (list[dict[str, Any]]): list of proposal dictionaries.
+
+        Note:
+            This method generate new Order and SwapProposal instances based on the input order and proposal dictionaries,
+            and add them to the pending_orders list and pending_swap_proposals list in the environment, respectively.
+            Orders and proposals action example:
+            {
+                "orders": [
+                    {"counterparty_id": int, "counterparty_name": str, "item_name": str, "item_amount": float | int, "ttl": int},
+                    ...
+                ], # <- corresponds to the orders list in the arguments.
+                "proposals": [
+                    {"responder_agent_id": int, "responder_agent_name": str, "give_item_name": str, "give_item_amount": float | int, "get_item_name": str, "get_item_amount": float | int, "ttl": int},
+                    ...
+                ] # <- corresponds to the proposals list in the arguments.
+            }
+        """
         for order_dic in orders:
             counterparty_id: Optional[int] = order_dic.get("counterparty_id", None)
             counterparty_name: Optional[str] = order_dic.get("counterparty_name", None)
@@ -897,6 +1117,22 @@ class Environment(ABC, Generic[ObsT]):
         follow_agent_id: Optional[int],
         unfollow_agent_id: Optional[int],
     ) -> bool:
+        """Check whether the follow and unfollow actions are valid.
+
+        Args:
+            agent_id (int): agent id of the agent who performs the follow and unfollow actions.
+            follow_agent_id (int, optional): agent id of the target agent to follow. Optional, default None.
+            unfollow_agent_id (int, optional): agent id of the target agent to unfollow. Optional, default None.
+
+        Note:
+            Checked conditions:
+            - follow_agent_id and unfollow_agent_id cannot be the same.
+            - follow_agent_id and unfollow_agent_id must be existing agent ids in the environment.
+            - If follow_agent_id is already followed by the agent, it cannot be followed again.
+            - If unfollow_agent_id is not followed by the agent, it cannot be unfollowed.
+            - The number of follows after performing the follow and unfollow actions cannot exceed
+                the follow cap. See also: econsimulacra.social_networks.base.SocialNetwork.follow_cap
+        """
         if agent_id == follow_agent_id:
             return False
         if follow_agent_id is not None:
@@ -932,6 +1168,26 @@ class Environment(ABC, Generic[ObsT]):
         follow_agent_id: Optional[int] = None,
         unfollow_agent_id: Optional[int] = None,
     ) -> None:
+        """Apply the actions in the social network to the environment.
+
+        Args:
+            agent_id (int): agent id of the agent who performs the actions in the social network.
+            tweet (str, optional): the message to tweet. Optional, default None.
+            follow_agent_id (int, optional): agent id of the target agent to follow. Optional, default None.
+            unfollow_agent_id (int, optional): agent id of the target agent to unfollow. Optional, default None.
+
+        Note:
+            Action in social network example:
+            {
+                "tweet": str, # <- corresponds to the tweet argument
+                "follow": int, # <- corresponds to the follow_agent_id argument
+                "unfollow": int # <- corresponds to the unfollow_agent_id argument
+            }
+            See also:
+            - econsimulacra.social_networks.base.SocialNetwork.tweet
+            - econsimulacra.social_networks.base.SocialNetwork.follow_agent
+            - econsimulacra.social_networks.base.SocialNetwork.unfollow_agent
+        """
         if tweet is not None:
             self.social_network.tweet(agent_id=agent_id, message=tweet)
             tweet_log: TweetLog = TweetLog(
@@ -977,6 +1233,14 @@ class Environment(ABC, Generic[ObsT]):
                 follow_log.read_and_write(logger=self.logger)
 
     def _process_orders_and_proposals(self) -> None:
+        """Process the pending orders and proposals in the environment by executing the valid ones.
+
+        Note:
+            See also:
+            - econsimulacra.envs.order.Order
+            - econsimulacra.envs.order.SwapProposal
+            - econsimulacra.agents.base.Agent.exchange_goods
+        """
         for order in self.pending_orders:
             if order.accepted_amount > 0:
                 agent_id: int = order.agent_id
@@ -1023,7 +1287,7 @@ class Environment(ABC, Generic[ObsT]):
                     )
 
     def _check_reactions(self, agent_id: int, reactions: list[dict[str, Any]]) -> bool:
-        """check whether the reactions are valid.
+        """Check whether the reactions are valid.
 
         Args:
             agent_id (int): agent id of the agent who makes the reactions.
@@ -1109,6 +1373,25 @@ class Environment(ABC, Generic[ObsT]):
     def _process_reactions(
         self, agent_id: int, reactions: list[dict[str, Any]]
     ) -> None:
+        """Apply the reactions to the environment.
+
+        Args:
+            agent_id (int): agent id of the agent who makes the reactions.
+            reactions (list[dict[str, Any]]): list of reaction dictionaries.
+
+        Note:
+            Reaction action example:
+            {
+                "reactions": [
+                    {"kind": "order", "id": int, "accept_amount": float | int},
+                    {"kind": "proposal", "id": int, "accept": bool},
+                    ...
+                ] # <- corresponds to the reactions list in the arguments.
+            }
+            See also:
+            - econsimulacra.envs.order.Order.react
+            - econsimulacra.envs.order.SwapProposal.react
+        """
         for reaction in reactions:
             if "kind" not in reaction:
                 raise ValueError("Each reaction must include 'kind' key.")
@@ -1180,7 +1463,7 @@ class Environment(ABC, Generic[ObsT]):
     def _check_set_prices(
         self, agent_id: int, set_prices: list[dict[str, Any]]
     ) -> bool:
-        """check whether the set_prices are valid.
+        """Check whether the set_prices are valid.
 
         Args:
             agent_id (int): agent id of the agent who sets the prices.
@@ -1214,6 +1497,21 @@ class Environment(ABC, Generic[ObsT]):
         return True
 
     def _set_prices(self, agent_id: int, set_prices: list[dict[str, Any]]) -> None:
+        """Apply the set_prices action to the environment.
+
+        Args:
+            agent_id (int): agent id of the agent who sets the prices.
+            set_prices (list[dict[str, Any]]): list of set_price dictionaries.
+
+        Note:
+            Set prices action example:
+            {
+                "set_prices": [
+                    {"item_name": str, "price": float},
+                    ...
+                ] # <- corresponds to the set_prices list in the arguments.
+            }
+        """
         for set_price in set_prices:
             if "item_name" not in set_price:
                 raise ValueError("Each set_price must include 'item_name' key.")
@@ -1237,6 +1535,7 @@ class Environment(ABC, Generic[ObsT]):
                 change_price_log.read_and_write(logger=self.logger)
 
     def _update_time(self) -> None:
+        """Update the time in the environment by 1 step"""
         for order in self.pending_orders:
             order.update_time()
         for proposal in self.pending_swap_proposals:
@@ -1244,6 +1543,17 @@ class Environment(ABC, Generic[ObsT]):
         self._time += 1
 
     def _remove_expired_orders_and_proposals(self) -> None:
+        """Remove the expired orders and proposals from the environment.
+
+        Note:
+            The Order and SwapProposal instances whose time to live (ttl)
+            has reached 0 are considered expired and removed from the environment.
+            See also:
+            - econsimulacra.envs.order.Order.ttl
+            - econsimulacra.envs.order.Order.is_fulfilled
+            - econsimulacra.envs.order.SwapProposal.ttl
+            - econsimulacra.envs.order.SwapProposal.is_fulfilled
+        """
         self.pending_orders = [
             order for order in self.pending_orders if not order.is_fulfilled()
         ]
@@ -1254,6 +1564,24 @@ class Environment(ABC, Generic[ObsT]):
         ]
 
     def get_observations(self, agent_id: int) -> ObsT:
+        """Get the observations for the agent with the given agent_id.
+
+        Args:
+            agent_id (int): agent id of the agent to get the observations for.
+
+        Returns:
+            ObsT: the observations for the agent.
+
+        Note:
+            The observations are provided by the registered observation providers based on the agent's request.
+            There are three types of observations:
+            1. General observations provided to all agents, such as time and self position.
+            2. Additional observations provided only to agents who are allowed to have rich information
+                (i.e., agents with is_rich_info_allowed=True), such as item_name2price.
+            3. Additional observations provided only to agents who are co-located with other agents in the same grid cell, such as others_inventory.
+            The agent can request the observations by specifying the keys of the desired observations.
+            If the agent requests "all", all available observations will be provided.
+        """
         if not hasattr(self, "_obs_providers"):
             self._obs_providers: dict[str, ObsProvider] = (
                 self._build_observation_registry()
@@ -1289,6 +1617,17 @@ class Environment(ABC, Generic[ObsT]):
         return observation  # type: ignore
 
     def _build_observation_registry(self) -> dict[str, ObsProvider]:
+        """Build the registry of general observation providers available to all agents.
+
+        Returns:
+            dict[str, ObsProvider]: Dispatch table for general observation providers.
+
+        Note:
+            Custom observation provider can be added by creating a new ObsProvider class
+            and registering it in this method.
+            See also:
+            econsimulacra.envs.obs_providers
+        """
         return {
             "time": TimeProvider(env=self),
             "timedelta": TimeDeltaProvider(env=self),
@@ -1312,6 +1651,11 @@ class Environment(ABC, Generic[ObsT]):
         }
 
     def _build_observation4allowed_agents_registry(self) -> dict[str, ObsProvider]:
+        """Build the registry of additional observation providers available only to agents who are allowed to have rich information.
+
+        Returns:
+            dict[str, ObsProvider]: Dispatch table for additional observation providers for allowed agents.
+        """
         return {
             "item_name2price": ItemName2PriceProvider(env=self),
         }
@@ -1319,6 +1663,11 @@ class Environment(ABC, Generic[ObsT]):
     def _build_observation4co_located_agents_registry(
         self, co_located_agents: set[int]
     ) -> dict[str, ObsProviderForCoLocatedAgents]:
+        """Build the registry of additional observation providers available only to agents who are co-located with other agents in the same grid cell.
+
+        Returns:
+            dict[str, ObsProviderForCoLocatedAgents]: Dispatch table for additional observation providers for co-located agents.
+        """
         return {
             "others_inventory": OthersInventoriesProvider(
                 env=self, co_located_agents=co_located_agents
