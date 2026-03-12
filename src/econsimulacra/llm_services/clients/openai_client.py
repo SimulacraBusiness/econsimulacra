@@ -72,7 +72,7 @@ class OpenAIClient(LLMClient):
                         )
                     )
                 break
-            except RateLimitError as e:
+            except RateLimitError:
                 time.sleep(1)
         content: Optional[str] = response.choices[0].message.content
         if content is None:
