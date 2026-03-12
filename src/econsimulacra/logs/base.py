@@ -93,7 +93,7 @@ class OrderLog(Log):
         item_name: str,
         item_amount: float | int,
         price: Optional[float],
-        order_id: Optional[int],
+        order_id: int,
     ) -> None:
         self.type: str = "order"
         self.time: int | str = time
@@ -103,7 +103,7 @@ class OrderLog(Log):
         self.item_name: str = item_name
         self.item_amount: float | int = item_amount
         self.price: Optional[float] = price
-        self.order_id: Optional[int] = order_id
+        self.order_id: int = order_id
 
 
 class ProposalLog(Log):
@@ -141,7 +141,7 @@ class OrderReactionLog(Log):
         item_name: str,
         item_amount: float | int,
         price: float,
-        order_id: Optional[int],
+        order_id: int,
         accept_amount: float | int,
     ) -> None:
         self.type: str = "order_reaction"
@@ -152,7 +152,7 @@ class OrderReactionLog(Log):
         self.item_name: str = item_name
         self.item_amount: float | int = item_amount
         self.price: float = price
-        self.order_id: Optional[int] = order_id
+        self.order_id: int = order_id
         self.accept_amount: float | int = accept_amount
 
 
