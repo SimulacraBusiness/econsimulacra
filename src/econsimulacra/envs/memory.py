@@ -234,7 +234,7 @@ class MemoryHandler:
         self, config: dict[str, Any], prng: Optional[random.Random] = None
     ) -> None:
         """Initialization.
-        
+
         Args:
             config (dict[str, Any]): the configuration for the MemoryHandler. It must contain the key:
                 "memoryLength": defines the maximum length of the memory for each agent.
@@ -355,7 +355,7 @@ class MemoryHandler:
 
     def _build_memory_registry(self) -> dict[type[Log], Callable[[Any], None]]:
         """Build a dispatch dictionary that maps log types to their corresponding memory update handlers.
-        
+
         Returns:
             dict[type[Log], Callable[[Any], None]]: a dictionary mapping log types to memory update handlers.
 
@@ -391,7 +391,7 @@ class MemoryHandler:
 
     def _process_agent_generation_log(self, log: AgentGenerationLog) -> None:
         """Process the AgentGenerationLog to initialize AgentMemory for the generated agent.
-        
+
         Args:
             log (AgentGenerationLog): the log of agent generation.
 
@@ -414,7 +414,7 @@ class MemoryHandler:
 
     def _process_space_assign_log(self, log: SpaceAssignLog) -> None:
         """Process the SpaceAssignLog to update the initial position of the agent in memory.
-        
+
         Args:
             log (SpaceAssignLog): the log of space assignment.
 
@@ -436,7 +436,7 @@ class MemoryHandler:
 
     def _process_move_log(self, log: MoveLog) -> None:
         """Process the MoveLog to update the position of the agent in memory.
-        
+
         Args:
             log (MoveLog): the log of movement.
 
@@ -461,7 +461,7 @@ class MemoryHandler:
 
     def _process_consumption_log(self, log: ConsumptionLog) -> None:
         """Process the ConsumptionLog to update the consumption history of the agent in memory.
-        
+
         Args:
             log (ConsumptionLog): the log of consumption.
 
@@ -499,7 +499,7 @@ class MemoryHandler:
 
     def _process_order_log(self, log: OrderLog) -> None:
         """Process the OrderLog to update the order history of the agent in memory.
-        
+
         Args:
             log (OrderLog): the log of order.
 
@@ -524,7 +524,7 @@ class MemoryHandler:
 
         Args:
             log (OrderReactionLog): the log of order reaction.
-        
+
         Note:
             Order reaction event affects both buyer's and seller's memory.
             Each update method for buyer and seller is implemented in
@@ -543,7 +543,7 @@ class MemoryHandler:
 
     def _process_order_reaction_log_purchase_agent(self, log: OrderReactionLog) -> None:
         """Process the OrderReactionLog to update the purchase history of the purchase agent in memory.
-        
+
         Args:
             log (OrderReactionLog): the log of order reaction.
 
@@ -627,7 +627,7 @@ class MemoryHandler:
 
     def _process_proposal_reaction_log(self, log: ProposalReactionLog) -> None:
         """Process the ProposalReactionLog to update the exchange history of the proposer and responder agents in memory based on the reaction.
-        
+
         Args:
             log (ProposalReactionLog): the log of proposal reaction.
 
@@ -656,7 +656,7 @@ class MemoryHandler:
         self, log: ProposalReactionLog
     ) -> None:
         """Process the ProposalReactionLog to update the exchange history of the proposer agent in memory.
-        
+
         Args:
             log (ProposalReactionLog): the log of proposal reaction.
 
@@ -688,7 +688,7 @@ class MemoryHandler:
         self, log: ProposalReactionLog
     ) -> None:
         """Process the ProposalReactionLog to update the exchange history of the responder agent in memory.
-        
+
         Args:
             log (ProposalReactionLog): the log of proposal reaction.
 
@@ -718,7 +718,7 @@ class MemoryHandler:
 
     def _process_change_price_log(self, log: ChangePriceLog) -> None:
         """Process the ChangePriceLog to update the price change history of the agent in memory.
-        
+
         Args:
             log (ChangePriceLog): the log of price change.
 
