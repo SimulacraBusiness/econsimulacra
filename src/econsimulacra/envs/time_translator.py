@@ -11,7 +11,7 @@ class TimeTranslator:
     def __init__(
         self, config: dict[str, Any], prng: Optional[random.Random] = None
     ) -> None:
-        """initialization.
+        """Initialization.
 
         Args:
             config (dict): Configuration dictionary for the TimeTranslator. This must include parameters such as:
