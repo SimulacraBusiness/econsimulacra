@@ -17,7 +17,7 @@ from ..logs import Log
 from ..logs import Logger
 from .memory import MemoryHandler
 from .obs_providers import ObsProvider
-from .obs_providers import ObsProviderForCoLocatedAgents
+from .obs_providers import ObsProviderFromCoLocatedAgents
 from .obs_providers import TimeProvider
 from .obs_providers import TimeDeltaProvider
 from .obs_providers import SelfIDProvider
@@ -1594,11 +1594,11 @@ class Environment(Generic[ObsT]):
             agent_id=agent_id
         )
         self._obs4co_located_agents_providers: dict[
-            str, ObsProviderForCoLocatedAgents
+            str, ObsProviderFromCoLocatedAgents
         ] = self._build_observation4co_located_agents_registry(
             co_located_agents=co_located_agents
         )
-        obs_providers: dict[str, ObsProvider | ObsProviderForCoLocatedAgents] = {}
+        obs_providers: dict[str, ObsProvider | ObsProviderFromCoLocatedAgents] = {}
         obs_providers.update(self._obs_providers)
         agent: Agent = self.agent_id2agent[agent_id]
         if agent.is_rich_info_allowed:
@@ -1612,7 +1612,7 @@ class Environment(Generic[ObsT]):
         for key in keys_to_request:
             if key not in obs_providers:
                 raise ValueError(f"Unknown observation key requested: {key}.")
-            provider: ObsProvider | ObsProviderForCoLocatedAgents = obs_providers[key]
+            provider: ObsProvider | ObsProviderFromCoLocatedAgents = obs_providers[key]
             observation[key] = provider.get_obs(agent_id=agent_id)
         return observation  # type: ignore
 
@@ -1662,11 +1662,11 @@ class Environment(Generic[ObsT]):
 
     def _build_observation4co_located_agents_registry(
         self, co_located_agents: set[int]
-    ) -> dict[str, ObsProviderForCoLocatedAgents]:
+    ) -> dict[str, ObsProviderFromCoLocatedAgents]:
         """Build the registry of additional observation providers available only to agents who are co-located with other agents in the same grid cell.
 
         Returns:
-            dict[str, ObsProviderForCoLocatedAgents]: Dispatch table for additional observation providers for co-located agents.
+            dict[str, ObsProviderFromCoLocatedAgents]: Dispatch table for additional observation providers for co-located agents.
         """
         return {
             "others_inventory": OthersInventoriesProvider(

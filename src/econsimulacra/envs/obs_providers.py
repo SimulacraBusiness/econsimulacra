@@ -11,15 +11,59 @@ if TYPE_CHECKING:
 
 
 class ObsProvider(ABC):
+    """Observation provider class (abstract class).
+    
+    Each ObsProvider class must implement the get_obs method,
+    which returns the observation for a given agent_id.
+    
+    ObsProvider is used to build the observation space of the environment,
+    and to provide observations to agents at each step.
+    You can register your custom ObsProviders to the environment by adding
+    them to obs_providers through either _build_observation_registry or
+    _build_observation4allowed_agents_registry,
+    depending on who can observe the information provided by the ObsProvider.
+
+    Example:
+        >>> class MyCustomObsProvider(ObsProvider):
+        >>>     def get_obs(self, agent_id: int) -> Any:
+        >>>         # Return the custom observation for the given agent_id
+        >>>         return ...
+        >>>
+        >>> class MyCustomEnv(Environment):
+        >>>     def _build_observation_registry(self) -> dict[str, ObsProvider]:
+        >>>         obs_providers = super()._build_observation_registry()
+        >>>         obs_providers["my_custom_obs"] = MyCustomObsProvider(env=self)
+        >>>         return obs_providers
+
+    See also:
+        econsimulacra.envs.base.Environment.get_observations(agent_id: int)
+    """
     def __init__(self, env: Environment) -> None:
+        """Initialization.
+        
+        Args:
+            env (Environment): The environment instance to which the ObsProvider belongs.
+        """
         self.env: Environment = env
 
     @abstractmethod
     def get_obs(self, agent_id: int) -> Any:
+        """Get the observation for the given agent_id.
+        
+        Args:
+            agent_id (int): The ID of the agent for which to get the observation.
+
+        Returns:
+            Any: The observation for the given agent_id.
+        """
         raise NotImplementedError
 
 
-class ObsProviderForCoLocatedAgents(ABC):
+class ObsProviderFromCoLocatedAgents(ABC):
+    """Observation provider class from co-located agents (abstract class).
+    
+    
+    """
     def __init__(self, env: Environment, co_located_agents: set[int]) -> None:
         self.env: Environment = env
         self.co_located_agents: set[int] = co_located_agents
@@ -200,7 +244,7 @@ class ItemName2PriceProvider(ObsProvider):
         return item_name2prices
 
 
-class OthersInventoriesProvider(ObsProviderForCoLocatedAgents):
+class OthersInventoriesProvider(ObsProviderFromCoLocatedAgents):
     def get_obs(self, agent_id: int, mask_amount: bool = False) -> list[dict[str, Any]]:
         inventory_infos: list[dict[str, Any]] = []
         for other_agent_id in self.env.agent_ids:
