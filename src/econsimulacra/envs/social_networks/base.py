@@ -198,7 +198,7 @@ class SocialNetwork:
             int, optional: The follow cap of the social network, or None if not set.
         """
         return self.follow_cap
-    
+
     def get_allowed_num_follows(self, agent_id: int) -> Optional[int]:
         """Get the allowed number of follows for the agent with the given agent_id,
         which is the remaining number of follows the agent can make before reaching the follow cap.
@@ -216,7 +216,7 @@ class SocialNetwork:
         current_follow_count: int = len(self.agent_id2follows[agent_id])
         allowed_num_follows: int = self.follow_cap - current_follow_count
         return allowed_num_follows
-    
+
     def get_follows(self, agent_id: int) -> set[int]:
         """Get the agent IDs that the agent with the given agent_id follows.
 

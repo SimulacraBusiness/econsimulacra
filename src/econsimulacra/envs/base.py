@@ -1149,7 +1149,9 @@ class Environment(Generic[ObsT]):
                 agent_id=agent_id
             ):
                 return False
-        allowed_num_follows: Optional[int] = self.social_network.get_allowed_num_follows(agent_id=agent_id)
+        allowed_num_follows: Optional[int] = (
+            self.social_network.get_allowed_num_follows(agent_id=agent_id)
+        )
         if allowed_num_follows is not None:
             if unfollow_agent_id is not None:
                 allowed_num_follows += 1
