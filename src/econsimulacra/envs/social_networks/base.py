@@ -191,6 +191,32 @@ class SocialNetwork:
             raise ValueError(f"Agent ID {agent_id} not found in the social network.")
         return len(self.agent_id2followers[agent_id])
 
+    def get_follow_cap(self) -> Optional[int]:
+        """Get the follow cap of the social network.
+
+        Returns:
+            int, optional: The follow cap of the social network, or None if not set.
+        """
+        return self.follow_cap
+    
+    def get_allowed_num_follows(self, agent_id: int) -> Optional[int]:
+        """Get the allowed number of follows for the agent with the given agent_id,
+        which is the remaining number of follows the agent can make before reaching the follow cap.
+
+        Args:
+            agent_id (int): The agent ID for which to get the allowed number of follows.
+
+        Returns:
+            int, optional: The allowed number of follows for the given agent, or None if there is no follow cap.
+        """
+        if self.follow_cap is None:
+            return None
+        if agent_id not in self.nodes:
+            raise ValueError(f"Agent ID {agent_id} not found in the social network.")
+        current_follow_count: int = len(self.agent_id2follows[agent_id])
+        allowed_num_follows: int = self.follow_cap - current_follow_count
+        return allowed_num_follows
+    
     def get_follows(self, agent_id: int) -> set[int]:
         """Get the agent IDs that the agent with the given agent_id follows.
 
