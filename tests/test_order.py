@@ -25,6 +25,7 @@ class TestOrder:
 
     def test_react_and_execute(self) -> None:
         order = Order(
+            order_id=0,
             agent_id=1,
             counterparty_id=2,
             item_name="rice",
@@ -41,6 +42,7 @@ class TestOrder:
 
     def test_update_time(self) -> None:
         order = Order(
+            order_id=1,
             agent_id=1,
             counterparty_id=2,
             item_name="rice",
@@ -53,6 +55,7 @@ class TestOrder:
         order.update_time()
         assert order.expire_in == 0
         order1 = Order(
+            order_id=2,
             agent_id=1,
             counterparty_id=2,
             item_name="rice",
@@ -61,6 +64,7 @@ class TestOrder:
             ttl=2,
         )
         order2 = Order(
+            order_id=3,
             agent_id=1,
             counterparty_id=2,
             item_name="rice",
@@ -79,6 +83,7 @@ class TestOrder:
 
     def test_is_fulfilled(self) -> None:
         order = Order(
+            order_id=4,
             agent_id=1,
             counterparty_id=2,
             item_name="rice",
@@ -91,6 +96,7 @@ class TestOrder:
         order.execute()
         assert order.is_fulfilled()
         order = Order(
+            order_id=5,
             agent_id=1,
             counterparty_id=2,
             item_name="rice",
@@ -132,6 +138,7 @@ class TestSwapProposal:
             give_item_amount=5,
             get_item_name="cash",
             get_item_amount=20,
+            proposal_id=201,
         )
         proposal.react(accept=True)
         assert proposal.accept is True
@@ -147,6 +154,7 @@ class TestSwapProposal:
             get_item_name="cash",
             get_item_amount=20,
             ttl=3,
+            proposal_id=202,
         )
         proposal.update_time()
         assert proposal.expire_in == 2
@@ -162,6 +170,7 @@ class TestSwapProposal:
             get_item_name="cash",
             get_item_amount=20,
             ttl=1,
+            proposal_id=203,
         )
         assert not proposal.is_fulfilled()
         proposal.react(accept=True)
@@ -174,6 +183,7 @@ class TestSwapProposal:
             get_item_name="cash",
             get_item_amount=20,
             ttl=1,
+            proposal_id=204,
         )
         proposal.update_time()
         assert proposal.is_fulfilled()
