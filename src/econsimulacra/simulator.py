@@ -25,9 +25,9 @@ ObsT = TypeVar("ObsT")
 
 class Simulator(Generic[ObsT]):
     """Simulator class.
-    
+
     The Simulator class is responsible for running the simulation. Basic usage:
-    
+
     >>> config_path = pathlib.Path("path/to/config.json")
     >>> logger = DictLogger()
     >>> simulator = Simulator(
@@ -47,7 +47,7 @@ class Simulator(Generic[ObsT]):
         summarizer_class: Optional[Type[SimulationSummarizer]] = None,
     ) -> None:
         """Initialization.
-        
+
         Args:
             config (dict or Path): The configuration for the simulation
                 See also econsimulacra.envs.base.Environment for the required and optional configuration fields.
