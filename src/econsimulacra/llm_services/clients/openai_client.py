@@ -18,19 +18,23 @@ class OpenAIClient(LLMClient):
     def __init__(
         self, config: dict[str, Any], prng: Optional[random.Random] = None
     ) -> None:
-        """initialization.
+        """Initialization.
 
         Args:
             config (dict): Configuration dictionary for the OpenAI client. This may include parameters such as:
-                - modelName: model name to use for generation (e.g., "gpt-4-0613").
-                - apiKey: OpenAI API key (optional, can also be set via OPENAI_API_KEY environment variable).
-                - jsonSchemaPath: path to a custom JSON schema file for structured generation (optional, if not provided, a default schema will be used).
-                - modifySchema: whether to modify the default JSON schema based on config (optional, default is False).
-                - timeOut: timeout for API calls in seconds (optional, default is 30).
-                - maxRetries: max retries for transient failures (optional, default is 3).
+                - "modelName": model name to use for generation (e.g., "gpt-4-0613").
+                - "apiKey": OpenAI API key (optional, can also be set via OPENAI_API_KEY environment variable).
+                - "jsonSchemaPath": path to a custom JSON schema file for structured generation (optional, if not provided, a default schema will be used).
+                - "modifySchema": whether to modify the default JSON schema based on config (optional, default is False).
+                - "gridSpace": a list of two integers representing the dimensions of the grid space (optional, may be provided if modifySchema is True).
+                - "items": a list of item names available in the environment (optional, may be provided if modifySchema is True).
+                - "numAgents": the number of agents in the environment (optional, may be provided if modifySchema is True).
+                - "timeOut": timeout for API calls in seconds (optional, default is 30).
+                - "maxRetries": max retries for transient failures (optional, default is 3).
 
         Note: config example:
             {
+                "type": "OpenAIClient",
                 "modelName": "gpt-4o-mini",
                 "apiKey": "your_openai_api_key" # Optional if OPENAI_API_KEY environment variable is set
             }
@@ -49,6 +53,14 @@ class OpenAIClient(LLMClient):
         self.json_schema: dict[str, Any] = json.loads(self._get_json_schema())
 
     async def generate_response(self, prompt: str) -> dict[str, Any]:
+        """Generate a response from the OpenAI API based on the given prompt.
+        
+        Args:
+            prompt (str): The input prompt to send to the OpenAI API.
+        
+        Returns:
+            dict[str, Any]: The parsed JSON response from the OpenAI API.
+        """
         while True:
             try:
                 async with self._sem:
