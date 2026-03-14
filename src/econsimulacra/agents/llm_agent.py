@@ -38,10 +38,11 @@ class LLMAgent(Agent[dict[str, Any]]):
         self.persona_builder: Optional[PersonaBuilder] = None
         if "personaBuilder" in env_service_dic:
             self.persona_builder = env_service_dic["personaBuilder"]
-            self.persona_builder.build_persona(
-                agent_id=self.agent_id,
-                agent_config=self.config.get("personaConfig", {}),
-            )
+            if self.persona_builder is not None:
+                self.persona_builder.build_persona(
+                    agent_id=self.agent_id,
+                    agent_config=self.config.get("personaConfig", {}),
+                )
         if "promptBuilder" not in env_service_dic:
             raise ValueError(
                 f"LLMAgent {self.agent_name} requires 'promptBuilder' in env_service_dic."
