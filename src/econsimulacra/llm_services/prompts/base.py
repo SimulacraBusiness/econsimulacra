@@ -9,18 +9,37 @@ from typing import Optional
 
 
 class PromptBuilder:
+    """Prompt Builder class. Prompt builders are responsible for generating prompts
+    except for the persona description (if applicable)
+    i.e., they translate the observation into a prompt for LLM input.
+    You can implement your own prompt builder by inheriting this class and implementing the build_prompt method.
+    """
+
     def __init__(
         self, config: dict[str, Any], prng: Optional[random.Random] = None
     ) -> None:
+        """Initialization.
+
+        Args:
+            config (dict[str, Any]): The configuration dictionary. This may include:
+                - "obsDescriptionPath": (optional) the file path to the observation description text file.
+                    If not provided, a default observation description will be used.
+                - "actionDescriptionPath": (optional) the file path to the action description text file.
+                    If not provided, a default action description will be used.
+            prng (Optional[random.Random]): The random number generator.
+        """
         self.config: dict[str, Any] = config
         self.obs_desc, self.action_desc = self._get_obs_action_description(config)
         self.prng: random.Random = prng if prng is not None else random.Random()
 
     def build_prompt(self, obs: dict[str, Any]) -> str:
-        """translate the observation into a prompt for LLM input.
+        """Translate the observation into a prompt for LLM input.
 
         Args:
             obs (dict[str, Any]): the observation to translate into a prompt for LLM input
+
+        Returns:
+            str: the generated prompt for LLM input
 
         Note:
             Called by LLMAgent.act
@@ -48,7 +67,23 @@ class PromptBuilder:
             return obj
 
     def _get_obs_action_description(self, config: dict[str, Any]) -> tuple[str, str]:
-        """get description of observations and actions from config for better LLM understanding."""
+        """Get description of observations and actions from config for better LLM understanding.
+
+        Args:
+            config (dict[str, Any]): The configuration dictionary. This may include:
+                - "obsDescriptionPath": (optional) the file path to the observation description text file.
+                    If not provided, a default observation description will be used.
+                - "actionDescriptionPath": (optional) the file path to the action description text file.
+                    If not provided, a default action description will be used.
+
+        Returns:
+            tuple[str, str]: observation and action descriptions
+
+        Note:
+            For the default observation and action descriptions, see also:
+                - econsimulacra.constant.DEFAULT_OBS_DESCRIPTION
+                - econsimulacra.constant.DEFAULT_ACTION_DESCRIPTION, respectively.
+        """
         obs_desc_path_str: Optional[str] = config.get("obsDescriptionPath")
         obs_desc: str
         if obs_desc_path_str is not None:
