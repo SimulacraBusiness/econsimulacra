@@ -20,7 +20,7 @@ class Item:
         Args:
             item_id (int): The unique id for the item.
             item_name (str): The name of the item.
-            config (dict[str, Any], Optional): Optional config. If it contains "initialPrice", it is used as the initial price. Defaults to None.
+            config (dict[str, Any], optional): Optional config. If it contains "initialPrice", it is used as the initial price. Defaults to None.
         """
         self.item_id: int = item_id
         self.item_name: str = item_name
@@ -45,7 +45,7 @@ class Item:
 
         Args:
             price (float): The new price of the item.
-            set_by (int, Optional): The id of the agent who set the price. Defaults to None.
+            set_by (int, optional): The agent id who set the price. Defaults to None.
         """
         self.price = price
         self.price_set_by = set_by
