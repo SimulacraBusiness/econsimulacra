@@ -68,9 +68,9 @@ class TransformersClient(LLMClient):
             "trust_remote_code": trust_remote_code,
             "device_map": {"": device_str},
         }
-        model = models.transformers(self.model_name, model_kwargs=model_kwargs)
+        model = models.transformers(self.model_name, model_kwargs=model_kwargs) # pyright: ignore
         json_schema_str: str = self._get_json_schema()
-        return generate.json(model, schema_object=json_schema_str)
+        return generate.json(model, schema_object=json_schema_str) # pyright: ignore
 
     async def generate_response(self, prompt: str) -> dict[str, Any]:
         async with self._lock:
