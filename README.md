@@ -29,6 +29,40 @@ By combining agent-based modeling with LLM reasoning, EconSimulacra allows resea
 
 EconSimulacra consists of the following main components:
 
+```mermaid
+flowchart TB
+
+subgraph TOP["User Interface"]
+    direction LR
+    U["User"] --> C["Config"] --> S["Simulator"]
+end
+
+S --> ENV
+
+subgraph ENV["Environment"]
+    direction LR
+    GS["GridSpace"]
+    SN["SocialNetwork"]
+    AG["Agents"]
+    ES["EnvService"]
+end
+
+AG -->|"act in"| GS
+AG -->|"interact via"| SN
+AG -->|"use services"| ES
+
+subgraph SRV["EnvService components"]
+    direction LR
+    LLM["LLMClient"]
+    PB["PromptBuilder"]
+    PER["PersonaBuilder"]
+end
+
+ES --> LLM
+ES --> PB
+ES --> PER
+```
+
 ## [**Simulator**](https://github.com/SimulacraBusiness/econsimulacra/blob/main/src/econsimulacra/simulator.py) 
 
 The **Simulator** executes the simulation, manages temporal progression, and supports parallel execution. At each simulation step, the simulator collects actions from all agents based on their observations and applies them to the environment. The core logic of the simulator is conceptually as follows.
@@ -87,4 +121,3 @@ By customizing these components, users can easily modify LLM configurations and 
 ## Customize Prompt and Action Schema
 
 ## Customize Classes
-
