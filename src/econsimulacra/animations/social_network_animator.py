@@ -1,5 +1,6 @@
 from .base import Animator
 from collections import defaultdict
+from manim import Animation
 from manim import AnimationGroup
 from manim import Arrow
 from manim import Create
@@ -69,7 +70,7 @@ class SocialNetworkAnimator(Animator):
         time_text = Text(self.times[0], font_size=28).to_corner(UL)
         self.add(time_text)
         frame_w: int = manim_config.frame_width
-        sns_w: float = frame_w * 0.6
+        sns_w: float = frame_w * 0.5
         frame_h: int = manim_config.frame_height
         sns_h: float = frame_h
         sns_area: Rectangle = Rectangle(width=sns_w, height=sns_h, stroke_opacity=0.0)
@@ -79,24 +80,19 @@ class SocialNetworkAnimator(Animator):
         )
         tl_area.to_edge(RIGHT)
         social_layout: dict[int, ndarray] = self._make_social_layout(
-            center=sns_area.get_center(),
+            center=sns_area.get_center() + LEFT * 0.3,
             radius=min(sns_w, sns_h) * 0.35,
         )
-        self.agent_id2agent_mobject_dic, agent_id2label_dic, agents_group = (
-            self._generate_agents(social_layout=social_layout)
-        )
-        self.add(agents_group)
+        (
+            self.agent_id2agent_mobject_dic,
+            agent_id2label_dic,
+            self.agent_id2group_dic,
+            agents_group,
+        ) = self._generate_agents(social_layout=social_layout)
         self.play(
             LaggedStart(
                 *[
-                    FadeIn(self.agent_id2agent_mobject_dic[agent_id], scale=0.5)
-                    for agent_id in self.agent_ids
-                ],
-                lag_ratio=0.05,
-            ),
-            LaggedStart(
-                *[
-                    FadeIn(agent_id2label_dic[agent_id], scale=0.5)
+                    FadeIn(self.agent_id2group_dic[agent_id], scale=0.5)
                     for agent_id in self.agent_ids
                 ],
                 lag_ratio=0.05,
@@ -148,9 +144,10 @@ class SocialNetworkAnimator(Animator):
 
     def _generate_agents(
         self, social_layout: dict[int, ndarray]
-    ) -> tuple[dict[int, SVGMobject | Dot], dict[int, Text], VGroup]:
+    ) -> tuple[dict[int, SVGMobject | Dot], dict[int, Text], dict[int, VGroup], VGroup]:
         agent_id2agent_mobject_dic: dict[int, SVGMobject | Dot] = {}
         agent_id2label_dic: dict[int, Text] = {}
+        agent_id2group_dic: dict[int, VGroup] = {}
         agents_group: VGroup = VGroup()
         for agent_id in self.agent_ids:
             agent_name: str = self.agent_id2name_dic[agent_id]
@@ -170,15 +167,25 @@ class SocialNetworkAnimator(Animator):
                     ),
                     1.0,
                 )
+                * 0.4
             )
             agent_manim_obj.set_color("WHITE")
             agent_manim_obj.move_to(pos)
-            label: Text = Text(agent_name, font_size=18)
+            label: Text = Text(agent_name, font_size=7)
             label.add_updater(lambda m, d=agent_manim_obj: m.next_to(d, UP, buff=0.05))
+            label.set_z_index(3)
+            label.update()
+            agent_group = VGroup(agent_manim_obj, label)
             agent_id2agent_mobject_dic[agent_id] = agent_manim_obj
             agent_id2label_dic[agent_id] = label
-            agents_group.add(agent_manim_obj, label)
-        return agent_id2agent_mobject_dic, agent_id2label_dic, agents_group
+            agent_id2group_dic[agent_id] = agent_group
+            agents_group.add(agent_group)
+        return (
+            agent_id2agent_mobject_dic,
+            agent_id2label_dic,
+            agent_id2group_dic,
+            agents_group,
+        )
 
     def _update_edges(
         self,
@@ -198,14 +205,14 @@ class SocialNetworkAnimator(Animator):
                 follow_edge_dic[edge_key] = edge
                 anims.append(
                     Indicate(
-                        self.agent_id2agent_mobject_dic[src_agent_id],
+                        self.agent_id2group_dic[src_agent_id],
                         scale_factor=1.3,
                         run_time=0.3,
                     )
                 )
                 anims.append(
                     Indicate(
-                        self.agent_id2agent_mobject_dic[dst_agent_id],
+                        self.agent_id2group_dic[dst_agent_id],
                         scale_factor=1.3,
                         run_time=0.3,
                     )
@@ -220,9 +227,9 @@ class SocialNetworkAnimator(Animator):
             start=self.agent_id2agent_mobject_dic[src_agent_id].get_center(),
             end=self.agent_id2agent_mobject_dic[dst_agent_id].get_center(),
             buff=0.12,
-            stroke_width=2.5,
+            stroke_width=1.5,
             color=WHITE,
-            max_tip_length_to_length_ratio=0.15,
+            max_tip_length_to_length_ratio=0.05,
         )
         edge.set_z_index(1)
         return edge
@@ -235,8 +242,10 @@ class SocialNetworkAnimator(Animator):
         anchor = tl_box.get_top() + DOWN * 0.65 + RIGHT * 0.2
         agent_id: int = int(log_dic["agent_id"])
         message: str = log_dic["message"]
+        if len(message) > 78:
+            message = message[:75] + "..."
         agent_name: str = self.agent_id2name_dic[agent_id]
-        tweet_text: Text = Text(f"{agent_name}:\n {message}", font_size=16)
+        tweet_text: Text = Text(f"{agent_name}:\n {message}", font_size=12)
         if self.fast_rendering:
             assert self.latest_tweets is not None
             self.latest_tweets = [tweet_text] + self.latest_tweets
@@ -260,18 +269,18 @@ class SocialNetworkAnimator(Animator):
             new_group.arrange(DOWN, buff=0.35, aligned_edge=LEFT)
             new_group.move_to(anchor, aligned_edge=UP)
             new_group.align_to(tl_box, LEFT).shift(RIGHT * 0.2)
-            to_remove: list[Mobject] = []
             if len(new_group) > self.max_tweets_in_tl:
-                to_remove = list(new_group[self.max_tweets_in_tl :])
                 new_group = VGroup(*new_group[: self.max_tweets_in_tl])
-            tweet_anims: list[Mobject] = []
-            old: list[Mobject] = list(self.tl_group.submobjects)
-            new: list[Mobject] = list(new_group.submobjects)
-            for i in range(min(len(old), len(new) - 1)):
-                tweet_anims.append(old[i].animate.move_to(new[i + 1].get_center()))
+            old_subs = list(self.tl_group.submobjects)
+            new_subs = list(new_group.submobjects)
+            tweet_anims: list[Animation] = []
+            for i in range(min(len(old_subs), len(new_subs) - 1)):
+                tweet_anims.append(
+                    old_subs[i].animate.move_to(new_subs[i + 1].get_center())
+                )
             tweet_anims.append(FadeIn(tweet_text, shift=DOWN * 0.15))
-            for m in to_remove:
-                tweet_anims.append(FadeOut(m))
-            self.tl_group = new_group
-            self.add(self.tl_group)
+            for m in old_subs[self.max_tweets_in_tl - 1 :]:
+                if m not in new_subs:
+                    tweet_anims.append(FadeOut(m))
             self.play(AnimationGroup(*tweet_anims, lag_ratio=0.0), run_time=0.1)
+            self.tl_group.become(new_group)
