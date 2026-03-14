@@ -2,7 +2,7 @@ from .base import Environment as Environment
 from .memory import MemoryHandler as MemoryHandler
 from .obs_providers import ObsProvider as ObsProvider
 from .obs_providers import (
-    ObsProviderForCoLocatedAgents as ObsProviderForCoLocatedAgents,
+    ObsProviderFromCoLocatedAgents as ObsProviderFromCoLocatedAgents,
 )
 from .obs_providers import TimeProvider as TimeProvider
 from .obs_providers import TimeDeltaProvider as TimeDeltaProvider
@@ -46,7 +46,7 @@ __all__ = [
     "SwapProposal",
     "TimeTranslator",
     "ObsProvider",
-    "ObsProviderForCoLocatedAgents",
+    "ObsProviderFromCoLocatedAgents",
     "TimeProvider",
     "TimeDeltaProvider",
     "SelfIDProvider",

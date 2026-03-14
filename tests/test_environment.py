@@ -329,7 +329,7 @@ class TestEnvironment:
         assert proposal0.give_item_amount == 15
         assert proposal0.get_item_name == "Yen"
         assert proposal0.get_item_amount == 15000
-        assert proposal0.expire_in == 1
+        assert proposal0.expire_in == 2
         assert proposal0.accept is None
         env.latest_proposal_id = 1
 

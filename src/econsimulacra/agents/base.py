@@ -25,11 +25,14 @@ class Agent(ABC, Generic[ObsT]):
         prng: Optional[Random] = None,
         config: Optional[dict[str, Any]] = None,
     ) -> None:
-        """initialization.
+        """Initialization.
 
         Args:
-            agent_id (int): agent id, which is unique in the environment.
+            agent_id (int): agent id, which is unique in the environment. Usually assigned by environment when generating agents.
             agent_name (str): agent name, which is used for identification and display purposes.
+                This argument is set by environment, but can be overridden by providing "name" in config.
+            env_service_dic (dict[str, Any]): a dictionary of environment services that the agent can use.
+                The keys are service names and the values are the corresponding service instances.
             prng (Optional[Random], optional): pseudo-random number generator for the agent. Defaults to None.
             config (Optional[dict[str, Any]], optional): configuration dictionary for the agent. Defaults to None.
 
@@ -37,6 +40,7 @@ class Agent(ABC, Generic[ObsT]):
             config example:
             {
                 "isHousehold": True,
+                # If isHousehold, the agent is allowed to move, otherwise, the agent is allowed to set price of goods it has.
                 "numAgents": 10,
                 "name": str, # optional, if not provided, the agent name will be agent_name
                 "inventory": {
@@ -46,15 +50,22 @@ class Agent(ABC, Generic[ObsT]):
                 },
                 "isRichInfoAllowed": False,
                 "requestObs": ["all"],
-                # built-in options: "time", "timedelta", "self_agent_id", "self_name", "self_pos", "self_init_pos", "self_is_moving",
-                # "self_destination", "others_pos",
-                # "self_tweet", "visible_tl", "recommended_follows", "follow_cap", "num_followers", "num_follows",
+                # If set "all", the agent tries to request all available information from the environment
+                # built-in options: "time", "timedelta", "self_agent_id", "self_name", "memory",
+                # "self_pos", "self_init_pos", "self_is_moving",
+                # "self_destination", "others_pos", "self_inventory
+                # "self_tweet", "follow_cap", "num_followers", "num_follows", "visible_tl", "recommended_follows",
                 # "incoming_orders", "incoming_proposals",
-                # "item_name2price", "others_inventory", "memory"
-                "provideInfo4AllAgents": [], # built-in option: "self_pos",
-                "provideInfo4CoLocatedAgents": [], # built-in option: "inventory"
-                "provideInfo4AllowedAgents": [], # built-in option: None,
-                "availableServices": ["prompt_builder", "llm_client", ...] # Optional, default []
+                # "others_inventory", <- usually provided for co-located agents.
+                # "item_name2price" <- provided if the agent.is_rich_info_allowed.
+                "provideInfo4AllAgents": [],
+                # built-in option: "self_pos" <- If set, every other agents know where the agent is at each step.
+                "provideInfo4CoLocatedAgents": [],
+                # built-in option: "inventory" <- If set, co-located agents know the inventory of the agent at each step.
+                "provideInfo4AllowedAgents": [],
+                # built-in option: None,
+                "personaConfig": {}
+                # optional, see also econsimulacra.agents.llm_agent.LLMAgent.self_assign_name
             }
         """
         self.agent_id: int = agent_id
@@ -76,19 +87,26 @@ class Agent(ABC, Generic[ObsT]):
         self.self_assign_name(self.config)
 
     def get_self_name(self) -> str:
+        """Get the name of the agent."""
         return self.agent_name
 
     def self_assign_name(self, config: dict[str, Any]) -> None:
+        """Assign a name to the agent based on the configuration.
+
+        If "name" is not provided in the config, the agent name will be the default name assigned by environment.
+        """
         if "name" in config:
             self.agent_name = config["name"] + str(self.agent_id)
 
     def _setup_request_obs(self) -> None:
+        """Setup the observations that the agent will request."""
         if self.config is not None and "requestObs" in self.config:
             self.request_obses: list[str] = list(self.config["requestObs"])
         else:
             self.request_obses = ["all"]
 
     def _setup_infos_to_provide(self) -> None:
+        """Setup the information that the agent will provide for other agents."""
         self.info4all_agents: list[str] = list(
             self.config.get("provideInfo4AllAgents", [])
         )
@@ -109,6 +127,7 @@ class Agent(ABC, Generic[ObsT]):
         pass
 
     def _initialize_inventory(self, config: dict[str, Any]) -> dict[str, float | int]:
+        """Initialize the inventory for the agent based on the configuration."""
         json_random = JsonRandom(prng=self.prng)
         inventory_config: dict[str, Any] = config.get("inventory", {})
         inventory_dic: dict[str, Any] = {}
@@ -118,10 +137,12 @@ class Agent(ABC, Generic[ObsT]):
         return inventory_dic
 
     def get_item_amount(self, item_name: str) -> float | int:
+        """Get the amount of a specific item in the agent's inventory."""
         return self.inventory_dic.get(item_name, 0)
 
     @abstractmethod
     async def act(self, obs: ObsT) -> dict[str, Any]:
+        """Perform an action based on the observation (abstract method)."""
         pass
 
     def exchange_goods(
@@ -131,6 +152,14 @@ class Agent(ABC, Generic[ObsT]):
         give_item_name: Optional[str] = None,
         give_item_amount: Optional[float | int] = None,
     ) -> None:
+        """Exchange goods in the agent's inventory.
+
+        Args:
+            get_item_name (Optional[str]): the name of the item to get (optional).
+            get_item_amount (Optional[float | int]): the amount of the item to get (optional, must be provided if get_item_name is provided).
+            give_item_name (Optional[str]): the name of the item to give (optional).
+            give_item_amount (Optional[float | int]): the amount of the item to give (optional, must be provided if give_item_name is provided).
+        """
         if get_item_name is not None:
             if get_item_amount is None:
                 raise ValueError(
@@ -194,6 +223,14 @@ class Agent(ABC, Generic[ObsT]):
         return self.info4allowed_agents
 
     def request_obs(self) -> list[str]:
+        """Request observations from the environment.
+
+        Returns:
+            list[str]: a list of observation keys that the agent is requesting from the environment.
+
+        See also:
+            econsimulacra.environment.base.get_observations
+        """
         return self.request_obses
 
     def __repr__(self) -> str:

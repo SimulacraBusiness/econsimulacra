@@ -5,9 +5,21 @@ from typing import Optional
 
 
 class Big5PersonaBuilder(PersonaBuilder):
+    """Persona builder that builds personas based on the Big 5 personality traits."""
+
     def __init__(
         self, config: dict[str, Any], prng: Optional[random.Random] = None
     ) -> None:
+        """Initialization.
+
+        Args:
+            config (dict): Configuration dictionary for the persona builder. This must include:
+                - "type": the type of persona builder to use (e.g., "Big5PersonaBuilder").
+                and may include:
+                - "maxMagnitude": the maximum magnitude for each Big 5 trait, which is a non-negative integer and the default value is 1).
+            prng (random.Random, optional): An optional instance of random.Random for reproducible randomness.
+                If not provided, a new instance will be created.
+        """
         super().__init__(config=config, prng=prng)
         self.max_magnitude: int = config.get("maxMagnitude", 1)
 

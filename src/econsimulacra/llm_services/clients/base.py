@@ -11,9 +11,42 @@ from typing import Optional
 
 
 class LLMClient(ABC):
+    """LLM Client class (abstract class).
+
+    You can implement your own LLM client by inheriting this class and implementing the generate_response method.
+    Currently, OpenAIClient and TransformersClient are implemented as built-in options.
+
+    See also:
+        - econsimulacra.llm_services.clients.OpenAIClient: LLM client implementation for OpenAI's API.
+        - econsimulacra.llm_services.clients.TransformersClient: LLM client implementation using the Transformers library and Outlines for structured generation.
+    """
+
     def __init__(
         self, config: dict[str, Any], prng: Optional[random.Random] = None
     ) -> None:
+        """Initialization.
+
+        Args:
+            config (dict): Configuration dictionary for the LLM client. This must include:
+                - modelName: model name or path to the model
+                    (e.g., for OpenAI, "gpt-4"; for Transformers, a model name or path compatible with the Transformers library).
+                and may include:
+                - "jsonSchemaPath": path to a custom JSON schema file for structured generation (optional, if not provided, a default schema will be used).
+                - "modifySchema": whether to modify the default JSON schema based on config (optional, default is False).
+                    See also: ._get_json_schema() and ._modify_json_schema()
+                - "gridSpace": a list of two integers representing the dimensions of the grid space (optional, may be provided if modifySchema is True).
+                - "items": a list of item names available in the environment (optional, may be provided if modifySchema is True).
+                - "numAgents": the number of agents in the environment (optional, may be provided if modifySchema is True).
+                - other model-specific parameters (e.g., for TransformersClient, "device", "dtype", "maxConcurrentGenerations", etc.).
+            prng (random.Random, optional): An optional instance of random.Random for reproducible randomness.
+                If not provided, a new instance will be created.
+
+        Note:
+            The LLMClient class is used as an environment service, and used by the LLMAgent.
+            See also:
+                econsimulacra.envs.base.Environment._generate_service_providers(service_provider_keys: list[str])
+                econsimulacra.agents.llm_agent.LLMAgent
+        """
         self.config: dict[str, Any] = config
         if "modelName" not in config:
             raise ValueError("'modelName' must be specified in the LLMClient config.")
@@ -27,7 +60,11 @@ class LLMClient(ABC):
         pass
 
     def _get_json_schema(self) -> str:
-        """get JSON schema for structured generation from config or use default schema."""
+        """Get JSON schema for structured generation from config or use default schema.
+
+        Returns:
+            A JSON schema string for structured generation.
+        """
         schema_path_str: Optional[str] = self.config.get("jsonSchemaPath")
         if schema_path_str is not None:
             schema_path: Path = pathlib.Path(schema_path_str).resolve()
@@ -49,6 +86,19 @@ class LLMClient(ABC):
         json_schema: dict[str, Any],
         config: dict[str, Any],
     ) -> dict[str, Any]:
+        """Modify the default JSON schema based on the provided config.
+
+        Args:
+            json_schema: The default JSON schema.
+            config: The configuration dictionary.
+
+        Returns:
+            The modified JSON schema.
+
+        Note:
+            This method restricts the action space defined in the JSON schema
+            based on the environment configuration.
+        """
         assert "properties" in json_schema
         if "gridSpace" in config:
             dim: int = len(config["gridSpace"])
