@@ -24,6 +24,21 @@ ObsT = TypeVar("ObsT")
 
 
 class Simulator(Generic[ObsT]):
+    """Simulator class.
+    
+    The Simulator class is responsible for running the simulation. Basic usage:
+    
+    >>> config_path = pathlib.Path("path/to/config.json")
+    >>> logger = DictLogger()
+    >>> simulator = Simulator(
+    >>>     config=config_path,
+    >>>     env_class=Environment,
+    >>>     logger=logger,
+    >>>     summarizer_class=SimulationSummarizer,
+    >>> )
+    >>> asyncio.run(simulator.simulate(seed=42))
+    """
+
     def __init__(
         self,
         config: dict[str, Any] | Path,
@@ -31,6 +46,16 @@ class Simulator(Generic[ObsT]):
         logger: Optional[Logger] = None,
         summarizer_class: Optional[Type[SimulationSummarizer]] = None,
     ) -> None:
+        """Initialization.
+        
+        Args:
+            config (dict or Path): The configuration for the simulation
+                See also econsimulacra.envs.base.Environment for the required and optional configuration fields.
+            env_class (Type[Environment]): The environment class to use for the simulation. This must be a subclass of Environment.
+            logger (Logger, optional): An optional logger instance for logging simulation data. If not provided, no logging will be performed.
+            summarizer_class (Type[SimulationSummarizer], optional): An optional summarizer class for summarizing the simulation.
+                This must be a subclass of SimulationSummarizer. If not provided, no summarization will be performed.
+        """
         self.config: dict[str, Any]
         if isinstance(config, Path):
             config_path: Path = config
@@ -63,6 +88,49 @@ class Simulator(Generic[ObsT]):
         self,
         seed: Optional[int] = None,
     ) -> None:
+        """Execute the full simulation loop asynchronously.
+
+        Args:
+            - seed (int, optional): Random seed.
+
+        Note:
+            This method is the main entry point for running a simulation episode.
+            It resets the environment, iteratively collects actions from all agents,
+            applies the joint action to the environment at each step, and finalizes
+            optional logging and summarization at the end of the run.
+
+            The simulation proceeds as follows:
+
+            1. The environment is reset with the given random seed.
+            2. If a summarizer is configured, the simulation start is recorded.
+            3. For each simulation step:
+            - observations are generated for all agents,
+            - each agent asynchronously computes its action via :meth:`act`,
+            - agents are evaluated in chunks determined by ``parallel_batch_size``,
+                so that multiple agents can act concurrently without launching all
+                coroutines at once,
+            - list-valued actions are recursively converted into tuples for
+                downstream consistency and hashability,
+            - the resulting joint action dictionary is passed to
+                :meth:`self.env.step`.
+            4. After all steps are completed, the logger is saved if present.
+            5. If a summarizer is configured, the simulation end is recorded.
+
+            This method is intentionally asynchronous because agent decision-making
+            may involve I/O-bound or high-latency components such as LLM inference,
+            API calls, or remote services. By using :func:`asyncio.gather`, the
+            simulator can evaluate multiple agents concurrently within each batch,
+            improving throughput while still preserving step-level synchronization:
+            all actions for a step are collected before the environment advances.
+
+            Concurrency Model:
+                Agent actions are computed concurrently within each batch, but the
+                environment transition itself is performed once per step after all
+                actions have been collected. Therefore, this method implements
+                synchronous environment stepping with asynchronous per-agent action
+                generation.
+        """
+
         def _chunked(seq: list[int], size: int) -> list[list[int]]:
             return [seq[i : i + size] for i in range(0, len(seq), size)]
 
@@ -178,17 +246,23 @@ class SimulationSummarizer:
                     llm_client_branch.add(
                         f"[green]Model Name[/green]: {service.model_name}"
                     )
-                    if hasattr(service, "max_concurrent_generations"):
+                    max_concurrent_generations: Optional[int] = getattr(
+                        service, "max_concurrent_generations", None
+                    )
+                    if max_concurrent_generations is not None:
                         llm_client_branch.add(
-                            f"[green]Max Concurrent Generations[/green]: {service.max_concurrent_generations}"
+                            f"[green]Max Concurrent Generations[/green]: {max_concurrent_generations}"
                         )
                 elif isinstance(service, PersonaBuilder):
                     persona_builder_branch: Tree = service_branch.add(
                         f"[green]Persona Builder: {service.__class__.__name__}[/green]"
                     )
-                    if hasattr(service, "max_magnitude"):
+                    max_magnitude: Optional[int] = getattr(
+                        service, "max_magnitude", None
+                    )
+                    if max_magnitude is not None:
                         persona_builder_branch.add(
-                            f"[green]Max Magnitude[/green]: {service.max_magnitude}"
+                            f"[green]Max Magnitude[/green]: {max_magnitude}"
                         )
                 elif isinstance(service, PromptBuilder):
                     service_branch.add(
@@ -198,17 +272,22 @@ class SimulationSummarizer:
                     time_translator_branch: Tree = service_branch.add(
                         f"[green]Time Translator: {service.__class__.__name__}[/green]"
                     )
-                    if hasattr(service, "start_datetime"):
+                    start_datetime: Optional[Any] = getattr(
+                        service, "start_datetime", None
+                    )
+                    end_datetime: Optional[Any] = getattr(service, "end_datetime", None)
+                    time_delta: Optional[Any] = getattr(service, "time_delta", None)
+                    if start_datetime is not None:
                         time_translator_branch.add(
-                            f"[green]Start Datetime[/green]: {str(service.start_datetime)}"
+                            f"[green]Start Datetime[/green]: {str(start_datetime)}"
                         )
-                    if hasattr(service, "end_datetime"):
+                    if end_datetime is not None:
                         time_translator_branch.add(
-                            f"[green]End Datetime[/green]: {str(service.end_datetime)}"
+                            f"[green]End Datetime[/green]: {str(end_datetime)}"
                         )
-                    if hasattr(service, "time_delta"):
+                    if time_delta is not None:
                         time_translator_branch.add(
-                            f"[green]Time Delta[/green]: {str(service.time_delta)}"
+                            f"[green]Time Delta[/green]: {str(time_delta)}"
                         )
         print()
         console.print(Panel(tree, title="[bold green]Summary[/bold green]"))
@@ -226,10 +305,12 @@ class SimulationSummarizer:
         print()
         example_agent_id: int = self.env.household_ids[0]
         agent: Agent = self.env.agent_id2agent[example_agent_id]
-        if hasattr(agent, "last_prompt") and agent.last_prompt != "":
-            console.print(
-                Panel(
-                    agent.last_prompt,
-                    title=f"[bold green]Agent {example_agent_id}'s Last Prompt[/bold green]",
+        last_prompt: Optional[str] = getattr(agent, "last_prompt", None)
+        if last_prompt is not None:
+            if last_prompt != "":
+                console.print(
+                    Panel(
+                        last_prompt,
+                        title=f"[bold green]Agent {example_agent_id}'s Last Prompt[/bold green]",
+                    )
                 )
-            )
