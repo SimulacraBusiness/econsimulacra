@@ -5,20 +5,21 @@ from typing import DefaultDict
 
 class GridSpace:
     """Grid Space class.
-    
+
     The grid space represents the spatial environment where agents are located.
     Each agent can be placed at a specific position in the grid,
     and multiple agents can occupy the same position.
     The GridSpace provides methods to manage agent placements and movements.
     """
+
     def __init__(self, config: dict[str, Any]) -> None:
         """Initialization.
-        
+
         Args:
             config (dict): Configuration dictionary for the GridSpace.
                 This must include:
                 - "gridSize": A tuple representing the dimensions of the grid.
-        
+
         Note:
             See also:
                 econsimulacra.envs.base.Environment._generate_space(space_key: str)
@@ -32,7 +33,7 @@ class GridSpace:
 
     def get_space_size(self) -> tuple[int, ...]:
         """Get the shape of the grid space.
-        
+
         Returns:
             tuple[int, ...]: The dimensions of the grid space.
         """
@@ -40,7 +41,7 @@ class GridSpace:
 
     def _check_bounds(self, pos: tuple[int, ...]) -> None:
         """Check whether the given position is within the bounds of the grid space.
-        
+
         Args:
             pos (tuple[int, ...]): The position to check.
         """
@@ -56,10 +57,10 @@ class GridSpace:
 
     def get_pos(self, agent_id: int) -> tuple[int, ...]:
         """Get the position of the agent with the given ID.
-        
+
         Args:
             agent_id (int): The ID of the agent to get the position for.
-        
+
         Returns:
             tuple[int, ...]: The position of the agent.
         """
@@ -69,10 +70,10 @@ class GridSpace:
 
     def get_agents(self, pos: tuple[int, ...]) -> set[int]:
         """Get the set of agent IDs located at the given position.
-        
+
         Args:
             pos (tuple[int, ...]): The position to check.
-        
+
         Returns:
             set[int]: The set of agent IDs located at the given position.
         """
@@ -81,11 +82,11 @@ class GridSpace:
 
     def place_agent(self, agent_id: int, pos: tuple[int, ...]) -> None:
         """Place an agent with the given ID at the specified position in the grid space.
-        
+
         Args:
             agent_id (int): The ID of the agent to place.
             pos (tuple[int, ...]): The position to place the agent at.
-        
+
         Note:
             See also:
                 econsimulacra.envs.base.Environment._assign_agent_to_space(
@@ -102,10 +103,10 @@ class GridSpace:
 
     def get_colocated_agents(self, agent_id: int) -> set[int]:
         """Get the set of agent IDs located at the same position as the given agent.
-        
+
         Args:
             agent_id (int): The ID of the agent to check.
-        
+
         Returns:
             set[int]: The set of agent IDs located at the same position as the given agent.
         """
@@ -116,7 +117,7 @@ class GridSpace:
 
     def remove_agent(self, agent_id: int) -> None:
         """Remove the agent with the given ID from the grid space.
-        
+
         Args:
             agent_id (int): The ID of the agent to remove.
         """
@@ -130,16 +131,16 @@ class GridSpace:
 
     def move_agent(self, agent_id: int, new_pos: tuple[int, ...]) -> None:
         """Move the agent with the given ID to a new position in the grid space.
-        
+
         Args:
             agent_id (int): The ID of the agent to move.
             new_pos (tuple[int, ...]): The new position to move the agent to.
-        
+
         Note:
             See also:
                 econsimulacra.envs.base.Environment._move(
                     agent_id: int, where_to_move: Optional[tuple[int, ...] | str]
-                )   
+                )
         """
         self._check_bounds(pos=new_pos)
         if agent_id not in self.agent_id2pos:
