@@ -67,7 +67,7 @@
         "provideInfo4CoLocatedAgents": ["inventory"],
         "provideInfo4AllAgents": ["self_pos"],
         "svgPath": "../../imgs/store.svg",
-        "iconScale": 0.01
+        "iconScale": 0.2
     },
     "Yen": {
         "type": "Item",
@@ -86,16 +86,16 @@
     },
     "llmClient": {
         "type": "TransformersClient",
-        "modelName": "mistralai/Mistral-7B-Instruct-v0.3",
-        "other_choice": "Qwen/Qwen2.5-7B-Instruct, meta-llama/Meta-Llama-3-7B-Instruct-v0.1",
+        "modelName": "meta-llama/Meta-Llama-3-8B-Instruct",
+        "other_choice": "Qwen/Qwen2.5-7B-Instruct, mistralai/Mistral-7B-Instruct-v0.3",
         "maxConcurrentGenerations": 2,
         "device": "cuda",
         "gpuIds": [0, 1],
         "dtype": "float32",
         "modifySchema": true,
-        "gridSpace": [10, 10],
+        "gridSpace": [50, 50],
         "items": ["Yen", "Rice", "Pizza"],
-        "numAgents": 10
+        "numAgents": 120
     },
     "timeTranslator": {
         "type": "TimeTranslator",
