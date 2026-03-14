@@ -7,10 +7,10 @@ from typing import Optional
 
 class PersonaBuilder(ABC):
     """Persona Builder class (abstract class).
-    
+
     You can implement your own persona builder by inheriting this class and implementing the build_persona method.
     Currently, Big5PersonaBuilder is implemented as a built-in option, which builds personas based on the Big5 personality traits.
-    
+
     See also:
         - econsimulacra.llm_services.personas.big5.Big5PersonaBuilder
     """
@@ -19,10 +19,11 @@ class PersonaBuilder(ABC):
         self, config: dict[str, Any], prng: Optional[random.Random] = None
     ) -> None:
         """Initialization.
-        
+
         Args:
-            config (dict): Configuration dictionary for the persona builder. This may include parameters such as:
+            config (dict): Configuration dictionary for the persona builder. This must include:
                 - "type": the type of persona builder to use (e.g., "Big5PersonaBuilder").
+                and may include:
                 - other persona builder-specific parameters (e.g., for Big5PersonaBuilder,
                     "maxMagnitude": the maximum magnitude for each Big 5 trait, which is a non-negative integer and the default value is 1).
             prng (random.Random, optional): An optional instance of random.Random for reproducible randomness.

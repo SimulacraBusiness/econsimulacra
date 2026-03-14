@@ -28,7 +28,7 @@ class SocialNetwork:
                 This is used to find the recommender system class based on the "type" specified in the recSys config.
                 You can register custom recommender systems class by econsimulacra.envs.base.Environment.register_class
             prng (Random): A pseudo random number generator.
-        
+
         Note:
             See also:
                 econsimulacra.envs.base.Environment._generate_social_network(social_network_key: str)

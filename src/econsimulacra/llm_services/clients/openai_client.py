@@ -54,10 +54,10 @@ class OpenAIClient(LLMClient):
 
     async def generate_response(self, prompt: str) -> dict[str, Any]:
         """Generate a response from the OpenAI API based on the given prompt.
-        
+
         Args:
             prompt (str): The input prompt to send to the OpenAI API.
-        
+
         Returns:
             dict[str, Any]: The parsed JSON response from the OpenAI API.
         """

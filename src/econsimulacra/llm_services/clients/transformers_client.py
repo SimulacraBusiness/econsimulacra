@@ -31,7 +31,7 @@ class TransformersClient(LLMClient):
                 - "gridSpace": a list of two integers representing the dimensions of the grid space (optional, may be provided if modifySchema is True).
                 - "items": a list of item names available in the environment (optional, may be provided if modifySchema is True).
                 - "numAgents": the number of agents in the environment (optional, may be provided if modifySchema is True).
-                
+
         Note: config example:
             {
                 "modelName": "meta-llama/Meta-Llama-3-8B-Instruct",
@@ -60,7 +60,7 @@ class TransformersClient(LLMClient):
 
     def _make_json_generator(self, gpu_id: int) -> Callable[[str], dict[str, Any]]:
         """Create a JSON generator for a specific GPU.
-        
+
         Args:
             gpu_id (int): The ID of the GPU to use for this generator.
 
@@ -81,16 +81,16 @@ class TransformersClient(LLMClient):
             "trust_remote_code": trust_remote_code,
             "device_map": {"": device_str},
         }
-        model = models.transformers(self.model_name, model_kwargs=model_kwargs) # pyright: ignore
+        model = models.transformers(self.model_name, model_kwargs=model_kwargs)  # pyright: ignore
         json_schema_str: str = self._get_json_schema()
-        return generate.json(model, schema_object=json_schema_str) # pyright: ignore
+        return generate.json(model, schema_object=json_schema_str)  # pyright: ignore
 
     async def generate_response(self, prompt: str) -> dict[str, Any]:
         """Generate a response from the model based on the given prompt.
-        
+
         Args:
             prompt (str): The input prompt to send to the model.
-        
+
         Returns:
             dict[str, Any]: The parsed JSON response from the model.
         """
