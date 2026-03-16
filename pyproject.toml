@@ -29,42 +29,20 @@ classifiers = [
 [tool.poetry.dependencies]
 python = ">=3.10,<3.13"
 typing-extensions = "^4.15.0"
+torch = "2.2.1"
 numpy = "^1.26.1"
+pandas = "^2.3.3"
+matplotlib = "^3.10.8"
+openai = "^2.21.0"
+outlines = "0.1.11"
 rich = "^14.2.0"
+accelerate = "^1.12.0"
+datasets = "^4.5.0"
+transformers = "^4.49.0"
+statsmodels = "^0.14.6"
+sentencepiece = "^0.2.1"
+protobuf = "^7.34.0"
 types-tqdm = "^4.67.3.20260205"
-openai="^2.21.0"
-
-# Optional dependencies for extras
-outlines = { version = "0.1.11", optional = true }
-
-torch = { version = "2.2.1", optional = true }
-accelerate = { version = "^1.12.0", optional = true }
-datasets = { version = "^4.5.0", optional = true }
-transformers = { version = "^4.49.0", optional = true }
-sentencepiece = { version = "^0.2.1", optional = true }
-protobuf = { version = "^7.34.0", optional = true }
-
-matplotlib = { version = "^3.10.8", optional = true }
-statsmodels = { version = "^0.14.6", optional = true }
-
-manim = { version = "^0.18.1", optional = true }
-
-[tool.poetry.extras]
-ml = ["torch", "accelerate", "datasets", "transformers", "outlines", "sentencepiece", "protobuf"]
-viz = ["matplotlib", "statsmodels"]
-animations = ["manim"]
-full = [
-  "outlines",
-  "torch",
-  "accelerate",
-  "datasets",
-  "transformers",
-  "sentencepiece",
-  "protobuf",
-  "matplotlib",
-  "statsmodels",
-  "manim",
-]
 
 # ---------------------------------------------------------
 # Development tools
