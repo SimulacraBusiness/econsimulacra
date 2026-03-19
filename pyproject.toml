@@ -1,11 +1,27 @@
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
 [tool.poetry]
 name = "econsimulacra"
 version = "0.1.0"
-description = ""
-authors = ["ryuji-hashimoto0110"]
+description = "EconSimulacra: A Digital Twin Platform of Consumer Economy Powered by LLM Agents"
+authors = ["Ryuji Hashimoto <r_hashimoto@simulacra.co.jp>"]
+license = "MIT"
 readme = "README.md"
 packages = [{ include = "econsimulacra", from = "src" }]
 include = ["src/econsimulacra/py.typed"]
+repository = "https://github.com/SimulacraBusiness/econsimulacra"
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Typing :: Typed",
+]
 
 # ---------------------------------------------------------
 # Core dependencies (always installed)
@@ -15,8 +31,6 @@ python = ">=3.10,<3.13"
 typing-extensions = "^4.15.0"
 torch = "2.2.1"
 numpy = "^1.26.1"
-pandas = "^2.3.3"
-matplotlib = "^3.10.8"
 openai = "^2.21.0"
 outlines = "0.1.11"
 rich = "^14.2.0"
@@ -41,19 +55,6 @@ mypy = "^1.19.1"
 ruff = "^0.14.13"
 
 # ---------------------------------------------------------
-# Animation dependencies (manim requires cairo/pango system libs)
-# Install only when working on animations:
-#   poetry install --with dev,animations
-#
-# CI does NOT install this group to avoid cairo build issues.
-# ---------------------------------------------------------
-[tool.poetry.group.animations]
-optional = true
-
-[tool.poetry.group.animations.dependencies]
-manim = "^0.18.1"
-
-# ---------------------------------------------------------
 # Mypy configuration
 # Animations layer is excluded because manim lacks full type hints
 # ---------------------------------------------------------
@@ -68,8 +69,3 @@ ignore_missing_imports = true
 [[tool.mypy.overrides]]
 module = ["econsimulacra.animations", "econsimulacra.animations.*"]
 ignore_missing_imports = true
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
-
