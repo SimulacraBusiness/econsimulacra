@@ -1,5 +1,7 @@
 from econsimulacra.agents import Agent
 from econsimulacra.envs import Environment
+from econsimulacra.envs import Event
+from econsimulacra.envs import EventTrigger
 from econsimulacra.envs import MemoryHandler
 from econsimulacra.envs import Order
 from econsimulacra.items import Item
@@ -98,10 +100,24 @@ class DummyMemoryHandler(MemoryHandler):
         return {}
 
 
+class DummyEvent(Event):
+    def __init__(
+        self,
+        trigger: EventTrigger,
+        config: dict[str, Any],
+    ) -> None:
+        super().__init__(trigger=trigger, config=config)
+        self.num_executions = 0
+
+    def execute(self, env, log=None):
+        self.num_executions += 1
+
+
 class TestEnvironment:
     config = {
         "simulation": {
             "numSteps": 100,
+            "events": ["DummyEvent1", "DummyEvent3"],
         },
         "environment": {
             "space": "gridSpace",
@@ -161,6 +177,18 @@ class TestEnvironment:
             "type": "DummyMemoryHandler",
             "memoryLength": 2,
         },
+        "DummyEvent1": {
+            "trigger": {
+                "at": (1, 3, 5),
+            },
+            "type": "DummyEvent",
+        },
+        "DummyEvent3": {
+            "trigger": {
+                "between": (2, 4),
+            },
+            "type": "DummyEvent",
+        },
     }
 
     def test___init__(self) -> None:
@@ -171,14 +199,19 @@ class TestEnvironment:
 
     def test_register_classes(self) -> None:
         env = Environment(config=self.config)
-        env.register_classes([DummyHousehold, DummyRetailer, DummyMemoryHandler])
+        env.register_classes(
+            [DummyHousehold, DummyRetailer, DummyMemoryHandler, DummyEvent]
+        )
         assert DummyHousehold in env.registered_classes
         assert DummyRetailer in env.registered_classes
         assert DummyMemoryHandler in env.registered_classes
+        assert DummyEvent in env.registered_classes
 
     def test_reset(self) -> None:
         env = Environment(config=self.config)
-        env.register_classes([DummyHousehold, DummyRetailer, DummyMemoryHandler])
+        env.register_classes(
+            [DummyHousehold, DummyRetailer, DummyMemoryHandler, DummyEvent]
+        )
         env.reset(seed=42)
         assert len(env.agent_ids) == 6
         assert len(env.household_ids) == 5
@@ -225,7 +258,9 @@ class TestEnvironment:
                 assert agent.inventory_dic == {"Yen": 500, "Rice": 10000}
                 assert agent.agent_name == "DummyRetailer"
         env = Environment(config=self.config, logger=DictLogger())
-        env.register_classes([DummyHousehold, DummyRetailer, DummyMemoryHandler])
+        env.register_classes(
+            [DummyHousehold, DummyRetailer, DummyMemoryHandler, DummyEvent]
+        )
         env.reset(seed=42)
         logger = env.logger
         assert isinstance(logger, DictLogger)
@@ -233,7 +268,9 @@ class TestEnvironment:
 
     def test_move(self) -> None:
         env = Environment(config=self.config)
-        env.register_classes([DummyHousehold, DummyRetailer, DummyMemoryHandler])
+        env.register_classes(
+            [DummyHousehold, DummyRetailer, DummyMemoryHandler, DummyEvent]
+        )
         env.reset(seed=42)
         household_id: int = env.household_ids[0]
         initial_pos: tuple[int, int] = env.grid_space.get_pos(household_id)
@@ -268,7 +305,9 @@ class TestEnvironment:
 
     def test_consume_items(self) -> None:
         env = Environment(config=self.config)
-        env.register_classes([DummyHousehold, DummyRetailer, DummyMemoryHandler])
+        env.register_classes(
+            [DummyHousehold, DummyRetailer, DummyMemoryHandler, DummyEvent]
+        )
         env.reset(seed=42)
         household_id: int = env.household_ids[0]
         initial_rice_amount: int = env.agent_id2agent[household_id].inventory_dic[
@@ -281,7 +320,9 @@ class TestEnvironment:
 
     def test_add_new_orders_and_proposals(self) -> None:
         env = Environment(config=self.config)
-        env.register_classes([DummyHousehold, DummyRetailer, DummyMemoryHandler])
+        env.register_classes(
+            [DummyHousehold, DummyRetailer, DummyMemoryHandler, DummyEvent]
+        )
         env.reset(seed=42)
         orders: list[dict[str, Any]] = [
             {
@@ -335,7 +376,9 @@ class TestEnvironment:
 
     def test_apply_action_to_env_and_process_orders_and_proposals(self) -> None:
         env = Environment(config=self.config)
-        env.register_classes([DummyHousehold, DummyRetailer, DummyMemoryHandler])
+        env.register_classes(
+            [DummyHousehold, DummyRetailer, DummyMemoryHandler, DummyEvent]
+        )
         env.reset(seed=42)
         household_id0: int = env.household_ids[0]
         household_id1: int = env.household_ids[1]
@@ -443,7 +486,9 @@ class TestEnvironment:
 
     def test_get_observations(self) -> None:
         env = Environment(config=self.config)
-        env.register_classes([DummyHousehold, DummyRetailer, DummyMemoryHandler])
+        env.register_classes(
+            [DummyHousehold, DummyRetailer, DummyMemoryHandler, DummyEvent]
+        )
         env.reset(seed=42)
         for agent_id in env.agent_ids:
             obs: dict[str, Any] = env.get_observations(agent_id=agent_id)
@@ -522,7 +567,9 @@ class TestEnvironment:
 
     def test_step(self) -> None:
         env = Environment(config=self.config)
-        env.register_classes([DummyHousehold, DummyRetailer, DummyMemoryHandler])
+        env.register_classes(
+            [DummyHousehold, DummyRetailer, DummyMemoryHandler, DummyEvent]
+        )
         env.reset(seed=42)
         all_actions_dic: dict[int, dict[str, Any]] = {}
         for agent_id in env.agent_ids:
@@ -532,7 +579,9 @@ class TestEnvironment:
             all_actions_dic[agent_id] = action_dic
         env.step(all_actions_dic=all_actions_dic)
         env = Environment(config=self.config, logger=DictLogger())
-        env.register_classes([DummyHousehold, DummyRetailer, DummyMemoryHandler])
+        env.register_classes(
+            [DummyHousehold, DummyRetailer, DummyMemoryHandler, DummyEvent]
+        )
         env.reset(seed=42)
         for _ in range(self.config["simulation"]["numSteps"]):
             all_actions_dic = {}
@@ -547,6 +596,9 @@ class TestEnvironment:
                 all_actions_dic[agent_id] = action_dic
             env.step(all_actions_dic=all_actions_dic)
         assert env.get_time() == self.config["timeTranslator"]["endDatetime"]
+        event_manager = env.event_manager
+        assert event_manager.events[0].num_executions == 3
+        assert event_manager.events[1].num_executions == 3
         logger = env.logger
         assert isinstance(logger, DictLogger)
         assert len(logger.logs) > 12

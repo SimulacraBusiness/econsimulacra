@@ -1,5 +1,5 @@
 from ..agents import Agent
-from ..sim_utils import find_class
+from .event import EventManager
 from ..items import Item
 from ..logs import AgentGenerationLog
 from ..logs import SpaceAssignLog
@@ -43,6 +43,7 @@ from .order import Order
 from .order import SwapProposal
 import random
 from random import Random
+from ..sim_utils import find_class
 from .social_networks import SocialNetwork
 from .space import GridSpace
 from .time_translator import TimeTranslator
@@ -89,7 +90,8 @@ class Environment(Generic[ObsT]):
             {
                 "simulation": {
                     "numSteps": int, # Required, total number of steps for the simulation.
-                    "parallelBatchSize": 2
+                    "parallelBatchSize": 2,
+                    "events": ["Event1", "Event2", ...], # Optional, list of event names to be generated in the environment. Default is [].
                 },
                 "environment": {
                     "space": "gridSpace", # Required, the key of the space configuration.
@@ -170,7 +172,18 @@ class Environment(Generic[ObsT]):
                     "type": "MemoryHandler", # See also: econsimulacra.envs.memory.MemoryHandler
                     "memoryLength": int, # the maximum number of logs to be stored in memory for each agent
                 },
-                ...,
+                "Event1": {
+                    "type": "EventType",
+                    "trigger": {
+                        "at": [int], # optional
+                        "every": int, # optional
+                        "with": [str], # optional
+                        "between": [int, int], # optional
+                        "probability": float # optional
+                    },
+                    "other_parameters": ...
+                },
+                ... # other event configurations
             }
         """
         env_config: dict[str, Any] = config.get("environment", {})
@@ -258,6 +271,16 @@ class Environment(Generic[ObsT]):
         if seed is not None:
             self.seed = seed
             self.prng.seed(seed)
+        event_keys: list[str] = self.config.get("simulation", {}).get("events", [])
+        events_dic: dict[str, Any] = {
+            event_key: self.config.get(event_key, {}) for event_key in event_keys
+        }
+        self.event_manager: EventManager = EventManager(
+            event_names=event_keys,
+            events_dic=events_dic,
+            registered_classes=self.registered_classes,
+            prng=self.prng,
+        )
         assert "environment" in self.config, "Config must include 'environment' key."
         assert isinstance(self.config["environment"], dict), (
             "'environment' key must be a dictionary."
@@ -266,7 +289,6 @@ class Environment(Generic[ObsT]):
             raise ValueError("Environment config must include 'space' key.")
         space_key: str = self.config["environment"]["space"]
         self.grid_space: GridSpace = self._generate_space(space_key=space_key)
-
         if "socialNetwork" not in self.config["environment"]:
             raise ValueError("Environment config must include 'socialNetwork' key.")
         social_network_key: str = self.config["environment"]["socialNetwork"]
@@ -292,6 +314,9 @@ class Environment(Generic[ObsT]):
         if self.logger is not None:
             self.logger.process_logs()
         self._time = 0
+        self.event_manager.trigger_events_after_step(
+            time_step=self.get_time_step(), env=self
+        )
 
     def _set_invalid_action_dic(self) -> None:
         """Initialize the dictionary for counting invalid actions.
@@ -449,6 +474,7 @@ class Environment(Generic[ObsT]):
                     inventory_dic=agent_instance.inventory_dic.copy(),
                 )
                 self.remember_log(log)
+                self.event_manager.trigger_events_after_log(log=log, env=self)
                 if self.logger is not None:
                     log.read_and_write(logger=self.logger)
                 while True:
@@ -536,6 +562,7 @@ class Environment(Generic[ObsT]):
         self.agent_id2initial_coords[agent_id] = coords
         log: SpaceAssignLog = SpaceAssignLog(agent_id=agent_id, pos=coords)
         self.remember_log(log)
+        self.event_manager.trigger_events_after_log(log=log, env=self)
         if self.logger is not None:
             log.read_and_write(logger=self.logger)
 
@@ -560,6 +587,9 @@ class Environment(Generic[ObsT]):
         self._remove_expired_orders_and_proposals()
         if self.logger is not None:
             self.logger.process_logs()
+        self.event_manager.trigger_events_after_step(
+            time_step=self.get_time_step(), env=self
+        )
 
     def apply_action_to_env(self, agent_id: int, action_dic: dict[str, Any]) -> None:
         """Apply the action of a single agent to the environment.
@@ -754,6 +784,7 @@ class Environment(Generic[ObsT]):
             new_pos=next_pos,
         )
         self.remember_log(log)
+        self.event_manager.trigger_events_after_log(log=log, env=self)
         if self.logger is not None:
             log.read_and_write(logger=self.logger)
         if next_pos == destination_pos:
@@ -881,6 +912,7 @@ class Environment(Generic[ObsT]):
                 item_amount=item_amount,
             )
             self.remember_log(log)
+            self.event_manager.trigger_events_after_log(log=log, env=self)
             if self.logger is not None:
                 log.read_and_write(logger=self.logger)
 
@@ -1053,6 +1085,7 @@ class Environment(Generic[ObsT]):
                 order_id=self.latest_order_id,
             )
             self.remember_log(order_log)
+            self.event_manager.trigger_events_after_log(log=order_log, env=self)
             if self.logger is not None:
                 order_log.read_and_write(logger=self.logger)
             self.pending_orders.append(new_order)
@@ -1106,6 +1139,7 @@ class Environment(Generic[ObsT]):
                 get_item_amount=get_item_amount,
             )
             self.remember_log(proposal_log)
+            self.event_manager.trigger_events_after_log(log=proposal_log, env=self)
             if self.logger is not None:
                 proposal_log.read_and_write(logger=self.logger)
             self.pending_swap_proposals.append(new_proposal)
@@ -1199,6 +1233,7 @@ class Environment(Generic[ObsT]):
                 num_followers=self.social_network.get_num_followers(agent_id=agent_id),
             )
             self.remember_log(tweet_log)
+            self.event_manager.trigger_events_after_log(log=tweet_log, env=self)
             if self.logger is not None:
                 tweet_log.read_and_write(logger=self.logger)
         if unfollow_agent_id is not None:
@@ -1214,6 +1249,7 @@ class Environment(Generic[ObsT]):
                 num_followers=self.social_network.get_num_followers(agent_id=agent_id),
             )
             self.remember_log(unfollow_log)
+            self.event_manager.trigger_events_after_log(log=unfollow_log, env=self)
             if self.logger is not None:
                 unfollow_log.read_and_write(logger=self.logger)
         if follow_agent_id is not None:
@@ -1229,6 +1265,7 @@ class Environment(Generic[ObsT]):
                 num_followers=self.social_network.get_num_followers(agent_id=agent_id),
             )
             self.remember_log(follow_log)
+            self.event_manager.trigger_events_after_log(log=follow_log, env=self)
             if self.logger is not None:
                 follow_log.read_and_write(logger=self.logger)
 
@@ -1425,6 +1462,9 @@ class Environment(Generic[ObsT]):
                             accept_amount=accept_amount,
                         )
                         self.remember_log(order_reaction_log)
+                        self.event_manager.trigger_events_after_log(
+                            log=order_reaction_log, env=self
+                        )
                         if self.logger is not None:
                             order_reaction_log.read_and_write(logger=self.logger)
             elif kind == "proposal":
@@ -1453,6 +1493,9 @@ class Environment(Generic[ObsT]):
                             )
                         )
                         self.remember_log(proposal_reaction_log)
+                        self.event_manager.trigger_events_after_log(
+                            log=proposal_reaction_log, env=self
+                        )
                         if self.logger is not None:
                             proposal_reaction_log.read_and_write(logger=self.logger)
             else:
@@ -1531,6 +1574,7 @@ class Environment(Generic[ObsT]):
                 new_price=price,
             )
             self.remember_log(change_price_log)
+            self.event_manager.trigger_events_after_log(log=change_price_log, env=self)
             if self.logger is not None:
                 change_price_log.read_and_write(logger=self.logger)
 
