@@ -1,12 +1,14 @@
 from __future__ import annotations
+import asyncio
 from .base import LLMClient
+import copy
 import json
 from openai import AsyncOpenAI
 from openai.types.chat import ChatCompletion
+from openai import BadRequestError
 from openai import RateLimitError
 import os
 import random
-import time
 from typing import Any
 from typing import cast
 from typing import Optional
@@ -46,9 +48,9 @@ class OpenAIClient(LLMClient):
                 "OpenAIClient: API key must be provided in the config or set in the OPENAI_API_KEY environment variable."
             )
         time_out: float = config.get("timeOut", 30.0)
-        max_retries: int = config.get("maxRetries", 3)
+        self.max_retries: int = config.get("maxRetries", 3)
         self.client: AsyncOpenAI = AsyncOpenAI(
-            api_key=api_key, timeout=time_out, max_retries=max_retries
+            api_key=api_key, timeout=time_out, max_retries=self.max_retries
         )
         self.json_schema: dict[str, Any] = json.loads(self._get_json_schema())
 
@@ -61,7 +63,8 @@ class OpenAIClient(LLMClient):
         Returns:
             dict[str, Any]: The parsed JSON response from the OpenAI API.
         """
-        while True:
+        schema: dict[str, Any] = copy.deepcopy(self.json_schema)
+        for _ in range(self.max_retries):
             try:
                 async with self._sem:
                     response: ChatCompletion = (
@@ -78,14 +81,18 @@ class OpenAIClient(LLMClient):
                                 "json_schema": {
                                     "name": "agent_action",
                                     "strict": True,
-                                    "schema": self.json_schema,
+                                    "schema": schema,
                                 },
                             },
                         )
                     )
                 break
-            except RateLimitError:
-                time.sleep(1)
+            except BadRequestError as e:
+                print(f"[BadRequestError] {e}")
+                return {}
+            except RateLimitError as e:
+                print(f"[RateLimitError] {e}")
+                await asyncio.sleep(1)
         content: Optional[str] = response.choices[0].message.content
         if content is None:
             raise ValueError("OpenAIClient: Received empty response from OpenAI API.")
