@@ -7,15 +7,19 @@ MODIFIED_ACTION_JSON_SCHEMA = {
     "additionalProperties": False,
     "properties": {
         "move": {
-            "type": "array",
-            "items": {
-                "type": "integer",
-                "minimum": 0,
-                "maximum": 10,
-            },
-            "minItems": 2,
-            "maxItems": 2,
-            "default": None,
+            "anyOf": [
+                {
+                    "type": "array",
+                    "items": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 10,
+                    },
+                    "minItems": 2,
+                    "maxItems": 2,
+                },
+                {"type": "null"},
+            ]
         },
         "consumptions": {
             "type": "array",
@@ -28,7 +32,6 @@ MODIFIED_ACTION_JSON_SCHEMA = {
                 },
                 "required": ["item_name", "item_amount"],
             },
-            "default": [],
         },
         "orders": {
             "type": "array",
@@ -39,11 +42,10 @@ MODIFIED_ACTION_JSON_SCHEMA = {
                     "counterparty_id": {"type": "integer", "minimum": 0, "maximum": 2},
                     "item_name": {"type": "string", "enum": ["item1", "item2"]},
                     "item_amount": {"type": "number", "minimum": 1},
-                    "ttl": {"type": "integer", "minimum": 2, "maximum": 10},
+                    "ttl": {"type": "integer", "minimum": 2},
                 },
                 "required": ["counterparty_id", "item_name", "item_amount", "ttl"],
             },
-            "default": [],
         },
         "proposals": {
             "type": "array",
@@ -60,7 +62,7 @@ MODIFIED_ACTION_JSON_SCHEMA = {
                     "give_item_amount": {"type": "number", "minimum": 1},
                     "get_item_name": {"type": "string", "enum": ["item1", "item2"]},
                     "get_item_amount": {"type": "number", "minimum": 1},
-                    "ttl": {"type": "integer", "minimum": 2, "maximum": 10},
+                    "ttl": {"type": "integer", "minimum": 2},
                 },
                 "required": [
                     "responder_agent_id",
@@ -71,7 +73,6 @@ MODIFIED_ACTION_JSON_SCHEMA = {
                     "ttl",
                 ],
             },
-            "default": [],
         },
         "reactions": {
             "type": "array",
@@ -86,7 +87,6 @@ MODIFIED_ACTION_JSON_SCHEMA = {
                 },
                 "required": ["kind", "id", "accept_amount", "accept"],
             },
-            "default": [],
         },
         "set_price": {
             "type": "array",
@@ -99,11 +99,20 @@ MODIFIED_ACTION_JSON_SCHEMA = {
                 },
                 "required": ["item_name", "price"],
             },
-            "default": [],
         },
         "tweet": {"anyOf": [{"type": "string"}, {"type": "null"}]},
-        "follow": {"anyOf": [{"type": "integer"}, {"type": "null"}]},
-        "unfollow": {"anyOf": [{"type": "integer"}, {"type": "null"}]},
+        "follow": {
+            "anyOf": [
+                {"type": "integer", "minimum": 0, "maximum": 2},
+                {"type": "null"},
+            ]
+        },
+        "unfollow": {
+            "anyOf": [
+                {"type": "integer", "minimum": 0, "maximum": 2},
+                {"type": "null"},
+            ]
+        },
     },
     "required": [
         "move",
