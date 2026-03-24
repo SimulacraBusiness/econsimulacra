@@ -104,10 +104,12 @@ class LLMClient(ABC):
             dim: int = len(config["gridSpace"])
             max_coordinate: int = max(config["gridSpace"])
             if "move" in json_schema["properties"]:
-                json_schema["properties"]["move"]["items"]["minimum"] = 0
-                json_schema["properties"]["move"]["items"]["maximum"] = max_coordinate
-                json_schema["properties"]["move"]["minItems"] = dim
-                json_schema["properties"]["move"]["maxItems"] = dim
+                json_schema["properties"]["move"]["anyOf"][0]["items"]["minimum"] = 0
+                json_schema["properties"]["move"]["anyOf"][0]["items"]["maximum"] = (
+                    max_coordinate
+                )
+                json_schema["properties"]["move"]["anyOf"][0]["minItems"] = dim
+                json_schema["properties"]["move"]["anyOf"][0]["maxItems"] = dim
         if "items" in config:
             item_names: list[str] = list(config["items"])
             if "consumptions" in json_schema["properties"]:
@@ -145,4 +147,12 @@ class LLMClient(ABC):
                 json_schema["properties"]["proposals"]["items"]["properties"][
                     "responder_agent_id"
                 ]["maximum"] = num_agents - 1
+            if "follow" in json_schema["properties"]:
+                json_schema["properties"]["follow"]["anyOf"][0]["maximum"] = (
+                    num_agents - 1
+                )
+            if "unfollow" in json_schema["properties"]:
+                json_schema["properties"]["unfollow"]["anyOf"][0]["maximum"] = (
+                    num_agents - 1
+                )
         return json_schema

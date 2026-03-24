@@ -4,10 +4,13 @@
     "additionalProperties": false,
     "properties": {
         "move": {
-            "type": "array",
-            "items": {"type": "integer", "minimum": 0},
-            "minItems": 2,
-            "default": null
+            "anyOf": [
+                {
+                    "type": "array",
+                    "items": {"type": "integer"}
+                },
+                {"type": "null"}
+            ]
         },
         "consumptions": {
             "type": "array",
@@ -19,8 +22,7 @@
                     "item_amount": {"type": "number", "minimum": 1}
                 },
                 "required": ["item_name", "item_amount"]
-            },
-            "default": []
+            }
         },
         "orders": {
             "type": "array",
@@ -28,14 +30,13 @@
                 "type": "object",
                 "additionalProperties": false,
                 "properties": {
-                    "counterparty_id": {"type": "integer", "minimum": 0},
+                    "counterparty_id": {"type": "integer"},
                     "item_name": {"type": "string"},
                     "item_amount": {"type": "number", "minimum": 1},
-                    "ttl": {"type": "integer", "minimum": 2, "maximum": 10}
+                    "ttl": {"type": "integer", "minimum": 2}
                 },
                 "required": ["counterparty_id", "item_name", "item_amount", "ttl"]
-            },
-            "default": []
+            }
         },
         "proposals": {
             "type": "array",
@@ -43,12 +44,12 @@
                 "type": "object",
                 "additionalProperties": false,
                 "properties": {
-                    "responder_agent_id": {"type": "integer", "minimum": 0},
+                    "responder_agent_id": {"type": "integer"},
                     "give_item_name": {"type": "string"},
                     "give_item_amount": {"type": "number", "minimum": 1},
                     "get_item_name": {"type": "string"},
                     "get_item_amount": {"type": "number", "minimum": 1},
-                    "ttl": {"type": "integer", "minimum": 2, "maximum": 10}
+                    "ttl": {"type": "integer", "minimum": 2}
                 },
                 "required": [
                     "responder_agent_id",
@@ -58,8 +59,7 @@
                     "get_item_amount",
                     "ttl"
                 ]
-            },
-            "default": []
+            }
         },
         "reactions": {
             "type": "array",
@@ -73,8 +73,7 @@
                     "accept": {"type": "boolean"}
                 },
                 "required": ["kind", "id", "accept_amount", "accept"]
-            },
-            "default": []
+            }
         },
         "set_price": {
             "type": "array",
@@ -86,12 +85,21 @@
                     "price": {"type": "number", "minimum": 0}
                 },
                 "required": ["item_name", "price"]
-            },
-            "default": []
+            }
         },
         "tweet": {"anyOf": [{"type": "string"}, {"type": "null"}]},
-        "follow": {"anyOf": [{"type": "integer"}, {"type": "null"}]},
-        "unfollow": {"anyOf": [{"type": "integer"}, {"type": "null"}]}
+        "follow": {
+            "anyOf": [
+                {"type": "integer", "minimum": 0},
+                {"type": "null"}
+            ]
+        },
+        "unfollow": {
+            "anyOf": [
+                {"type": "integer", "minimum": 0},
+                {"type": "null"}
+            ]
+        }
     },
     "required": [
         "move",
