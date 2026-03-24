@@ -1,4 +1,7 @@
 from .base import Environment as Environment
+from .event import EventManager as EventManager
+from .event import Event as Event
+from .event import EventTrigger as EventTrigger
 from .memory import MemoryHandler as MemoryHandler
 from .obs_providers import ObsProvider as ObsProvider
 from .obs_providers import (
@@ -37,6 +40,9 @@ from .time_translator import TimeTranslator as TimeTranslator
 
 __all__ = [
     "Environment",
+    "EventManager",
+    "Event",
+    "EventTrigger",
     "MemoryHandler",
     "GridSpace",
     "SocialNetwork",

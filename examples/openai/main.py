@@ -1,5 +1,6 @@
 import asyncio
 from econsimulacra.envs import Environment
+from econsimulacra.envs import Event
 from econsimulacra.logs import DictLogger
 from econsimulacra.simulator import Simulator
 from econsimulacra.simulator import SimulationSummarizer
@@ -8,6 +9,18 @@ import os
 import pathlib
 from pathlib import Path
 # export LOG_TXT_PATH="log_gpt-4o-mini.txt"
+
+
+class SubsidyEvent(Event):
+    def __init__(self, trigger, config) -> None:
+        super().__init__(trigger=trigger, config=config)
+        self.subsidy_amount: int = config["subsidyAmount"]
+
+    def execute(self, env, log=None) -> None:
+        cash_name = env.cash_name
+        for agent_id in env.agent_ids:
+            agent = env.agent_id2agent[agent_id]
+            agent.inventory_dic[cash_name] += self.subsidy_amount
 
 
 def conduct_simulation():
@@ -19,6 +32,7 @@ def conduct_simulation():
         logger=logger,
         summarizer_class=SimulationSummarizer,
     )
+    simulator.register_classes([SubsidyEvent])
     asyncio.run(simulator.simulate(seed=42))
     logs: list[dict] = logger.logs
     log_txt_path: Path = pathlib.Path(os.environ["LOG_TXT_PATH"])
