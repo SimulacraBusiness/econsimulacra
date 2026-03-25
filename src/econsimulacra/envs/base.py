@@ -13,6 +13,7 @@ from ..logs import ChangePriceLog
 from ..logs import TweetLog
 from ..logs import FollowLog
 from ..logs import UnfollowLog
+from ..logs import StateEvaluationLog
 from ..logs import Log
 from ..logs import Logger
 from .memory import MemoryHandler
@@ -585,6 +586,8 @@ class Environment(Generic[ObsT]):
         self._process_orders_and_proposals()
         self._update_time()
         self._remove_expired_orders_and_proposals()
+        for agent_id in self.agent_ids:
+            self.evaluate_agent_state(agent_id=agent_id)
         if self.logger is not None:
             self.logger.process_logs()
         self.event_manager.trigger_events_after_step(
@@ -1606,6 +1609,42 @@ class Environment(Generic[ObsT]):
             for proposal in self.pending_swap_proposals
             if not proposal.is_fulfilled()
         ]
+
+    def evaluate_agent_state(self, agent_id: int) -> None:
+        """Evaluate the state of the agent. Generate agent evaluation log.
+
+        Args:
+            agent_id (int): agent id of the agent to evaluate.
+        """
+        agent: Agent = self.agent_id2agent[agent_id]
+        wealth: float = self._calculate_wealth(agent.inventory_dic)
+        log: StateEvaluationLog = StateEvaluationLog(
+            time=self.get_time(),
+            time_step=self.get_time_step(),
+            agent_id=agent_id,
+            wealth=wealth,
+        )
+        self.remember_log(log)
+        self.event_manager.trigger_events_after_log(log=log, env=self)
+        if self.logger is not None:
+            log.read_and_write(logger=self.logger)
+
+    def _calculate_wealth(self, inventory_dic: dict[str, float | int]) -> float:
+        """Calculate the wealth based on the inventory_dic.
+
+        Args:
+            inventory_dic (dict[str, float | int]): the inventory dictionary to calculate the wealth.
+                The keys are item names, and the values are the corresponding item amounts.
+
+        Returns:
+            float: the calculated wealth.
+        """
+        wealth: float = 0
+        for item_name, item_amount in inventory_dic.items():
+            if item_name in self.item_name2item:
+                item: Item = self.item_name2item[item_name]
+                wealth += item_amount * item.get_price()
+        return wealth
 
     def get_observations(self, agent_id: int) -> ObsT:
         """Get the observations for the agent with the given agent_id.
