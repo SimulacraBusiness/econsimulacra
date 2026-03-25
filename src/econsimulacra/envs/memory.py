@@ -14,6 +14,7 @@ from ..logs import ChangePriceLog
 from ..logs import TweetLog
 from ..logs import FollowLog
 from ..logs import UnfollowLog
+from ..logs import StateEvaluationLog
 import random
 from typing import Any
 from typing import Callable
@@ -198,6 +199,25 @@ class SocialHistoryItem:
 
 
 @dataclass
+class StateEvaluationItem:
+    """A class representing a state evaluation item in the agent's memory.
+
+    Attributes:
+        wealth (float): the wealth of the agent at the time of evaluation.
+        time (int | str): the time of the state evaluation.
+
+    Note:
+        This history item is generated based on the StateEvaluationLog.
+        See also:
+            econsimulacra.logs.base.StateEvaluationLog
+            econsimulacra.envs.base.Environment.evaluate_agent_state(agent_id: int)
+    """
+
+    wealth: float
+    time: int | str
+
+
+@dataclass
 class AgentMemory:
     """Agent Memory class.
 
@@ -212,6 +232,7 @@ class AgentMemory:
         exchange_history (Deque[ExchangeHistoryItem]): the history of the agent's exchange.
         set_price_history (Deque[SetPriceHistoryItem]): the history of the agent's price change.
         social_history (Deque[SocialHistoryItem]): the history of the agent's social actions.
+        state_evaluation_history (Deque[StateEvaluationItem]): the history of the agent's state evaluations.
 
     Note:
         The history is stored in a deque with a maximum length of memory_length, which is defined in the MemoryHandler.
@@ -225,6 +246,7 @@ class AgentMemory:
     exchange_history: Deque[ExchangeHistoryItem]
     set_price_history: Deque[SetPriceHistoryItem]
     social_history: Deque[SocialHistoryItem]
+    state_evaluation_history: Deque[StateEvaluationItem]
 
 
 class MemoryHandler:
@@ -296,6 +318,7 @@ class MemoryHandler:
                     # the history of the agent's price change.
                     "social_history": "follow target_agent_id1 at time1 (num_followers: num_followers1, num_follows: num_follows1); unfollow target_agent_id2 at time2 (num_followers: num_followers2, num_follows: num_follows2); ...",
                     # the history of the agent's social actions.
+                    "state_evaluation_history": "Wealth: wealth1 at time1; Wealth: wealth2 at time2; ...",
                 }
         """
         if agent_id not in self.agent_id2memory:
@@ -310,6 +333,7 @@ class MemoryHandler:
             "exchange_history": "",
             "set_price_history": "",
             "social_history": "",
+            "state_evaluation_history": "",
         }
         if len(agent_memory.move_history) > 0:
             summarized_memory["move_history"] = "You have moved to " + " -> ".join(
@@ -351,6 +375,14 @@ class MemoryHandler:
                     for item in agent_memory.social_history
                 )
             )
+        if len(agent_memory.state_evaluation_history) > 0:
+            summarized_memory["state_evaluation_history"] = (
+                "Your state evaluations are "
+                + "; ".join(
+                    f"Wealth: {item.wealth} at {item.time}"
+                    for item in agent_memory.state_evaluation_history
+                )
+            )
         return summarized_memory
 
     def _build_memory_registry(self) -> dict[type[Log], Callable[[Any], None]]:
@@ -376,6 +408,7 @@ class MemoryHandler:
             TweetLog: self._process_tweet_log,
             FollowLog: self._process_follow_log,
             UnfollowLog: self._process_unfollow_log,
+            StateEvaluationLog: self._process_state_evaluation_log,
         }
 
     def update(self, log: Log) -> None:
@@ -385,9 +418,10 @@ class MemoryHandler:
             See also:
                 econsimulacra.envs.base.Environment.remember_log(log: Log)
         """
-        handler: Optional[Callable[[Any], None]] = self.memory_updaters.get(type(log))
-        if handler is not None:
-            handler(log)
+        for log_type, handler in self.memory_updaters.items():
+            if isinstance(log, log_type):
+                handler(log)
+                return
 
     def _process_agent_generation_log(self, log: AgentGenerationLog) -> None:
         """Process the AgentGenerationLog to initialize AgentMemory for the generated agent.
@@ -408,6 +442,7 @@ class MemoryHandler:
                 exchange_history=deque(maxlen=self.memory_length),
                 set_price_history=deque(maxlen=self.memory_length),
                 social_history=deque(maxlen=self.memory_length),
+                state_evaluation_history=deque(maxlen=self.memory_length),
             )
         else:
             raise ValueError(f"Agent with id {agent_id} already exists in memory.")
@@ -798,4 +833,24 @@ class MemoryHandler:
                 num_followers=log.num_followers,
                 num_follows=log.num_follows,
             )
+        )
+
+    def _process_state_evaluation_log(self, log: StateEvaluationLog) -> None:
+        """Process the StateEvaluationLog to update the state evaluation history of the agent in memory.
+
+        Args:
+            log (StateEvaluationLog): the log of state evaluation.
+
+        Note:
+            Generate a new StateEvaluationItem and add it to the state_evaluation_history of the agent's memory.
+        """
+        agent_id: int = log.agent_id
+        if agent_id not in self.agent_id2memory:
+            raise ValueError(f"Agent with id {agent_id} does not exist in memory.")
+        agent_memory: AgentMemory = self.agent_id2memory[agent_id]
+        state_evaluation_history: Deque[StateEvaluationItem] = (
+            agent_memory.state_evaluation_history
+        )
+        state_evaluation_history.append(
+            StateEvaluationItem(wealth=log.wealth, time=log.time)
         )
