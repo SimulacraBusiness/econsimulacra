@@ -5,6 +5,8 @@ import copy
 import json
 from openai import AsyncOpenAI
 from openai.types.chat import ChatCompletion
+from openai import APIConnectionError
+from openai import APITimeoutError
 from openai import BadRequestError
 from openai import RateLimitError
 import os
@@ -92,6 +94,12 @@ class OpenAIClient(LLMClient):
                 return {}
             except RateLimitError as e:
                 print(f"[RateLimitError] {e}")
+                await asyncio.sleep(1)
+            except APITimeoutError as e:
+                print(f"[APITimeoutError] {e}")
+                await asyncio.sleep(1)
+            except APIConnectionError as e:
+                print(f"[APIConnectionError] {e}")
                 await asyncio.sleep(1)
         content: Optional[str] = response.choices[0].message.content
         if content is None:
