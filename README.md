@@ -30,7 +30,7 @@ By combining agent-based modeling with LLM reasoning, EconSimulacra allows resea
 EconSimulacra consists of the following main components:
 
 <p align="center">
-  <img src="imgs/framework_structure.png" width="80%" />
+  <img src="imgs/framework_structure.png" width="100%" />
 </p>
 
 ## [**Simulator**](https://github.com/SimulacraBusiness/econsimulacra/blob/main/src/econsimulacra/simulator.py) 
