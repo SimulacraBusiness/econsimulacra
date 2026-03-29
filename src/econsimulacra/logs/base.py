@@ -13,6 +13,7 @@ class Log:
     Logger.process_logs() is called, which dispatches each pending log to a handler
     and then clears the pending list.
     """
+
     def read_and_write(self, logger: "Logger") -> None:
         """Append this log to the logger's pending logs.
 
@@ -28,7 +29,7 @@ class Log:
             dict[str, object]: The dictionary representation of the log.
         """
         return self.__dict__
-    
+
 
 class AgentGenerationLog(Log):
     def __init__(
@@ -115,7 +116,7 @@ class ConsumptionLog(Log):
         self, time: int, agent_id: int, item_name: str, item_amount: float | int
     ) -> None:
         """Initialization.
-        
+
         Args:
             time (int): The time step when the consumption occurs.
             agent_id (int): The unique id of the agent.
@@ -141,7 +142,7 @@ class OrderLog(Log):
         order_id: Optional[int],
     ) -> None:
         """Initialization.
-        
+
         Args:
             time (int): The time step when the order was made.
             agent_id (int): The unique id of the agent.
@@ -151,7 +152,7 @@ class OrderLog(Log):
             price (Optional[float]): The price of the item.
             order_id (Optional[int]): The unique id of the order.
         """
-        
+
         self.type: str = "order"
         self.time: int = time
         self.agent_id: int = agent_id
@@ -175,7 +176,7 @@ class ProposalLog(Log):
         get_item_amount: float | int,
     ) -> None:
         """Initialization.
-        
+
         Args:
             time (int): The time step when the proposal is made.
             proposal_id (int): The unique id of the proposal.
@@ -186,7 +187,7 @@ class ProposalLog(Log):
             get_item_name (str): The name of the item to get.
             get_item_amount (float | int): The amount of the item to get.
         """
-        
+
         self.type: str = "proposal"
         self.time: int = time
         self.proposal_id: int = proposal_id
@@ -351,9 +352,10 @@ class Logger:
 
     Subclasses can override handlers (e.g., _process_log_default) to implement custom behavior.
     """
+
     def __init__(self) -> None:
         """Initialization.
-    
+
         The Logger starts with an empty list of pending logs and an empty dispatch table.
         """
         self.pending_logs: list[Log] = []

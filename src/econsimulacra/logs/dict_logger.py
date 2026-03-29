@@ -12,6 +12,7 @@ class DictLogger(Logger):
     Processed logs are serialized to dictionaries via Log.to_dict() and stored in self.logs.
     If txt_save_path is provided, save() writes the records in JSON Lines format to the specified path.
     """
+
     def __init__(self, txt_save_path: Optional[Path] = None) -> None:
         """Initialization.
 
