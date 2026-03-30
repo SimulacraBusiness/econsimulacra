@@ -34,7 +34,8 @@ class Log:
 class AgentGenerationLog(Log):
     def __init__(
         self,
-        time: int,
+        time: int | str,
+        time_step: int,
         agent_id: int,
         agent_type: str,
         agent_name: str,
@@ -43,14 +44,16 @@ class AgentGenerationLog(Log):
         """Initialization.
 
         Args:
-            time (int): The time step when the agent is generated.
+            time (int | str): Current time of the environment.
+            time_step (int): Current integer step index of the environment.
             agent_id (int): The unique id of the generated agent.
             agent_type (str): The type of the generated agent.
             agent_name (str): The name of the generated agent.
             inventory_dic (dict[str, float | int]): The initial inventory of the generated agent. The keys are item names, and the values are the amounts.
         """
         self.type: str = "agent_generation"
-        self.time: int = time
+        self.time: int | str = time
+        self.time_step: int = time_step
         self.agent_id: int = agent_id
         self.agent_type: str = agent_type
         self.agent_name: str = agent_name
@@ -65,6 +68,7 @@ class AgentGenerationLog(Log):
         d: dict[str, object] = {
             "type": self.type,
             "time": self.time,
+            "time_step": self.time_step,
             "agent_id": self.agent_id,
             "agent_type": self.agent_type,
             "agent_name": self.agent_name,
@@ -91,7 +95,8 @@ class SpaceAssignLog(Log):
 class MoveLog(Log):
     def __init__(
         self,
-        time: int,
+        time: int | str,
+        time_step: int,
         agent_id: int,
         old_pos: tuple[int, ...],
         new_pos: tuple[int, ...],
@@ -99,13 +104,15 @@ class MoveLog(Log):
         """Initialization.
 
         Args:
-            time (int): The time step when the move occurs.
+            time (int | str): Current time of the environment when the move occurs.
+            time_step (int): Current integer step index of the environment when the move occurs.
             agent_id (int): The unique id of the agent.
             old_pos (tuple[int, ...]): The previous position of the agent. The length of the tuple should match the dimension of the environment's space.
             new_pos (tuple[int, ...]): The new position of the agent. The length of the tuple should match the dimension of the environment's space.
         """
         self.type: str = "move"
-        self.time: int = time
+        self.time: int | str = time
+        self.time_step: int = time_step
         self.agent_id: int = agent_id
         self.old_pos: tuple[int, ...] = old_pos
         self.new_pos: tuple[int, ...] = new_pos
@@ -113,18 +120,25 @@ class MoveLog(Log):
 
 class ConsumptionLog(Log):
     def __init__(
-        self, time: int, agent_id: int, item_name: str, item_amount: float | int
+        self,
+        time: int | str,
+        time_step: int,
+        agent_id: int,
+        item_name: str,
+        item_amount: float | int,
     ) -> None:
         """Initialization.
 
         Args:
-            time (int): The time step when the consumption occurs.
+            time (int | str): Current time of the environment when the consumption occurs.
+            time_step (int): Current integer step index of the environment when the consumption occurs.
             agent_id (int): The unique id of the agent.
             item_name (str): The name of the consumed item.
             item_amount (float | int): The amount of the consumed item.
         """
         self.type: str = "consumption"
-        self.time: int = time
+        self.time: int | str = time
+        self.time_step: int = time_step
         self.agent_id: int = agent_id
         self.item_name: str = item_name
         self.item_amount: float | int = item_amount
@@ -133,7 +147,8 @@ class ConsumptionLog(Log):
 class OrderLog(Log):
     def __init__(
         self,
-        time: int,
+        time: int | str,
+        time_step: int,
         agent_id: int,
         counterparty_id: int,
         item_name: str,
@@ -144,7 +159,8 @@ class OrderLog(Log):
         """Initialization.
 
         Args:
-            time (int): The time step when the order was made.
+            time (int | str): Current time of the environment when the order was made.
+            time_step (int): Current integer step index of the environment when the order was made.
             agent_id (int): The unique id of the agent.
             counterparty_id (int): The unique id of the counterparty.
             item_name (str): The name of the item.
@@ -154,7 +170,8 @@ class OrderLog(Log):
         """
 
         self.type: str = "order"
-        self.time: int = time
+        self.time: int | str = time
+        self.time_step: int = time_step
         self.agent_id: int = agent_id
         self.counterparty_id: int = counterparty_id
         self.item_name: str = item_name
@@ -166,7 +183,8 @@ class OrderLog(Log):
 class ProposalLog(Log):
     def __init__(
         self,
-        time: int,
+        time: int | str,
+        time_step: int,
         proposal_id: int,
         proposer_agent_id: int,
         responder_agent_id: int,
@@ -178,7 +196,8 @@ class ProposalLog(Log):
         """Initialization.
 
         Args:
-            time (int): The time step when the proposal is made.
+            time (int | str): Current time of the environment when the proposal is made.
+            time_step (int): Current integer step index of the environment when the proposal is made.
             proposal_id (int): The unique id of the proposal.
             proposer_agent_id (int): The unique id of the proposer.
             responder_agent_id (int): The unique id of the responder.
@@ -189,7 +208,8 @@ class ProposalLog(Log):
         """
 
         self.type: str = "proposal"
-        self.time: int = time
+        self.time: int | str = time
+        self.time_step: int = time_step
         self.proposal_id: int = proposal_id
         self.proposer_agent_id: int = proposer_agent_id
         self.responder_agent_id: int = responder_agent_id
@@ -202,7 +222,8 @@ class ProposalLog(Log):
 class OrderReactionLog(Log):
     def __init__(
         self,
-        time: int,
+        time: int | str,
+        time_step: int,
         agent_id: int,
         counterparty_id: int,
         item_name: str,
@@ -214,7 +235,8 @@ class OrderReactionLog(Log):
         """Initialization.
 
         Args:
-            time (int): The time step when the order reaction occurs.
+            time (int | str): Current time of the environment when the order reaction occurs.
+            time_step (int): Current integer step index of the environment when the order reaction occurs.
             agent_id (int): The unique id of the agent reacting to the order.
             counterparty_id (int): The unique id of the counterparty in the order.
             item_name (str): The name of the item in the order.
@@ -224,7 +246,8 @@ class OrderReactionLog(Log):
             accept_amount (float | int): The amount accepted in reaction to the order. It can be less than or equal to item_amount.
         """
         self.type: str = "order_reaction"
-        self.time: int = time
+        self.time_: int | str = time
+        self.time_step: int = time_step
         self.agent_id: int = agent_id
         self.counterparty_id: int = counterparty_id
         self.item_name: str = item_name
@@ -237,7 +260,8 @@ class OrderReactionLog(Log):
 class ProposalReactionLog(Log):
     def __init__(
         self,
-        time: int,
+        time: int | str,
+        time_step: int,
         proposal_id: int,
         proposer_agent_id: int,
         responder_agent_id: int,
@@ -250,7 +274,8 @@ class ProposalReactionLog(Log):
         """Initialization.
 
         Args:
-            time (int): The time step when the proposal reaction occurs.
+            time (int | str): Current time of the environment when the proposal reaction occurs.
+            time_step (int): Current integer step index of the environment when the proposal reaction occurs.
             proposal_id (int): The unique id of the proposal.
             proposer_agent_id (int): The unique id of the proposer.
             responder_agent_id (int): The unique id of the responder.
@@ -261,7 +286,8 @@ class ProposalReactionLog(Log):
             accept (bool): Whether the responder accepted the proposal.
         """
         self.type: str = "proposal_reaction"
-        self.time: int = time
+        self.time: int | str = time
+        self.time_step: int = time_step
         self.proposal_id: int = proposal_id
         self.proposer_agent_id: int = proposer_agent_id
         self.responder_agent_id: int = responder_agent_id
@@ -275,7 +301,8 @@ class ProposalReactionLog(Log):
 class ChangePriceLog(Log):
     def __init__(
         self,
-        time: int,
+        time: int | str,
+        time_step: int,
         agent_id: int,
         item_name: str,
         old_price: float,
@@ -284,14 +311,16 @@ class ChangePriceLog(Log):
         """Initialization.
 
         Args:
-            time (int): The time step when the price change occurs.
+            time (int | str): Current time of the environment when the price change occurs.
+            time_step (int): Current integer step index of the environment when the price change occurs.
             agent_id (int): The unique id of the agent changing the price.
             item_name (str): The name of the item whose price is changed.
             old_price (float): The previous price of the item.
             new_price (float): The new price of the item.
         """
         self.type: str = "change_price"
-        self.time: int = time
+        self.time: int | str = time
+        self.time_step: int = time_step
         self.agent_id: int = agent_id
         self.item_name: str = item_name
         self.old_price: float = old_price
@@ -299,48 +328,90 @@ class ChangePriceLog(Log):
 
 
 class TweetLog(Log):
-    def __init__(self, time: int, agent_id: int, message: str) -> None:
+    def __init__(
+        self,
+        time: int | str,
+        time_step: int,
+        agent_id: int,
+        message: str,
+        num_follows: int,
+        num_followers: int,
+    ) -> None:
         """Initialization.
 
         Args:
-            time (int): The time step when the tweet is posted.
+            time (int | str): Current time of the environment when the tweet is posted.
+            time_step (int): Current integer step index of the environment when the tweet is posted.
             agent_id (int): The unique id of the agent posting the tweet.
             message (str): The content of the tweet.
+            num_follows (int): The number of agents this agent follows at the time of posting.
+            num_followers (int): The number of agents following this agent at the time of posting
         """
         self.type: str = "tweet"
-        self.time: int = time
+        self.time: int | str = time
+        self.time_step: int = time_step
         self.agent_id: int = agent_id
         self.message: str = message
+        self.num_follows: int = num_follows
+        self.num_followers: int = num_followers
 
 
 class FollowLog(Log):
-    def __init__(self, time: int, agent_id: int, target_agent_id: int) -> None:
+    def __init__(
+        self,
+        time: int | str,
+        time_step: int,
+        agent_id: int,
+        target_agent_id: int,
+        num_follows: int,
+        num_followers: int,
+    ) -> None:
         """Initialization.
 
         Args:
-            time (int): The time step when the follow action occurs.
+            time (int | str): Current time of the environment when the follow action occurs.
+            time_step (int): Current integer step index of the environment when the follow action occurs.
             agent_id (int): The unique id of the agent following.
             target_agent_id (int): The unique id of the agent being followed.
+            num_follows (int): The number of agents the follower agent follows at the time of following.
+            num_followers (int): The number of agents following the target agent at the time of
+
         """
         self.type: str = "follow"
-        self.time: int = time
+        self.time: int | str = time
+        self.time_step: int = time_step
         self.agent_id: int = agent_id
         self.target_agent_id: int = target_agent_id
-
+        self.num_follows: int = num_follows
+        self.num_followers: int = num_followers
 
 class UnfollowLog(Log):
-    def __init__(self, time: int, agent_id: int, target_agent_id: int) -> None:
+    def __init__(
+        self,
+        time: int | str,
+        time_step: int,
+        agent_id: int,
+        target_agent_id: int,
+        num_follows: int,
+        num_followers: int,
+    ) -> None:
         """Initialization.
 
         Args:
-            time (int): The time step when the unfollow action occurs.
+            time (int | str): Current time of the environment when the unfollow action occurs.
+            time_step (int): Current integer step index of the environment when the unfollow action occurs.
             agent_id (int): The unique id of the agent unfollowing.
             target_agent_id (int): The unique id of the agent being unfollowed.
+            num_follows (int): The number of agents the unfollower agent follows at the time of unfollowing.
+            num_followers (int): The number of agents following the target agent at the time of unfollowing.
         """
         self.type: str = "unfollow"
-        self.time: int = time
+        self.time: int | str = time
+        self.time_step: int = time_step
         self.agent_id: int = agent_id
         self.target_agent_id: int = target_agent_id
+        self.num_follows: int = num_follows
+        self.num_followers: int = num_followers
 
 
 class StateEvaluationLog(Log):
@@ -351,11 +422,20 @@ class StateEvaluationLog(Log):
         agent_id: int,
         wealth: float,
     ) -> None:
+        """Initialization.
+
+        Args:
+            time (int | str): Current time of the environment when the state evaluation occurs.
+            time_step (int): Current integer step index of the environment when the state evaluation occurs.
+            agent_id (int): The unique id of the agent being evaluated.
+            wealth (float): The wealth of the agent at the time of evaluation.
+        """
         self.type: str = "state_evaluation"
         self.time: int | str = time
         self.time_step: int = time_step
         self.agent_id: int = agent_id
         self.wealth: float = wealth
+
 
 
 class Logger:
