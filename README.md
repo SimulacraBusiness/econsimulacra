@@ -1,3 +1,7 @@
+
+[![python](https://img.shields.io/pypi/pyversions/econsimulacra.svg)](https://pypi.org/project/econsimulacra)
+[![pypi](https://img.shields.io/pypi/v/econsimulacra.svg)](https://pypi.org/project/econsimulacra)
+[![pypi](https://img.shields.io/pypi/v/econsimulacra.svg)](https://pypi.org/project/econsimulacra)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 <p align="center">
@@ -24,6 +28,16 @@ By combining agent-based modeling with LLM reasoning, EconSimulacra allows resea
 - 📊 Structured simulation logs for analysis
 - ⚡ Parallel simulation execution
 - 🧩 Modular architecture for extensibility
+
+# Install
+
+This package is available on pypi as [`econsimulacra`](https://pypi.org/project/econsimulacra/)
+
+```bash
+$ pip install econsimulacra
+$ python
+>> import econsimulacra
+```
 
 # Conceptual Architecture
 
@@ -125,7 +139,7 @@ You need to provide your OpenAI API key in one of the following ways:
 **Option A: Environment Variable (recommended)**
 
 ```bash
-export OPENAI_API_KEY="your_api_key"
+$ export OPENAI_API_KEY="your_api_key"
 ```
 
 **Option B: ```config.json```**
@@ -150,16 +164,16 @@ An example configuration is provided at: ```config.json```. This file defines si
 To save simulation logs, set the following environment variable:
 
 ```bash
-export LOG_TXT_PATH="path/to/output_log.txt"
+$ export LOG_TXT_PATH="path/to/output_log.txt"
 ```
 
 ### 4. Run Simulation
 
 Move to the example directory and execute:
 
-```python
-cd examples/openai
-python main.py
+```bash
+$ cd examples/openai
+$ python main.py
 ```
 
 In this script, custom ```Event``` class: ```SubsidyEvent``` is implemented. The script will 1) load ```config.json```, 2) generate simulator and register the ```SubsidyEvent``` to the simulator, 3) reset the environment and run the simulation loop, and 4) output logs to the specified path.
