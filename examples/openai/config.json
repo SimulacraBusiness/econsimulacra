@@ -1,7 +1,8 @@
 {
     "simulation": {
         "numSteps": 72,
-        "parallelBatchSize": 2
+        "parallelBatchSize": 2,
+        "events": ["provideSubsidy"]
     },
     "environment": {
         "space": "gridSpace",
@@ -82,7 +83,8 @@
         "initialPrice": 1500.0
     },
     "promptBuilder": {
-        "type": "PromptBuilder"
+        "type": "PromptBuilder",
+        "simulationDescriptionPath": "simulation_description.txt"
     },
     "llmClient": {
         "type": "OpenAIClient",
@@ -106,6 +108,13 @@
     "memoryHandler": {
         "type": "MemoryHandler",
         "memoryLength": 3
+    },
+    "provideSubsidy": {
+        "type": "SubsidyEvent",
+        "trigger": {
+            "every": 30
+        },
+        "subsidyAmount": 50000
     },
     "animation": {
         "cellSize": 1,

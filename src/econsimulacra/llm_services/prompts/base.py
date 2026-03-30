@@ -1,5 +1,6 @@
 from ..constant import DEFAULT_ACTION_DESCRIPTION
 from ..constant import DEFAULT_OBS_DESCRIPTION
+from ..constant import DEFAULT_SIMULATION_DESCRIPTION
 import json
 import pathlib
 from pathlib import Path
@@ -22,6 +23,8 @@ class PromptBuilder:
 
         Args:
             config (dict[str, Any]): The configuration dictionary. This may include:
+                - "simulationDescriptionPath": (optional) the file path to the simulation description text file.
+                    If not provided, a default simulation description will be used.
                 - "obsDescriptionPath": (optional) the file path to the observation description text file.
                     If not provided, a default observation description will be used.
                 - "actionDescriptionPath": (optional) the file path to the action description text file.
@@ -29,6 +32,7 @@ class PromptBuilder:
             prng (Optional[random.Random]): The random number generator.
         """
         self.config: dict[str, Any] = config
+        self.simulation_desc: str = self._get_simulation_description(config)
         self.obs_desc, self.action_desc = self._get_obs_action_description(config)
         self.prng: random.Random = prng if prng is not None else random.Random()
 
@@ -47,7 +51,7 @@ class PromptBuilder:
         obs = self._truncate_floats(obs)
         obs_str: str = json.dumps(obs, ensure_ascii=False)
         prompt: str = (
-            "\nYou are a member of the society. Based on the following observation, decide the action to take.\n"
+            f"\n{self.simulation_desc}\n"
             + f"Observation description: {self.obs_desc}\nAction description: {self.action_desc}"
             + f"\nObservation: {obs_str}\nRespond in JSON format."
         )
@@ -65,6 +69,30 @@ class PromptBuilder:
 
         else:
             return obj
+
+    def _get_simulation_description(self, config: dict[str, Any]) -> str:
+        """Get simulation description from config for better LLM understanding.
+
+        Args:
+            config (dict[str, Any]): The configuration dictionary. This may include:
+                - "simulationDescriptionPath": (optional) the file path to the simulation description text file.
+                    If not provided, a default simulation description will be used.
+
+        Returns:
+            str: simulation description
+        """
+        sim_desc_path_str: Optional[str] = config.get("simulationDescriptionPath")
+        sim_desc: str
+        if sim_desc_path_str is not None:
+            sim_desc_path: Path = pathlib.Path(sim_desc_path_str).resolve()
+            if not sim_desc_path.exists():
+                raise FileNotFoundError(
+                    f"Simulation description file not found at: {sim_desc_path}"
+                )
+            sim_desc = sim_desc_path.read_text(encoding="utf-8")
+        else:
+            sim_desc = DEFAULT_SIMULATION_DESCRIPTION
+        return sim_desc
 
     def _get_obs_action_description(self, config: dict[str, Any]) -> tuple[str, str]:
         """Get description of observations and actions from config for better LLM understanding.

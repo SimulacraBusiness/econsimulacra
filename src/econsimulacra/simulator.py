@@ -3,6 +3,7 @@ import asyncio
 import json
 from .agents.base import Agent
 from .envs.base import Environment
+from .envs.event import Event
 from .envs.time_translator import TimeTranslator
 from .llm_services.clients import LLMClient
 from .llm_services.personas import PersonaBuilder
@@ -236,9 +237,34 @@ class SimulationSummarizer:
                 agent_branch.add(
                     f"[green]Provide Info for Allowed Agents[/green]: {agent.provide_info4allowed_agents()}"
                 )
+        events: list[Event] = self.env.event_manager.events
+        if len(events) > 0:
+            event_branch: Tree = tree.add("[green]Events[/green]")
+            for event in self.env.event_manager.events:
+                event_branch_: Tree = event_branch.add(
+                    f"[green]{event.__class__.__name__}[/green]"
+                )
+                if event.trigger.at is not None:
+                    event_branch_.add(f"[green]Trigger at[/green]: {event.trigger.at}")
+                if event.trigger.every is not None:
+                    event_branch_.add(
+                        f"[green]Trigger every[/green]: {event.trigger.every}"
+                    )
+                if len(event.trigger.logs) > 0:
+                    event_branch_.add(
+                        f"[green]Trigger with logs[/green]: {[log.__class__ for log in event.trigger.logs]}"
+                    )
+                if event.trigger.between is not None:
+                    event_branch_.add(
+                        f"[green]Trigger between[/green]: {event.trigger.between}"
+                    )
+                if event.trigger.probability is not None:
+                    event_branch_.add(
+                        f"[green]Trigger probability[/green]: {event.trigger.probability}"
+                    )
         if len(self.env.service_dic) > 0:
             service_branch: Tree = tree.add("[green]Environment Services[/green]")
-            for service_name, service in self.env.service_dic.items():
+            for _, service in self.env.service_dic.items():
                 if isinstance(service, LLMClient):
                     llm_client_branch: Tree = service_branch.add(
                         f"[green]LLM Client: {service.__class__.__name__}[/green]"
@@ -289,6 +315,10 @@ class SimulationSummarizer:
                         time_translator_branch.add(
                             f"[green]Time Delta[/green]: {str(time_delta)}"
                         )
+                else:
+                    service_branch.add(
+                        f"[green]Service: ({service.__class__.__name__})[/green]"
+                    )
         print()
         console.print(Panel(tree, title="[bold green]Summary[/bold green]"))
         print()

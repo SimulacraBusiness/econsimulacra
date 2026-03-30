@@ -29,39 +29,9 @@ By combining agent-based modeling with LLM reasoning, EconSimulacra allows resea
 
 EconSimulacra consists of the following main components:
 
-```mermaid
-flowchart TB
-
-subgraph TOP["User Interface"]
-    direction LR
-    U["User"] --> C["Config"] --> S["Simulator"]
-end
-
-S --> ENV
-
-subgraph ENV["Environment"]
-    direction LR
-    GS["GridSpace"]
-    SN["SocialNetwork"]
-    AG["Agents"]
-    ES["EnvService"]
-end
-
-AG -->|"act in"| GS
-AG -->|"interact via"| SN
-AG -->|"use services"| ES
-
-subgraph SRV["EnvService components"]
-    direction LR
-    LLM["LLMClient"]
-    PB["PromptBuilder"]
-    PER["PersonaBuilder"]
-end
-
-ES --> LLM
-ES --> PB
-ES --> PER
-```
+<p align="center">
+  <img src="imgs/framework_structure.png" width="100%" />
+</p>
 
 ## [**Simulator**](https://github.com/SimulacraBusiness/econsimulacra/blob/main/src/econsimulacra/simulator.py) 
 
@@ -69,8 +39,8 @@ The **Simulator** executes the simulation, manages temporal progression, and sup
 
 ```python
 num_steps: int
-all_actions_dic = {}
 for _ in range(num_steps):
+    all_actions_dic = {}
     for agent_id in env.agent_ids:
         agent = self.env.agent_id2agent[agent_id]
         obs = self.env.get_observations(agent_id=agent_id)
@@ -83,6 +53,24 @@ In each step:
 1. The environment provides observations to each agent ```env.get_observations(agent_id=agent_id)```
 2. Agents decide their actions based on these observations ```action_dic = agent.act(obs)```
 3. The environment updates the global state according to the agents' actions. ```env.step(all_actions_dic)```
+
+The Simulator requires ```config``` to apply your simulation settings. See [examples/openai/config.json](https://github.com/SimulacraBusiness/econsimulacra/blob/main/examples/openai/config.json) for an example.
+
+```Python
+simulator = Simulator(
+    config=config_dic_path,
+    env_class=Environment,
+    logger=logger,
+    summarizer_class=SimulationSummarizer,
+)
+```
+
+You can introduce your custom classes in your simulation by specifying ```"type": "MyClass"``` in the config and register them to the Simulator. [examples/openai/main.py](https://github.com/SimulacraBusiness/econsimulacra/blob/main/examples/openai/main.py) provides an example to introduce the custom event ```SubsidyEvent```.
+
+```python
+simulator.register_classes([MyClass1, MyClass2])
+```
+
 
 ## [**Environment**](https://github.com/SimulacraBusiness/econsimulacra/blob/main/src/econsimulacra/envs/base.py)
 
@@ -100,6 +88,8 @@ The environment includes multiple submodules, such as:
 
 An **Agent** represents an autonomous decision-maker in the simulation Agents receive structured observations from the environment and determine their actions (```.act```). 
 
+The information available to each agent, both as observations received from the environment and as information disclosed to other agents, is fully configurable via the agent configuration. For example, ```requestObs``` field defines what an agent can perceive from the environment, while ```provideInfo*``` fields define what an agent reveals to others.
+
 EconSimulacra provides a built-in [**LLMAgent**](https://github.com/SimulacraBusiness/econsimulacra/blob/main/src/econsimulacra/agents/llm_agent.py) implementation that leverages LLMs to generate agent behaviors. To ensure reliable and stable simulations, agent actions are generated as structured outputs using [Outlines](https://pypi.org/project/outlines/0.1.11/), which enforces predefined schemas for the generated actions.
 
 The LLM-based agent system is modular and consists of several customizable submodules:
@@ -107,5 +97,17 @@ The LLM-based agent system is modular and consists of several customizable submo
 - [**LLMClient**](https://github.com/SimulacraBusiness/econsimulacra/blob/main/src/econsimulacra/llm_services/clients/base.py) – manages the underlying language model and inference settings
 - [**PersonaBuilder**](https://github.com/SimulacraBusiness/econsimulacra/blob/main/src/econsimulacra/llm_services/personas/base.py) – assigns role-playing personas to agents
 - [**PromptBuilder**](https://github.com/SimulacraBusiness/econsimulacra/blob/main/src/econsimulacra/llm_services/prompts/base.py) – constructs prompts used for agent reasoning
+- [**MemoryHandler**](https://github.com/SimulacraBusiness/econsimulacra/blob/main/src/econsimulacra/envs/memory.py) - stores and provides each agent the sequence of their experience in the past time steps as memory
 
 By customizing these components, users can easily modify LLM configurations and experiment with different prompting strategies, personas, and model backends without changing the core simulation logic.
+
+## [**Event**](https://github.com/SimulacraBusiness/econsimulacra/blob/main/src/econsimulacra/envss/event.py)
+
+An **EventManager** is responsible for managing events and triggering them at appropriate times during the simulation. Events can be scheduled based on:
+
+- specific timestamps, (```at```)
+- time intervals or durations, (```between```)
+- periodic execution (e.g., every k steps), (```every```)
+- or the occurrence of specific logs (e.g., when a transaction is generated). (```with```)
+
+You can also adapt probabilistic triggering via ```probability```. By registering custom events, users can introduce exogenous dynamics into the simulation, such as policy interventions or regime shifts, in a flexible and extensible manner.

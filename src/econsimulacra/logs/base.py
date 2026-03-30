@@ -343,6 +343,21 @@ class UnfollowLog(Log):
         self.target_agent_id: int = target_agent_id
 
 
+class StateEvaluationLog(Log):
+    def __init__(
+        self,
+        time: int | str,
+        time_step: int,
+        agent_id: int,
+        wealth: float,
+    ) -> None:
+        self.type: str = "state_evaluation"
+        self.time: int | str = time
+        self.time_step: int = time_step
+        self.agent_id: int = agent_id
+        self.wealth: float = wealth
+
+
 class Logger:
     """Store pending logs and process them.
 
@@ -418,6 +433,9 @@ class Logger:
         pass
 
     def _process_unfollow_log(self, log: UnfollowLog) -> None:
+        pass
+
+    def _process_state_evaluation_log(self, log: StateEvaluationLog) -> None:
         pass
 
     def save(self) -> None:

@@ -5,10 +5,13 @@ DEFAULT_ACTION_JSON_SCHEMA: dict[str, Any] = {
     "additionalProperties": False,
     "properties": {
         "move": {
-            "type": "array",
-            "items": {"type": "integer", "minimum": 0},
-            "minItems": 2,
-            "default": None,
+            "anyOf": [
+                {
+                    "type": "array",
+                    "items": {"type": "integer"},
+                },
+                {"type": "null"},
+            ]
         },
         "consumptions": {
             "type": "array",
@@ -21,7 +24,6 @@ DEFAULT_ACTION_JSON_SCHEMA: dict[str, Any] = {
                 },
                 "required": ["item_name", "item_amount"],
             },
-            "default": [],
         },
         "orders": {
             "type": "array",
@@ -29,14 +31,13 @@ DEFAULT_ACTION_JSON_SCHEMA: dict[str, Any] = {
                 "type": "object",
                 "additionalProperties": False,
                 "properties": {
-                    "counterparty_id": {"type": "integer", "minimum": 0},
+                    "counterparty_id": {"type": "integer"},
                     "item_name": {"type": "string"},
                     "item_amount": {"type": "number", "minimum": 1},
-                    "ttl": {"type": "integer", "minimum": 2, "maximum": 10},
+                    "ttl": {"type": "integer", "minimum": 2},
                 },
                 "required": ["counterparty_id", "item_name", "item_amount", "ttl"],
             },
-            "default": [],
         },
         "proposals": {
             "type": "array",
@@ -44,12 +45,12 @@ DEFAULT_ACTION_JSON_SCHEMA: dict[str, Any] = {
                 "type": "object",
                 "additionalProperties": False,
                 "properties": {
-                    "responder_agent_id": {"type": "integer", "minimum": 0},
+                    "responder_agent_id": {"type": "integer"},
                     "give_item_name": {"type": "string"},
                     "give_item_amount": {"type": "number", "minimum": 1},
                     "get_item_name": {"type": "string"},
                     "get_item_amount": {"type": "number", "minimum": 1},
-                    "ttl": {"type": "integer", "minimum": 2, "maximum": 10},
+                    "ttl": {"type": "integer", "minimum": 2},
                 },
                 "required": [
                     "responder_agent_id",
@@ -60,7 +61,6 @@ DEFAULT_ACTION_JSON_SCHEMA: dict[str, Any] = {
                     "ttl",
                 ],
             },
-            "default": [],
         },
         "reactions": {
             "type": "array",
@@ -75,7 +75,6 @@ DEFAULT_ACTION_JSON_SCHEMA: dict[str, Any] = {
                 },
                 "required": ["kind", "id", "accept_amount", "accept"],
             },
-            "default": [],
         },
         "set_price": {
             "type": "array",
@@ -88,11 +87,20 @@ DEFAULT_ACTION_JSON_SCHEMA: dict[str, Any] = {
                 },
                 "required": ["item_name", "price"],
             },
-            "default": [],
         },
         "tweet": {"anyOf": [{"type": "string"}, {"type": "null"}]},
-        "follow": {"anyOf": [{"type": "integer"}, {"type": "null"}]},
-        "unfollow": {"anyOf": [{"type": "integer"}, {"type": "null"}]},
+        "follow": {
+            "anyOf": [
+                {"type": "integer", "minimum": 0},
+                {"type": "null"},
+            ]
+        },
+        "unfollow": {
+            "anyOf": [
+                {"type": "integer", "minimum": 0},
+                {"type": "null"},
+            ]
+        },
     },
     "required": [
         "move",
@@ -106,6 +114,8 @@ DEFAULT_ACTION_JSON_SCHEMA: dict[str, Any] = {
         "unfollow",
     ],
 }
+
+DEFAULT_SIMULATION_DESCRIPTION: str = "You are a member of the society. Based on the following observation, decide the action to take."
 
 DEFAULT_OBS_DESCRIPTION: dict[str, str] = {
     "time": "The current time step in the simulation. Provided as either an integer or a string in ISO datetime format.",
@@ -157,7 +167,7 @@ DEFAULT_ACTION_DESCRIPTION: dict[str, str] = {
     + "You can refer to the others_pos field in the observation to decide where to go if you want to visit a store. "
     + "You can also refer to the self_init_pos field in the observation to go back home. "
     + "Example: If the current position is [2, 3] and you want to go to [10, 5], you can specify [10, 5] as your move action. "
-    + "If you are a corporation (e.g., retailer or restaurant), you cannot move and must set this to null.",
+    + "If you are a corporation (e.g., retailer or restaurant), you cannot move.",
     "consumptions": "The consumptions action is a list of items that you want to consume. "
     + "Each item is represented as an object with 'item_name' and 'item_amount'. "
     + "If you do not want to consume anything, it can set this to an empty list. "
