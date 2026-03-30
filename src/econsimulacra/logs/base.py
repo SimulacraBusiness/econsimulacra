@@ -3,10 +3,31 @@ from typing import Optional
 
 
 class Log:
+    """Base class for simulation event logs.
+
+    A Log instance represents a single event that occurred during the simulation
+    (e.g., agent generation, movement, consumption, orders, proposals, etc.).
+
+    In typical usage, agents or the environment create a log object and record it
+    via read_and_write(). The logger stores logs in Logger.pending_logs until
+    Logger.process_logs() is called, which dispatches each pending log to a handler
+    and then clears the pending list.
+    """
+
     def read_and_write(self, logger: "Logger") -> None:
+        """Append this log to the logger's pending logs.
+
+        Args:
+            logger (Logger): The logger that stores pending logs.
+        """
         logger.write_log(self)
 
     def to_dict(self) -> dict[str, object]:
+        """Convert this log object into a dictionary.
+
+        Returns:
+            dict[str, object]: The dictionary representation of the log.
+        """
         return self.__dict__
 
 
@@ -20,6 +41,16 @@ class AgentGenerationLog(Log):
         agent_name: str,
         inventory_dic: dict[str, float | int],
     ) -> None:
+        """Initialization.
+
+        Args:
+            time (int | str): Current time of the environment.
+            time_step (int): Current integer step index of the environment.
+            agent_id (int): The unique id of the generated agent.
+            agent_type (str): The type of the generated agent.
+            agent_name (str): The name of the generated agent.
+            inventory_dic (dict[str, float | int]): The initial inventory of the generated agent. The keys are item names, and the values are the amounts.
+        """
         self.type: str = "agent_generation"
         self.time: int | str = time
         self.time_step: int = time_step
@@ -29,6 +60,11 @@ class AgentGenerationLog(Log):
         self.inventory_dic: dict[str, float | int] = inventory_dic.copy()
 
     def to_dict(self) -> dict[str, object]:
+        """Convert this log object into a dictionary. Overrides the base method to include inventory details.
+
+        Returns:
+            dict[str, object]: The dictionary representation of the log, including inventory details.
+        """
         d: dict[str, object] = {
             "type": self.type,
             "time": self.time,
@@ -44,6 +80,13 @@ class AgentGenerationLog(Log):
 
 class SpaceAssignLog(Log):
     def __init__(self, agent_id: int, pos: tuple[int, ...]) -> None:
+        """Initialization.
+
+        Args:
+            agent_id (int): The unique id of the agent.
+            pos (tuple[int, ...]): The assigned position for the agent. The length of the tuple should match the dimension of the environment's space.
+            (e.g., (x, y) for 2D, (x, y, z) for 3D).
+        """
         self.type: str = "space_assign"
         self.agent_id: int = agent_id
         self.pos: tuple[int, ...] = pos
@@ -58,6 +101,15 @@ class MoveLog(Log):
         old_pos: tuple[int, ...],
         new_pos: tuple[int, ...],
     ) -> None:
+        """Initialization.
+
+        Args:
+            time (int | str): Current time of the environment when the move occurs.
+            time_step (int): Current integer step index of the environment when the move occurs.
+            agent_id (int): The unique id of the agent.
+            old_pos (tuple[int, ...]): The previous position of the agent. The length of the tuple should match the dimension of the environment's space.
+            new_pos (tuple[int, ...]): The new position of the agent. The length of the tuple should match the dimension of the environment's space.
+        """
         self.type: str = "move"
         self.time: int | str = time
         self.time_step: int = time_step
@@ -75,6 +127,15 @@ class ConsumptionLog(Log):
         item_name: str,
         item_amount: float | int,
     ) -> None:
+        """Initialization.
+
+        Args:
+            time (int | str): Current time of the environment when the consumption occurs.
+            time_step (int): Current integer step index of the environment when the consumption occurs.
+            agent_id (int): The unique id of the agent.
+            item_name (str): The name of the consumed item.
+            item_amount (float | int): The amount of the consumed item.
+        """
         self.type: str = "consumption"
         self.time: int | str = time
         self.time_step: int = time_step
@@ -93,8 +154,21 @@ class OrderLog(Log):
         item_name: str,
         item_amount: float | int,
         price: Optional[float],
-        order_id: int,
+        order_id: Optional[int],
     ) -> None:
+        """Initialization.
+
+        Args:
+            time (int | str): Current time of the environment when the order was made.
+            time_step (int): Current integer step index of the environment when the order was made.
+            agent_id (int): The unique id of the agent.
+            counterparty_id (int): The unique id of the counterparty.
+            item_name (str): The name of the item.
+            item_amount (float | int): The amount of the item.
+            price (Optional[float]): The price of the item.
+            order_id (Optional[int]): The unique id of the order.
+        """
+
         self.type: str = "order"
         self.time: int | str = time
         self.time_step: int = time_step
@@ -103,7 +177,7 @@ class OrderLog(Log):
         self.item_name: str = item_name
         self.item_amount: float | int = item_amount
         self.price: Optional[float] = price
-        self.order_id: int = order_id
+        self.order_id: Optional[int] = order_id
 
 
 class ProposalLog(Log):
@@ -119,6 +193,20 @@ class ProposalLog(Log):
         get_item_name: str,
         get_item_amount: float | int,
     ) -> None:
+        """Initialization.
+
+        Args:
+            time (int | str): Current time of the environment when the proposal is made.
+            time_step (int): Current integer step index of the environment when the proposal is made.
+            proposal_id (int): The unique id of the proposal.
+            proposer_agent_id (int): The unique id of the proposer.
+            responder_agent_id (int): The unique id of the responder.
+            give_item_name (str): The name of the item to give.
+            give_item_amount (float | int): The amount of the item to give.
+            get_item_name (str): The name of the item to get.
+            get_item_amount (float | int): The amount of the item to get.
+        """
+
         self.type: str = "proposal"
         self.time: int | str = time
         self.time_step: int = time_step
@@ -141,9 +229,22 @@ class OrderReactionLog(Log):
         item_name: str,
         item_amount: float | int,
         price: float,
-        order_id: int,
+        order_id: Optional[int],
         accept_amount: float | int,
     ) -> None:
+        """Initialization.
+
+        Args:
+            time (int | str): Current time of the environment when the order reaction occurs.
+            time_step (int): Current integer step index of the environment when the order reaction occurs.
+            agent_id (int): The unique id of the agent reacting to the order.
+            counterparty_id (int): The unique id of the counterparty in the order.
+            item_name (str): The name of the item in the order.
+            item_amount (float | int): The amount of the item in the order.
+            price (float): The price of the item in the order.
+            order_id (Optional[int]): The unique id of the order.
+            accept_amount (float | int): The amount accepted in reaction to the order. It can be less than or equal to item_amount.
+        """
         self.type: str = "order_reaction"
         self.time: int | str = time
         self.time_step: int = time_step
@@ -152,7 +253,7 @@ class OrderReactionLog(Log):
         self.item_name: str = item_name
         self.item_amount: float | int = item_amount
         self.price: float = price
-        self.order_id: int = order_id
+        self.order_id: Optional[int] = order_id
         self.accept_amount: float | int = accept_amount
 
 
@@ -170,6 +271,20 @@ class ProposalReactionLog(Log):
         get_item_amount: float | int,
         accept: bool,
     ) -> None:
+        """Initialization.
+
+        Args:
+            time (int | str): Current time of the environment when the proposal reaction occurs.
+            time_step (int): Current integer step index of the environment when the proposal reaction occurs.
+            proposal_id (int): The unique id of the proposal.
+            proposer_agent_id (int): The unique id of the proposer.
+            responder_agent_id (int): The unique id of the responder.
+            give_item_name (str): The name of the item the proposer offers to give.
+            give_item_amount (float | int): The amount of the item the proposer offers to give.
+            get_item_name (str): The name of the item the proposer requests in return.
+            get_item_amount (float | int): The amount of the item the proposer requests in return.
+            accept (bool): Whether the responder accepted the proposal.
+        """
         self.type: str = "proposal_reaction"
         self.time: int | str = time
         self.time_step: int = time_step
@@ -193,6 +308,16 @@ class ChangePriceLog(Log):
         old_price: float,
         new_price: float,
     ) -> None:
+        """Initialization.
+
+        Args:
+            time (int | str): Current time of the environment when the price change occurs.
+            time_step (int): Current integer step index of the environment when the price change occurs.
+            agent_id (int): The unique id of the agent changing the price.
+            item_name (str): The name of the item whose price is changed.
+            old_price (float): The previous price of the item.
+            new_price (float): The new price of the item.
+        """
         self.type: str = "change_price"
         self.time: int | str = time
         self.time_step: int = time_step
@@ -212,6 +337,16 @@ class TweetLog(Log):
         num_follows: int,
         num_followers: int,
     ) -> None:
+        """Initialization.
+
+        Args:
+            time (int | str): Current time of the environment when the tweet is posted.
+            time_step (int): Current integer step index of the environment when the tweet is posted.
+            agent_id (int): The unique id of the agent posting the tweet.
+            message (str): The content of the tweet.
+            num_follows (int): The number of agents this agent follows at the time of posting.
+            num_followers (int): The number of agents following this agent at the time of posting
+        """
         self.type: str = "tweet"
         self.time: int | str = time
         self.time_step: int = time_step
@@ -231,6 +366,17 @@ class FollowLog(Log):
         num_follows: int,
         num_followers: int,
     ) -> None:
+        """Initialization.
+
+        Args:
+            time (int | str): Current time of the environment when the follow action occurs.
+            time_step (int): Current integer step index of the environment when the follow action occurs.
+            agent_id (int): The unique id of the agent following.
+            target_agent_id (int): The unique id of the agent being followed.
+            num_follows (int): The number of agents the follower agent follows at the time of following.
+            num_followers (int): The number of agents following the target agent at the time of
+
+        """
         self.type: str = "follow"
         self.time: int | str = time
         self.time_step: int = time_step
@@ -250,6 +396,16 @@ class UnfollowLog(Log):
         num_follows: int,
         num_followers: int,
     ) -> None:
+        """Initialization.
+
+        Args:
+            time (int | str): Current time of the environment when the unfollow action occurs.
+            time_step (int): Current integer step index of the environment when the unfollow action occurs.
+            agent_id (int): The unique id of the agent unfollowing.
+            target_agent_id (int): The unique id of the agent being unfollowed.
+            num_follows (int): The number of agents the unfollower agent follows at the time of unfollowing.
+            num_followers (int): The number of agents following the target agent at the time of unfollowing.
+        """
         self.type: str = "unfollow"
         self.time: int | str = time
         self.time_step: int = time_step
@@ -267,6 +423,14 @@ class StateEvaluationLog(Log):
         agent_id: int,
         wealth: float,
     ) -> None:
+        """Initialization.
+
+        Args:
+            time (int | str): Current time of the environment when the state evaluation occurs.
+            time_step (int): Current integer step index of the environment when the state evaluation occurs.
+            agent_id (int): The unique id of the agent being evaluated.
+            wealth (float): The wealth of the agent at the time of evaluation.
+        """
         self.type: str = "state_evaluation"
         self.time: int | str = time
         self.time_step: int = time_step
@@ -275,17 +439,38 @@ class StateEvaluationLog(Log):
 
 
 class Logger:
+    """Store pending logs and process them.
+
+    The logger collects logs in pending_logs via write_log() (or Log.read_and_write()).
+    When process_logs() is called, each log is dispatched to a handler selected from
+    _dispatch_table by its class; otherwise _process_log_default() is used.
+
+    Subclasses can override handlers (e.g., _process_log_default) to implement custom behavior.
+    """
+
     def __init__(self) -> None:
+        """Initialization.
+
+        The Logger starts with an empty list of pending logs and an empty dispatch table.
+        """
         self.pending_logs: list[Log] = []
         self._dispatch_table: dict[type[Log], Callable] = {}
 
     def clear(self) -> None:
+        """Clear all pending logs."""
         self.pending_logs.clear()
 
     def write_log(self, log: Log) -> None:
+        """Append a log to the pending logs list."""
         self.pending_logs.append(log)
 
     def process_logs(self) -> None:
+        """Process all pending logs.
+
+        Each log is dispatched to a handler selected from _dispatch_table by its class.
+        If no handler is registered, _process_log_default() is used.
+        After processing, pending_logs is cleared.
+        """
         for log in self.pending_logs:
             handler = self._dispatch_table.get(type(log), self._process_log_default)
             handler(log)
