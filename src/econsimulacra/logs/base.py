@@ -385,6 +385,7 @@ class FollowLog(Log):
         self.num_follows: int = num_follows
         self.num_followers: int = num_followers
 
+
 class UnfollowLog(Log):
     def __init__(
         self,
@@ -435,7 +436,6 @@ class StateEvaluationLog(Log):
         self.time_step: int = time_step
         self.agent_id: int = agent_id
         self.wealth: float = wealth
-
 
 
 class Logger:
