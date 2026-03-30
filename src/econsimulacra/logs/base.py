@@ -246,7 +246,7 @@ class OrderReactionLog(Log):
             accept_amount (float | int): The amount accepted in reaction to the order. It can be less than or equal to item_amount.
         """
         self.type: str = "order_reaction"
-        self.time_: int | str = time
+        self.time: int | str = time
         self.time_step: int = time_step
         self.agent_id: int = agent_id
         self.counterparty_id: int = counterparty_id
