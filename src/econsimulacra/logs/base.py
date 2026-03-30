@@ -153,7 +153,7 @@ class OrderLog(Log):
         counterparty_id: int,
         item_name: str,
         item_amount: float | int,
-        price: float,
+        price: Optional[float],
         order_id: Optional[int],
     ) -> None:
         """Initialization.
@@ -165,7 +165,7 @@ class OrderLog(Log):
             counterparty_id (int): The unique id of the counterparty.
             item_name (str): The name of the item.
             item_amount (float | int): The amount of the item.
-            price (float): The price of the item.
+            price (Optional[float]): The price of the item.
             order_id (Optional[int]): The unique id of the order.
         """
 
@@ -176,7 +176,7 @@ class OrderLog(Log):
         self.counterparty_id: int = counterparty_id
         self.item_name: str = item_name
         self.item_amount: float | int = item_amount
-        self.price: float = price
+        self.price: Optional[float] = price
         self.order_id: Optional[int] = order_id
 
 
