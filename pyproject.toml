@@ -4,8 +4,8 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "econsimulacra"
-version = "0.1.0"
-description = "EconSimulacra: A Digital Twin Platform of Consumer Economy Powered by LLM Agents"
+version = "0.1.2"
+description = "EconSimulacra: A Digital Twin Platform of Socio-Economic Systems Powered by LLM Agents"
 authors = ["Ryuji Hashimoto <r_hashimoto@simulacra.co.jp>"]
 license = "MIT"
 readme = "README.md"
