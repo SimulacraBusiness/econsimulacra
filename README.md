@@ -1,3 +1,7 @@
+
+[![python](https://img.shields.io/pypi/pyversions/econsimulacra.svg)](https://pypi.org/project/econsimulacra)
+[![pypi](https://img.shields.io/pypi/v/econsimulacra.svg)](https://pypi.org/project/econsimulacra)
+[![pypi](https://img.shields.io/pypi/v/econsimulacra.svg)](https://pypi.org/project/econsimulacra)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 <p align="center">
