@@ -111,3 +111,55 @@ An **EventManager** is responsible for managing events and triggering them at ap
 - or the occurrence of specific logs (e.g., when a transaction is generated). (```with```)
 
 You can also adapt probabilistic triggering via ```probability```. By registering custom events, users can introduce exogenous dynamics into the simulation, such as policy interventions or regime shifts, in a flexible and extensible manner.
+
+# Basic Usage
+
+## OpenAI API
+
+This section explains how to run EconSimulacra using the [OpenAI API](https://openai.com/index/openai-api/), based on the example in ```examples/openai```.
+
+### 1. Set OpenAI API Key
+
+You need to provide your OpenAI API key in one of the following ways:
+
+**Option A: Environment Variable (recommended)**
+
+```bash
+export OPENAI_API_KEY="your_api_key"
+```
+
+**Option B: ```config.json```**
+
+```json
+{
+    "llmClient": {
+        "type": "OpenAIClient",
+        "modelName": "gpt-4o-mini",
+        "apiKey": "your_api_key",
+        ...
+    },
+}
+```
+
+### 2. Configure Simulation
+
+An example configuration is provided at: ```config.json```. This file defines simulation parameters (e.g., number of steps), environment settings (e.g., agents, items, space) and LLM-related services (e.g., llm client, prompt settings). You can modify this file to design your own simulation scenario.
+
+### 3. Set Log Output Path
+
+To save simulation logs, set the following environment variable:
+
+```bash
+export LOG_TXT_PATH="path/to/output_log.txt"
+```
+
+### 4. Run Simulation
+
+Move to the example directory and execute:
+
+```python
+cd examples/openai
+python main.py
+```
+
+In this script, custom ```Event``` class: ```SubsidyEvent``` is implemented. The script will 1) load ```config.json```, 2) generate simulator and register the ```SubsidyEvent``` to the simulator, 3) reset the environment and run the simulation loop, and 4) output logs to the specified path.
