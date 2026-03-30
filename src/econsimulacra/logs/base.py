@@ -153,7 +153,7 @@ class OrderLog(Log):
         counterparty_id: int,
         item_name: str,
         item_amount: float | int,
-        price: Optional[float],
+        price: float,
         order_id: Optional[int],
     ) -> None:
         """Initialization.
@@ -165,7 +165,7 @@ class OrderLog(Log):
             counterparty_id (int): The unique id of the counterparty.
             item_name (str): The name of the item.
             item_amount (float | int): The amount of the item.
-            price (Optional[float]): The price of the item.
+            price (float): The price of the item.
             order_id (Optional[int]): The unique id of the order.
         """
 
@@ -176,7 +176,7 @@ class OrderLog(Log):
         self.counterparty_id: int = counterparty_id
         self.item_name: str = item_name
         self.item_amount: float | int = item_amount
-        self.price: Optional[float] = price
+        self.price: float = price
         self.order_id: Optional[int] = order_id
 
 
@@ -228,7 +228,7 @@ class OrderReactionLog(Log):
         counterparty_id: int,
         item_name: str,
         item_amount: float | int,
-        price: Optional[float],
+        price: float,
         order_id: Optional[int],
         accept_amount: float | int,
     ) -> None:
@@ -241,7 +241,7 @@ class OrderReactionLog(Log):
             counterparty_id (int): The unique id of the counterparty in the order.
             item_name (str): The name of the item in the order.
             item_amount (float | int): The amount of the item in the order.
-            price (Optional[float]): The price of the item in the order.
+            price (float): The price of the item in the order.
             order_id (Optional[int]): The unique id of the order.
             accept_amount (float | int): The amount accepted in reaction to the order. It can be less than or equal to item_amount.
         """
@@ -252,7 +252,7 @@ class OrderReactionLog(Log):
         self.counterparty_id: int = counterparty_id
         self.item_name: str = item_name
         self.item_amount: float | int = item_amount
-        self.price: Optional[float] = price
+        self.price: float = price
         self.order_id: Optional[int] = order_id
         self.accept_amount: float | int = accept_amount
 
