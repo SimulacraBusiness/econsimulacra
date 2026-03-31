@@ -1,7 +1,8 @@
 
 [![python](https://img.shields.io/pypi/pyversions/econsimulacra.svg)](https://pypi.org/project/econsimulacra)
 [![pypi](https://img.shields.io/pypi/v/econsimulacra.svg)](https://pypi.org/project/econsimulacra)
-[![pypi](https://img.shields.io/pypi/v/econsimulacra.svg)](https://pypi.org/project/econsimulacra)
+[![CI](https://github.com/SimulacraBusiness/econsimulacra/actions/workflows/ci.yml/badge.svg)](https://github.com/SimulacraBusiness/econsimulacra/actions/workflows/ci.yml)
+[![Publish to PyPI](https://github.com/SimulacraBusiness/econsimulacra/actions/workflows/release.yml/badge.svg)](https://github.com/SimulacraBusiness/econsimulacra/actions/workflows/release.yml)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 <p align="center">
