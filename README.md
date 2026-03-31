@@ -6,8 +6,8 @@
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 <p align="center">
-  <img src="imgs/SimpleGridAnimator.gif" width="48%" />
-  <img src="imgs/SimpleSocialAnimator.gif" width="48%" />
+  <img src="https://raw.githubusercontent.com/SimulacraBusiness/econsimulacra/main/imgs/SimpleGridAnimator.gif" width="48%" />
+  <img src="https://raw.githubusercontent.com/SimulacraBusiness/econsimulacra/main/imgs/SimpleSocialAnimator.gif" width="48%" />
 </p>
 
 
@@ -45,7 +45,7 @@ $ python
 EconSimulacra consists of the following main components:
 
 <p align="center">
-  <img src="imgs/framework_structure.png" width="100%" />
+  <img src="https://raw.githubusercontent.com/SimulacraBusiness/econsimulacra/main/imgs/framework_structure.png" width="100%" />
 </p>
 
 ## [**Simulator**](https://github.com/SimulacraBusiness/econsimulacra/blob/main/src/econsimulacra/simulator.py) 
