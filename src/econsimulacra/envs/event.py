@@ -105,7 +105,7 @@ class EventManager:
         """
         for event in self.events:
             if event.trigger.check_trigger_after_step(time_step):
-                event.execute(env=env, log=None)
+                event.execute(env=env)
 
     def trigger_events_after_log(self, log: Log, env: Environment) -> None:
         """Checks and triggers events based on the provided log.
