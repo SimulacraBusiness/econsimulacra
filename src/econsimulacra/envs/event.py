@@ -116,7 +116,7 @@ class EventManager:
         """
         for event in self.events:
             if event.trigger.check_trigger_after_log(log):
-                event.execute(env=env)
+                event.execute(env=env, log=log)
 
 
 class Event:
