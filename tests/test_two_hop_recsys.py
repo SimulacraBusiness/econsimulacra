@@ -1,4 +1,4 @@
-from econsimulacra.envs.social_networks import TwoHopRecommenderSystem
+from econsimulacra.envs.social_networks import SocialNetwork
 import random
 
 
@@ -16,29 +16,37 @@ class TestTwoHopRecommenderSystem:
                6 -> 9 -> 10
     """
 
-    recsys = TwoHopRecommenderSystem(
-        config={"maxRecommendations": 2, "isRandomized": False}, prng=random.Random(0)
-    )
+    config = {
+        "type": "SocialNetwork",
+        "followCap": 4,
+        "recSys": {
+            "type": "TwoHopRecommenderSystem",
+            "maxRecommendations": 2,
+            "isRandomized": False,
+        },
+    }
+    sn = SocialNetwork(config=config, prng=random.Random(0), registered_classes=[])
+    recsys = sn.rec_sys
     for i in range(11):
-        recsys.hook_add_agent(i)
-    recsys.hook_follow_agent(0, 1)
-    recsys.hook_follow_agent(1, 2)
-    recsys.hook_follow_agent(2, 1)
-    recsys.hook_follow_agent(1, 3)
-    recsys.hook_follow_agent(3, 4)
-    recsys.hook_follow_agent(4, 3)
-    recsys.hook_follow_agent(4, 2)
-    recsys.hook_follow_agent(5, 4)
-    recsys.hook_follow_agent(5, 2)
-    recsys.hook_follow_agent(5, 6)
-    recsys.hook_follow_agent(5, 7)
-    recsys.hook_follow_agent(7, 8)
-    recsys.hook_follow_agent(6, 9)
-    recsys.hook_follow_agent(9, 10)
-    recsys.hook_follow_agent(10, 8)
-    recsys.hook_follow_agent(4, 8)
-    recsys.hook_follow_agent(8, 4)
-    recsys.hook_unfollow_agent(5, 2)
+        sn.add_agent(agent_id=i, agent_name=f"agent_{i}")
+    sn.follow_agent(0, 1)
+    sn.follow_agent(1, 2)
+    sn.follow_agent(2, 1)
+    sn.follow_agent(1, 3)
+    sn.follow_agent(3, 4)
+    sn.follow_agent(4, 3)
+    sn.follow_agent(4, 2)
+    sn.follow_agent(5, 4)
+    sn.follow_agent(5, 2)
+    sn.follow_agent(5, 6)
+    sn.follow_agent(5, 7)
+    sn.follow_agent(7, 8)
+    sn.follow_agent(6, 9)
+    sn.follow_agent(9, 10)
+    sn.follow_agent(10, 8)
+    sn.follow_agent(4, 8)
+    sn.follow_agent(8, 4)
+    sn.unfollow_agent(5, 2)
 
     def test_two_hop_recsys(self) -> None:
         assert self.recsys.agent_id2follows == {
@@ -98,14 +106,17 @@ class TestTwoHopRecommenderSystem:
         }
 
     def test_get_recommendations(self) -> None:
-        assert self.recsys.get_recommendations(0) == [2, 3]
-        assert self.recsys.get_recommendations(1) == [4, 8]
-        assert self.recsys.get_recommendations(2) == [3, 4]
-        assert self.recsys.get_recommendations(3) == [8, 2]
-        assert self.recsys.get_recommendations(4) == [1, 6]
-        assert self.recsys.get_recommendations(5) == [8, 2]
-        assert self.recsys.get_recommendations(6) == [10, 4]
-        assert self.recsys.get_recommendations(7) == [4, 1]
-        assert self.recsys.get_recommendations(8) == [2, 3]
-        assert self.recsys.get_recommendations(9) == [8, 4]
-        assert self.recsys.get_recommendations(10) == [4, 1]
+        def get_ids_from_recs(recs: list[dict[str, int | str]]) -> list[int]:
+            return [rec["agent_id"] for rec in recs]
+
+        assert get_ids_from_recs(self.recsys.get_recommendations(0)) == [2, 3]
+        assert get_ids_from_recs(self.recsys.get_recommendations(1)) == [4, 8]
+        assert get_ids_from_recs(self.recsys.get_recommendations(2)) == [3, 4]
+        assert get_ids_from_recs(self.recsys.get_recommendations(3)) == [8, 2]
+        assert get_ids_from_recs(self.recsys.get_recommendations(4)) == [1, 6]
+        assert get_ids_from_recs(self.recsys.get_recommendations(5)) == [8, 2]
+        assert get_ids_from_recs(self.recsys.get_recommendations(6)) == [10, 4]
+        assert get_ids_from_recs(self.recsys.get_recommendations(7)) == [4, 1]
+        assert get_ids_from_recs(self.recsys.get_recommendations(8)) == [2, 3]
+        assert get_ids_from_recs(self.recsys.get_recommendations(9)) == [8, 4]
+        assert get_ids_from_recs(self.recsys.get_recommendations(10)) == [4, 1]

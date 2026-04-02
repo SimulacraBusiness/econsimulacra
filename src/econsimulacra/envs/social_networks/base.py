@@ -37,6 +37,7 @@ class SocialNetwork:
         self.prng: Random = prng
         self.nodes: set[int] = set()
         self.follow_cap: Optional[int] = config.get("followCap")
+        self.agent_id2agent_name: dict[int, str] = {}
         self.agent_id2tweet: dict[int, str] = {}
         self.agent_id2followers: dict[int, set[int]] = {}
         self.agent_id2follows: dict[int, set[int]] = {}
@@ -76,7 +77,7 @@ class SocialNetwork:
         recsys: RecommenderSystem = recsys_class(config=recsys_config, prng=prng)
         return recsys
 
-    def add_agent(self, agent_id: int) -> None:
+    def add_agent(self, agent_id: int, agent_name: str) -> None:
         """Add a new agent to the SocialNetwork.
 
         Args:
@@ -91,10 +92,11 @@ class SocialNetwork:
                 f"Agent ID {agent_id} already exists in the social network."
             )
         self.nodes.add(agent_id)
+        self.agent_id2agent_name[agent_id] = agent_name
         self.agent_id2tweet[agent_id] = ""
         self.agent_id2followers[agent_id] = set()
         self.agent_id2follows[agent_id] = set()
-        self.rec_sys.hook_add_agent(agent_id)
+        self.rec_sys.hook_add_agent(agent_id, agent_name)
 
     def tweet(self, agent_id: int, message: str) -> None:
         """Append a new message to the agent's existing tweet. This represents the agent tweeting a message in the social network.
