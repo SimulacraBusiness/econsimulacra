@@ -47,17 +47,11 @@ class TestEvents:
             "type": "DummyEvent",
         },
         "DummyEvent4": {
-            "trigger": {
-                "probability": 0.0,
-                "at": (1, 3, 5)
-            },
+            "trigger": {"probability": 0.0, "at": (1, 3, 5)},
             "type": "DummyEvent",
         },
         "DummyEvent5": {
-            "trigger": {
-                "probability": 1.0,
-                "at": (1, 3, 5)
-            },
+            "trigger": {"probability": 1.0, "at": (1, 3, 5)},
             "type": "DummyEvent",
         },
     }

@@ -211,8 +211,6 @@ class EventTrigger:
         if self.probability is not None and self.prng.random() >= self.probability:
             return False
         if self.logs is not None:
-            if any(
-                isinstance(log, log_class) for log_class in self.logs
-            ):
+            if any(isinstance(log, log_class) for log_class in self.logs):
                 return True
         return False
