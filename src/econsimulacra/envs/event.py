@@ -105,7 +105,7 @@ class EventManager:
         """
         for event in self.events:
             if event.trigger.check_trigger_after_step(time_step):
-                event.execute(env=env)
+                event.execute(env=env, log=None)
 
     def trigger_events_after_log(self, log: Log, env: Environment) -> None:
         """Checks and triggers events based on the provided log.
@@ -193,24 +193,24 @@ class EventTrigger:
 
     def check_trigger_after_step(self, time_step: int) -> bool:
         """Checks whether the event should be triggered based on the current time step."""
-        if self.at is not None and time_step not in self.at:
-            return False
-        if self.every is not None and time_step % self.every != 0:
-            return False
-        if self.between is not None and not (
-            self.between[0] <= time_step <= self.between[1]
-        ):
-            return False
         if self.probability is not None and self.prng.random() >= self.probability:
             return False
-        return True
+        if self.at is not None:
+            if time_step in self.at:
+                return True
+        if self.every is not None:
+            if time_step % self.every == 0:
+                return True
+        if self.between is not None:
+            if self.between[0] <= time_step <= self.between[1]:
+                return True
+        return False
 
     def check_trigger_after_log(self, log: Log) -> bool:
         """Checks whether the event should be triggered based on the provided log."""
-        if self.logs is not None and not any(
-            isinstance(log, log_class) for log_class in self.logs
-        ):
-            return False
         if self.probability is not None and self.prng.random() >= self.probability:
             return False
-        return True
+        if self.logs is not None:
+            if any(isinstance(log, log_class) for log_class in self.logs):
+                return True
+        return False

@@ -25,6 +25,7 @@ class TestEvents:
         "DummyEvent2",
         "DummyEvent3",
         "DummyEvent4",
+        "DummyEvent5",
     ]
     event_configs: dict[str, dict[str, Any]] = {
         "DummyEvent1": {
@@ -46,9 +47,11 @@ class TestEvents:
             "type": "DummyEvent",
         },
         "DummyEvent4": {
-            "trigger": {
-                "probability": 0.5,
-            },
+            "trigger": {"probability": 0.0, "at": (1, 3, 5)},
+            "type": "DummyEvent",
+        },
+        "DummyEvent5": {
+            "trigger": {"probability": 1.0, "at": (1, 3, 5)},
             "type": "DummyEvent",
         },
     }
@@ -67,4 +70,5 @@ class TestEvents:
         assert event_manager.events[0].num_executions == 3
         assert event_manager.events[1].num_executions == 3
         assert event_manager.events[2].num_executions == 3
-        assert event_manager.events[3].num_executions == 3
+        assert event_manager.events[3].num_executions == 0
+        assert event_manager.events[4].num_executions == 3
