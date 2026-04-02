@@ -142,8 +142,7 @@ DEFAULT_OBS_DESCRIPTION: dict[str, str] = {
     "visible_tl": "A list of tweets that you can see in your timeline. "
     + "Each tweet is represented as a dictionary with 'agent_id' (the id of the agent who tweeted), "
     + "'agent_name' (the name of the agent who tweeted), and 'tweet' (the content of the tweet).",
-    "recommended_follows": "A list of agent ids that you are not currently following. "
-    + "You may consider following these agents to receive more information from them.",
+    "recommended_follows": "A list of agents that you are not currently following but may consider following to connect with.",
     "incoming_orders": "A list of orders that other agents have made to you. "
     + "Each order is represented as a dictionary with 'order_id', 'counterparty_id', 'counterparty_name', "
     + "'item_name', 'item_amount', and 'ttl' (time to live, i.e., how many more time steps this order will be valid).",

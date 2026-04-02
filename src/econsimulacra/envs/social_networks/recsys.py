@@ -64,14 +64,15 @@ class RecommenderSystem(ABC):
         return self._sn
 
     @abstractmethod
-    def get_recommendations(self, agent_id: int) -> list[int]:
+    def get_recommendations(self, agent_id: int) -> list[Any]:
         pass
 
-    def hook_add_agent(self, agent_id: int) -> None:
+    def hook_add_agent(self, agent_id: int, agent_name: str) -> None:
         """Event hook called when a new agent is added to the social network.
 
         Args:
             agent_id (int): The unique identifier of the agent that was added.
+            agent_name (str): The name of the agent that was added.
 
         Note:
             See also:
@@ -146,13 +147,14 @@ class TwoHopRecommenderSystem(RecommenderSystem):
             lambda: defaultdict(int)
         )
         self._dirty: set[int] = set()
-        self._cache: dict[int, list[int]] = {}
+        self._cache: dict[int, list[dict[str, int | str]]] = {}
 
-    def hook_add_agent(self, agent_id: int) -> None:
+    def hook_add_agent(self, agent_id: int, agent_name: str) -> None:
         """Event hook called when a new agent is added to the social network.
 
         Args:
             agent_id (int): The unique identifier of the agent that was added.
+            agent_name (str): The name of the agent that was added.
         """
         self.agent_id2follows[agent_id] = set()
         self.agent_id2followers[agent_id] = set()
@@ -225,7 +227,7 @@ class TwoHopRecommenderSystem(RecommenderSystem):
                 )
             self._dirty.add(two_hop_source)
 
-    def get_recommendations(self, agent_id: int) -> list[int]:
+    def get_recommendations(self, agent_id: int) -> list[dict[str, Any]]:
         """Generate recommendations for the given agent based on two-hop connections.
 
         Args:
@@ -260,7 +262,15 @@ class TwoHopRecommenderSystem(RecommenderSystem):
                 * (self.temperature if self.is_randomized else 0.0),
             ),
         )
-        recommendations: list[int] = sorted_candidates[: self.max_recs]
+        _sn: SocialNetwork = self._require_bound()
+        recommendations: list[dict[str, int | str]] = [
+            {
+                "agent_id": candidate,
+                "agent_name": _sn.agent_id2agent_name[candidate],
+                "latest_tweet": _sn.agent_id2tweet[candidate],
+            }
+            for candidate in sorted_candidates[: self.max_recs]
+        ]
         self._cache[agent_id] = recommendations
         self._dirty.discard(agent_id)
         return recommendations

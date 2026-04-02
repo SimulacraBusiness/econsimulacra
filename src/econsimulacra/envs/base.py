@@ -496,7 +496,9 @@ class Environment(Generic[ObsT]):
                 )
                 self.agent_id2is_moving[current_agent_id] = False
                 self.agent_id2destination[current_agent_id] = None
-                self.social_network.add_agent(current_agent_id)
+                self.social_network.add_agent(
+                    agent_id=current_agent_id, agent_name=agent_name
+                )
                 current_agent_id += 1
 
     def _generate_items(self, item_keys: list[str]) -> None:
