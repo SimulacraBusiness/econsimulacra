@@ -7,7 +7,7 @@ from typing import Type
 from typing import Union
 
 
-JsonValue = Union[dict, list, float, int]
+JsonValue = Union[dict, list, tuple, float, int]
 
 
 def find_class(name: str, optional_class_list: Optional[list[Type]] = None) -> Type:
@@ -47,9 +47,7 @@ class JsonRandom:
         return lam * -math.log(self.prng.random())
 
     def random(self, json_value: JsonValue) -> float:
-        if isinstance(json_value, tuple):
-            json_value = list(json_value)
-        if isinstance(json_value, list):
+        if isinstance(json_value, (list, tuple)):
             if len(json_value) != 2:
                 raise ValueError(
                     "Uniform distribution must be [min, max] but "
@@ -78,9 +76,9 @@ class JsonRandom:
                 return value
             if "uniform" in json_value:
                 args = json_value["uniform"]
-                if not isinstance(args, list):
+                if not isinstance(args, (list, tuple)):
                     raise ValueError(
-                        "Uniform distribution must be [min, max] (list) but "
+                        "Uniform distribution must be [min, max] (list or tuple) but "
                         + json.dumps(json_value)
                     )
                 if len(args) != 2:
@@ -93,9 +91,9 @@ class JsonRandom:
                 return self._next_uniform(min_value=min_value, max_value=max_value)
             if "normal" in json_value:
                 args = json_value["normal"]
-                if not isinstance(args, list):
+                if not isinstance(args, (list, tuple)):
                     raise ValueError(
-                        "Normal distribution must be [mu, sigma] (list) but "
+                        "Normal distribution must be [mu, sigma] (list or tuple) but "
                         + json.dumps(json_value)
                     )
                 if len(args) != 2:
@@ -108,9 +106,9 @@ class JsonRandom:
                 return self._next_normal(mu=mu, sigma=sigma)
             if "expon" in json_value:
                 args = json_value["expon"]
-                if not isinstance(args, list):
+                if not isinstance(args, (list, tuple)):
                     raise ValueError(
-                        "Exponential distribution must be [lambda] (list) but "
+                        "Exponential distribution must be [lambda] (list or tuple) but "
                         + json.dumps(json_value)
                     )
                 if len(args) != 1:
