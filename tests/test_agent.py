@@ -107,11 +107,11 @@ class TestAgent:
             give_item_amount=15,
         )
         assert agent.inventory_dic == {"cash": 95, "rice": 55}
-        with pytest.raises(ValueError):
-            agent.exchange_goods(
-                get_item_name="gold",
-                get_item_amount=10,
-            )
+        agent.exchange_goods(
+            get_item_name="gold",
+            get_item_amount=10,
+        )
+        assert agent.inventory_dic == {"cash": 95, "rice": 55, "gold": 10}
         with pytest.raises(ValueError):
             agent.exchange_goods(
                 give_item_name="bread",
