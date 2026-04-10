@@ -2,6 +2,7 @@ from .clients import (
     LLMClient as LLMClient,
     OpenAIClient as OpenAIClient,
     TransformersClient as TransformersClient,
+    VLLMClient as VLLMClient,
 )
 from .constant import (
     DEFAULT_ACTION_DESCRIPTION as DEFAULT_ACTION_DESCRIPTION,
@@ -19,6 +20,7 @@ __all__ = [
     "LLMClient",
     "OpenAIClient",
     "TransformersClient",
+    "VLLMClient",
     "PersonaBuilder",
     "Big5PersonaBuilder",
     "PromptBuilder",
