@@ -1,12 +1,14 @@
-from ..constant import DEFAULT_ACTION_DESCRIPTION
-from ..constant import DEFAULT_OBS_DESCRIPTION
-from ..constant import DEFAULT_SIMULATION_DESCRIPTION
 import json
 import pathlib
-from pathlib import Path
 import random
-from typing import Any
-from typing import Optional
+from pathlib import Path
+from typing import Any, Optional
+
+from ..constant import (
+    DEFAULT_ACTION_DESCRIPTION,
+    DEFAULT_OBS_DESCRIPTION,
+    DEFAULT_SIMULATION_DESCRIPTION,
+)
 
 
 class PromptBuilder:

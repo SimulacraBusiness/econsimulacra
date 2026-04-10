@@ -1,7 +1,7 @@
-from .base import PersonaBuilder
 import random
-from typing import Any
-from typing import Optional
+from typing import Any, Optional
+
+from .base import PersonaBuilder
 
 
 class Big5PersonaBuilder(PersonaBuilder):

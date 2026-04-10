@@ -1,10 +1,10 @@
 import json
-from manim import Scene
-import pathlib
 import os
+import pathlib
 from pathlib import Path
-from typing import Any
-from typing import Optional
+from typing import Any, Optional
+
+from manim import Scene
 
 
 class Animator(Scene):

@@ -1,59 +1,58 @@
-from ..agents import Agent
-from .event import EventManager
-from ..items import Item
-from ..logs import AgentGenerationLog
-from ..logs import SpaceAssignLog
-from ..logs import MoveLog
-from ..logs import ConsumptionLog
-from ..logs import OrderLog
-from ..logs import ProposalLog
-from ..logs import OrderReactionLog
-from ..logs import ProposalReactionLog
-from ..logs import ChangePriceLog
-from ..logs import TweetLog
-from ..logs import FollowLog
-from ..logs import UnfollowLog
-from ..logs import StateEvaluationLog
-from ..logs import Log
-from ..logs import Logger
-from .memory import MemoryHandler
-from .obs_providers import ObsProvider
-from .obs_providers import ObsProviderFromCoLocatedAgents
-from .obs_providers import TimeProvider
-from .obs_providers import TimeDeltaProvider
-from .obs_providers import SelfIDProvider
-from .obs_providers import SelfNameProvider
-from .obs_providers import SelfPosProvider
-from .obs_providers import SelfInitPosProvider
-from .obs_providers import SelfIsMovingProvider
-from .obs_providers import SelfDestinationProvider
-from .obs_providers import OthersPosProvider
-from .obs_providers import SelfInventoryProvider
-from .obs_providers import SelfTweetProvider
-from .obs_providers import FollowCapProvider
-from .obs_providers import NumFollowersProvider
-from .obs_providers import NumFollowsProvider
-from .obs_providers import VisibleTLProvider
-from .obs_providers import RecommendedFollowsProvider
-from .obs_providers import IncomingOrdersProvider
-from .obs_providers import IncomingSwapProposalsProvider
-from .obs_providers import ItemName2PriceProvider
-from .obs_providers import OthersInventoriesProvider
-from .obs_providers import MemoryProvider
-from .order import Order
-from .order import SwapProposal
 import random
 from random import Random
+from typing import Any, Generic, Literal, Optional, Type, TypeVar
+
+from ..agents import Agent
+from ..items import Item
+from ..logs import (
+    AgentGenerationLog,
+    ChangePriceLog,
+    ConsumptionLog,
+    FollowLog,
+    Log,
+    Logger,
+    MoveLog,
+    OrderLog,
+    OrderReactionLog,
+    ProposalLog,
+    ProposalReactionLog,
+    SpaceAssignLog,
+    StateEvaluationLog,
+    TweetLog,
+    UnfollowLog,
+)
 from ..sim_utils import find_class
+from .event import EventManager
+from .memory import MemoryHandler
+from .obs_providers import (
+    FollowCapProvider,
+    IncomingOrdersProvider,
+    IncomingSwapProposalsProvider,
+    ItemName2PriceProvider,
+    MemoryProvider,
+    NumFollowersProvider,
+    NumFollowsProvider,
+    ObsProvider,
+    ObsProviderFromCoLocatedAgents,
+    OthersInventoriesProvider,
+    OthersPosProvider,
+    RecommendedFollowsProvider,
+    SelfDestinationProvider,
+    SelfIDProvider,
+    SelfInitPosProvider,
+    SelfInventoryProvider,
+    SelfIsMovingProvider,
+    SelfNameProvider,
+    SelfPosProvider,
+    SelfTweetProvider,
+    TimeDeltaProvider,
+    TimeProvider,
+    VisibleTLProvider,
+)
+from .order import Order, SwapProposal
 from .social_networks import SocialNetwork
 from .space import GridSpace
 from .time_translator import TimeTranslator
-from typing import Any
-from typing import Generic
-from typing import Literal
-from typing import Optional
-from typing import Type
-from typing import TypeVar
 
 ObsT = TypeVar("ObsT")
 

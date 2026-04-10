@@ -1,5 +1,6 @@
-from econsimulacra.envs import TimeTranslator
 from datetime import datetime, timedelta
+
+from econsimulacra.envs import TimeTranslator
 
 
 class TestTimeTranslator:

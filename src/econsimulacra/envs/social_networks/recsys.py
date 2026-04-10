@@ -1,11 +1,10 @@
 from __future__ import annotations
+
+import heapq
 from abc import ABC, abstractmethod
 from collections import defaultdict
-import heapq
 from random import Random
-from typing import Any
-from typing import Optional
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Optional
 
 if TYPE_CHECKING:
     from .base import SocialNetwork

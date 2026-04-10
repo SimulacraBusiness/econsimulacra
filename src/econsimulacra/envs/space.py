@@ -1,6 +1,5 @@
 from collections import defaultdict
-from typing import Any
-from typing import DefaultDict
+from typing import Any, DefaultDict
 
 
 class GridSpace:

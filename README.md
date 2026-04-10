@@ -156,6 +156,44 @@ $ export OPENAI_API_KEY="your_api_key"
 }
 ```
 
+## VLLM
+
+This section explains how to run EconSimulacra by using a vLLM-backed OpenAI-compatible server.
+
+### 1. Create a Separate Virtual Environment
+
+We recommend preparing a dedicated virtual environment for vLLM, and running the vLLM server there as a separate process, since some dependency requirements conflict with EconSimulacra environment.
+
+```bash
+$ python3.10 -m venv .venv-vllm
+$ source .venv-vllm/bin/activate
+$ pip install vllm
+```
+
+### 2. Set VLLM configs
+
+```json
+{
+    "llmClient": {
+        "type": "VLLMClient",
+        "modelName": "meta-llama/Meta-Llama-3-8B-Instruct",
+        "vllmPython": "path_to_venv_vllm/.venv-vllm/bin/python",
+        "useGpu": true,
+        "gpuIds": [0, 1],
+        "isDataParallel": true,
+        "host": "127.0.0.1",
+        "port": 8000,
+        "timeOut": 60,
+        "maxRetries": 3,
+        "serverStartTimeout": 300,
+        "maxConcurrentGenerations": 32,
+        "trustRemoteCode": false,
+        "gpuMemoryUtilization": 0.9,
+    },
+}
+```
+
+
 ### 2. Configure Simulation
 
 An example configuration is provided at: ```config.json```. This file defines simulation parameters (e.g., number of steps), environment settings (e.g., agents, items, space) and LLM-related services (e.g., llm client, prompt settings). You can modify this file to design your own simulation scenario.

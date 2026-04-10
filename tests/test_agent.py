@@ -1,8 +1,10 @@
 import copy
 import random
-from econsimulacra.agents import Agent
-import pytest
 from typing import Any
+
+import pytest
+
+from econsimulacra.agents import Agent
 
 
 class DummyAgent(Agent):

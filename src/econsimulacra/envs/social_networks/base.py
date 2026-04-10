@@ -1,9 +1,8 @@
-from .recsys import RecommenderSystem
-from ...sim_utils import find_class
 from random import Random
-from typing import Any
-from typing import Optional
-from typing import Type
+from typing import Any, Optional, Type
+
+from ...sim_utils import find_class
+from .recsys import RecommenderSystem
 
 
 class SocialNetwork:

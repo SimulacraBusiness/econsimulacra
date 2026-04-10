@@ -1,5 +1,5 @@
-from econsimulacra.animations import GridSpaceAnimator
-from econsimulacra.animations import SocialNetworkAnimator
+from econsimulacra.animations import GridSpaceAnimator, SocialNetworkAnimator
+
 # export CONFIG_PATH="config.json"
 # export LOG_TXT_PATH="log.txt"
 

@@ -1,7 +1,10 @@
-from econsimulacra.llm_services import DEFAULT_ACTION_DESCRIPTION
-from econsimulacra.llm_services import DEFAULT_OBS_DESCRIPTION
-from econsimulacra.llm_services import PromptBuilder
 import json
+
+from econsimulacra.llm_services import (
+    DEFAULT_ACTION_DESCRIPTION,
+    DEFAULT_OBS_DESCRIPTION,
+    PromptBuilder,
+)
 
 
 class TestPromptBuilder:

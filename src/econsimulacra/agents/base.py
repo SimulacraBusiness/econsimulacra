@@ -1,11 +1,9 @@
-from abc import ABC, abstractmethod
-from ..sim_utils import JsonRandom
 import random
+from abc import ABC, abstractmethod
 from random import Random
-from typing import Any
-from typing import Optional
-from typing import Generic, TypeVar
+from typing import Any, Generic, Optional, TypeVar
 
+from ..sim_utils import JsonRandom
 
 ObsT = TypeVar("ObsT")
 
