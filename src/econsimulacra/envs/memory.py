@@ -341,29 +341,29 @@ class MemoryHandler:
             )
         if len(agent_memory.consumption_history) > 0:
             summarized_memory["consumption_history"] = "You have consumed " + ", ".join(
-                f"{item.item_name} x {item.quantity} at {item.time}"
+                f"{item.item_name} x {int(item.quantity)} at {item.time}"
                 for item in agent_memory.consumption_history
             )
         if len(agent_memory.purchase_history) > 0:
             summarized_memory["purchase_history"] = "You have purchased " + ", ".join(
-                f"{item.item_name} x {item.quantity} at {item.price} from agent_id {item.from_agent_id} at {item.time}"
+                f"{item.item_name} x {int(item.quantity)} at {int(item.price)} from agent_id {item.from_agent_id} at {item.time}"
                 for item in agent_memory.purchase_history
             )
         if len(agent_memory.sale_history) > 0:
             summarized_memory["sale_history"] = "You have sold " + ", ".join(
-                f"{item.item_name} x {item.quantity} at {item.price} to agent_id {item.to_agent_id} at {item.time}"
+                f"{item.item_name} x {int(item.quantity)} at {int(item.price)} to agent_id {item.to_agent_id} at {item.time}"
                 for item in agent_memory.sale_history
             )
         if len(agent_memory.exchange_history) > 0:
             summarized_memory["exchange_history"] = "You have exchanged " + "; ".join(
-                f"give {item.give_item_name} x {item.give_item_quantity}, get {item.get_item_name} x {item.get_item_quantity} with agent_id {item.counterparty_id} at {item.time}"
+                f"give {item.give_item_name} x {int(item.give_item_quantity)}, get {item.get_item_name} x {int(item.get_item_quantity)} with agent_id {item.counterparty_id} at {item.time}"
                 for item in agent_memory.exchange_history
             )
         if len(agent_memory.set_price_history) > 0:
             summarized_memory["set_price_history"] = (
                 "You have changed price "
                 + ", ".join(
-                    f"{item.item_name}: {item.old_price} -> {item.new_price} at {item.time}"
+                    f"{item.item_name}: {int(item.old_price)} -> {int(item.new_price)} at {item.time}"
                     for item in agent_memory.set_price_history
                 )
             )
@@ -371,7 +371,7 @@ class MemoryHandler:
             summarized_memory["social_history"] = (
                 "Your social actions are "
                 + "; ".join(
-                    f"{item.action} target_agent_id {item.target_agent_id} at {item.time} (num_followers: {item.num_followers}, num_follows: {item.num_follows})"
+                    f"{item.action} target_agent_id {item.target_agent_id} at {item.time} (num_followers: {int(item.num_followers)}, num_follows: {int(item.num_follows)})"
                     for item in agent_memory.social_history
                 )
             )
@@ -379,7 +379,7 @@ class MemoryHandler:
             summarized_memory["state_evaluation_history"] = (
                 "Your state evaluations are "
                 + "; ".join(
-                    f"Wealth: {item.wealth} at {item.time}"
+                    f"Wealth: {int(item.wealth)} at {item.time}"
                     for item in agent_memory.state_evaluation_history
                 )
             )
