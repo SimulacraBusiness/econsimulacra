@@ -1,6 +1,6 @@
 import json
-from econsimulacra.llm_services import LLMClient
-from econsimulacra.llm_services import DEFAULT_ACTION_JSON_SCHEMA
+
+from econsimulacra.llm_services import DEFAULT_ACTION_JSON_SCHEMA, LLMClient
 
 MODIFIED_ACTION_JSON_SCHEMA = {
     "type": "object",

@@ -1,19 +1,22 @@
 from __future__ import annotations
+
 import asyncio
-from .base import LLMClient
 import copy
 import json
-from openai import AsyncOpenAI
-from openai.types.chat import ChatCompletion
-from openai import APIConnectionError
-from openai import APITimeoutError
-from openai import BadRequestError
-from openai import RateLimitError
 import os
 import random
-from typing import Any
-from typing import cast
-from typing import Optional
+from typing import Any, Optional, cast
+
+from openai import (
+    APIConnectionError,
+    APITimeoutError,
+    AsyncOpenAI,
+    BadRequestError,
+    RateLimitError,
+)
+from openai.types.chat import ChatCompletion
+
+from .base import LLMClient
 
 
 class OpenAIClient(LLMClient):

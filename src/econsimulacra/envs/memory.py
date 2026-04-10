@@ -1,26 +1,26 @@
 from __future__ import annotations
+
+import random
 from collections import deque
 from dataclasses import dataclass
-from ..logs import Log
-from ..logs import AgentGenerationLog
-from ..logs import SpaceAssignLog
-from ..logs import MoveLog
-from ..logs import ConsumptionLog
-from ..logs import OrderLog
-from ..logs import ProposalLog
-from ..logs import OrderReactionLog
-from ..logs import ProposalReactionLog
-from ..logs import ChangePriceLog
-from ..logs import TweetLog
-from ..logs import FollowLog
-from ..logs import UnfollowLog
-from ..logs import StateEvaluationLog
-import random
-from typing import Any
-from typing import Callable
-from typing import Deque
-from typing import Literal
-from typing import Optional
+from typing import Any, Callable, Deque, Literal, Optional
+
+from ..logs import (
+    AgentGenerationLog,
+    ChangePriceLog,
+    ConsumptionLog,
+    FollowLog,
+    Log,
+    MoveLog,
+    OrderLog,
+    OrderReactionLog,
+    ProposalLog,
+    ProposalReactionLog,
+    SpaceAssignLog,
+    StateEvaluationLog,
+    TweetLog,
+    UnfollowLog,
+)
 
 
 @dataclass

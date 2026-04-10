@@ -1,23 +1,24 @@
-from .base import Animator
 from collections import defaultdict
-from manim import AnimationGroup
-from manim import config as manim_config
-from manim import Dot
-from manim import FadeIn
-from manim import LaggedStart
-from manim import Mobject
-from manim import NumberPlane
-from manim import SVGMobject
-from manim import Text
-from manim import Transform
-from manim import VGroup
-from manim.constants import DL, ORIGIN, UL, UP, UR
-import numpy as np
-from numpy import ndarray
-from typing import Any
-from typing import Optional
-from typing import Tuple
+from typing import Any, Optional, Tuple
 
+import numpy as np
+from manim import (
+    AnimationGroup,
+    Dot,
+    FadeIn,
+    LaggedStart,
+    Mobject,
+    NumberPlane,
+    SVGMobject,
+    Text,
+    Transform,
+    VGroup,
+    config as manim_config,
+)
+from manim.constants import DL, ORIGIN, UL, UP, UR
+from numpy import ndarray
+
+from .base import Animator
 
 Pos = Tuple[int, int]
 

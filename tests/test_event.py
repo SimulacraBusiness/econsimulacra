@@ -1,9 +1,7 @@
-from econsimulacra.envs import Environment
-from econsimulacra.envs import Event
-from econsimulacra.envs import EventTrigger
-from econsimulacra.envs import EventManager
 import random
 from typing import Any
+
+from econsimulacra.envs import Environment, Event, EventManager, EventTrigger
 
 
 class DummyEvent(Event):

@@ -1,41 +1,42 @@
 from .base import Environment as Environment
-from .event import EventManager as EventManager
-from .event import Event as Event
-from .event import EventTrigger as EventTrigger
+from .event import (
+    Event as Event,
+    EventManager as EventManager,
+    EventTrigger as EventTrigger,
+)
 from .memory import MemoryHandler as MemoryHandler
-from .obs_providers import ObsProvider as ObsProvider
 from .obs_providers import (
-    ObsProviderFromCoLocatedAgents as ObsProviderFromCoLocatedAgents,
-)
-from .obs_providers import TimeProvider as TimeProvider
-from .obs_providers import TimeDeltaProvider as TimeDeltaProvider
-from .obs_providers import SelfIDProvider as SelfIDProvider
-from .obs_providers import SelfNameProvider as SelfNameProvider
-from .obs_providers import SelfPosProvider as SelfPosProvider
-from .obs_providers import SelfInitPosProvider as SelfInitPosProvider
-from .obs_providers import SelfIsMovingProvider as SelfIsMovingProvider
-from .obs_providers import SelfDestinationProvider as SelfDestinationProvider
-from .obs_providers import OthersPosProvider as OthersPosProvider
-from .obs_providers import SelfInventoryProvider as SelfInventoryProvider
-from .obs_providers import SelfTweetProvider as SelfTweetProvider
-from .obs_providers import FollowCapProvider as FollowCapProvider
-from .obs_providers import NumFollowersProvider as NumFollowersProvider
-from .obs_providers import NumFollowsProvider as NumFollowsProvider
-from .obs_providers import VisibleTLProvider as VisibleTLProvider
-from .obs_providers import RecommendedFollowsProvider as RecommendedFollowsProvider
-from .obs_providers import IncomingOrdersProvider as IncomingOrdersProvider
-from .obs_providers import (
+    FollowCapProvider as FollowCapProvider,
+    IncomingOrdersProvider as IncomingOrdersProvider,
     IncomingSwapProposalsProvider as IncomingSwapProposalsProvider,
+    ItemName2PriceProvider as ItemName2PriceProvider,
+    MemoryProvider as MemoryProvider,
+    NumFollowersProvider as NumFollowersProvider,
+    NumFollowsProvider as NumFollowsProvider,
+    ObsProvider as ObsProvider,
+    ObsProviderFromCoLocatedAgents as ObsProviderFromCoLocatedAgents,
+    OthersInventoriesProvider as OthersInventoriesProvider,
+    OthersPosProvider as OthersPosProvider,
+    RecommendedFollowsProvider as RecommendedFollowsProvider,
+    SelfDestinationProvider as SelfDestinationProvider,
+    SelfIDProvider as SelfIDProvider,
+    SelfInitPosProvider as SelfInitPosProvider,
+    SelfInventoryProvider as SelfInventoryProvider,
+    SelfIsMovingProvider as SelfIsMovingProvider,
+    SelfNameProvider as SelfNameProvider,
+    SelfPosProvider as SelfPosProvider,
+    SelfTweetProvider as SelfTweetProvider,
+    TimeDeltaProvider as TimeDeltaProvider,
+    TimeProvider as TimeProvider,
+    VisibleTLProvider as VisibleTLProvider,
 )
-from .obs_providers import MemoryProvider as MemoryProvider
-from .obs_providers import ItemName2PriceProvider as ItemName2PriceProvider
-from .obs_providers import OthersInventoriesProvider as OthersInventoriesProvider
-from .order import Order as Order
-from .order import SwapProposal as SwapProposal
+from .order import Order as Order, SwapProposal as SwapProposal
+from .social_networks import (
+    RecommenderSystem as RecommenderSystem,
+    SocialNetwork as SocialNetwork,
+    TwoHopRecommenderSystem as TwoHopRecommenderSystem,
+)
 from .space import GridSpace as GridSpace
-from .social_networks import SocialNetwork as SocialNetwork
-from .social_networks import RecommenderSystem as RecommenderSystem
-from .social_networks import TwoHopRecommenderSystem as TwoHopRecommenderSystem
 from .time_translator import TimeTranslator as TimeTranslator
 
 __all__ = [

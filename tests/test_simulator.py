@@ -1,12 +1,10 @@
 import asyncio
+from typing import Any, Callable, Optional
+
 from econsimulacra.agents import Agent
-from econsimulacra.envs import Environment
-from econsimulacra.envs import Order
+from econsimulacra.envs import Environment, Order
 from econsimulacra.logs import DictLogger
 from econsimulacra.simulator import Simulator
-from typing import Any
-from typing import Callable
-from typing import Optional
 
 Provider = Callable[[int], Any]
 

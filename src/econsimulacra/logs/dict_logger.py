@@ -1,9 +1,9 @@
-from .base import Log
-from .base import Logger
 import json
-from pathlib import Path
 import pathlib
+from pathlib import Path
 from typing import Optional
+
+from .base import Log, Logger
 
 
 class DictLogger(Logger):

@@ -1,15 +1,11 @@
+from typing import Any, Callable, Optional
+
+import pytest
+
 from econsimulacra.agents import Agent
-from econsimulacra.envs import Environment
-from econsimulacra.envs import Event
-from econsimulacra.envs import EventTrigger
-from econsimulacra.envs import MemoryHandler
-from econsimulacra.envs import Order
+from econsimulacra.envs import Environment, Event, EventTrigger, MemoryHandler, Order
 from econsimulacra.items import Item
 from econsimulacra.logs import DictLogger
-import pytest
-from typing import Any
-from typing import Callable
-from typing import Optional
 
 Provider = Callable[[int], Any]
 

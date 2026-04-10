@@ -1,9 +1,7 @@
+from typing import Any, Optional
+
+from ..llm_services import LLMClient, PersonaBuilder, PromptBuilder
 from .base import Agent
-from ..llm_services import LLMClient
-from ..llm_services import PersonaBuilder
-from ..llm_services import PromptBuilder
-from typing import Any
-from typing import Optional
 
 
 class LLMAgent(Agent[dict[str, Any]]):

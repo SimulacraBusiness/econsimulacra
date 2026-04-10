@@ -1,5 +1,6 @@
-from econsimulacra.envs.social_networks import SocialNetwork
 import random
+
+from econsimulacra.envs.social_networks import SocialNetwork
 
 
 class TestTwoHopRecommenderSystem:

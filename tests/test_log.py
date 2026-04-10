@@ -1,6 +1,4 @@
-from econsimulacra.logs import AgentGenerationLog
-from econsimulacra.logs import MoveLog
-from econsimulacra.logs import DictLogger
+from econsimulacra.logs import AgentGenerationLog, DictLogger, MoveLog
 
 
 class DummyLogger(DictLogger):

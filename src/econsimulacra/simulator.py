@@ -1,6 +1,16 @@
 from __future__ import annotations
+
 import asyncio
 import json
+from pathlib import Path
+from typing import Any, Generic, Optional, Type, TypeVar
+
+from rich.console import Console
+from rich.panel import Panel
+from rich.table import Table
+from rich.tree import Tree
+from tqdm import tqdm
+
 from .agents.base import Agent
 from .envs.base import Environment
 from .envs.event import Event
@@ -9,17 +19,6 @@ from .llm_services.clients import LLMClient
 from .llm_services.personas import PersonaBuilder
 from .llm_services.prompts import PromptBuilder
 from .logs.base import Logger
-from pathlib import Path
-from rich.console import Console
-from rich.panel import Panel
-from rich.table import Table
-from rich.tree import Tree
-from tqdm import tqdm
-from typing import Any
-from typing import Generic
-from typing import Optional
-from typing import Type
-from typing import TypeVar
 
 ObsT = TypeVar("ObsT")
 

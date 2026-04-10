@@ -1,11 +1,10 @@
 from __future__ import annotations
-from ..logs import Log
+
 import random
+from typing import TYPE_CHECKING, Any, Optional, Type
+
+from ..logs import Log
 from ..sim_utils import find_class
-from typing import Any
-from typing import Optional
-from typing import Type
-from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .base import Environment

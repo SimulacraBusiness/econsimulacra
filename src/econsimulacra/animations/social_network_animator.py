@@ -1,27 +1,30 @@
-from .base import Animator
 from collections import defaultdict
-from manim import Animation
-from manim import AnimationGroup
-from manim import Arrow
-from manim import Create
-from manim import config as manim_config
-from manim import Dot
-from manim import FadeIn
-from manim import FadeOut
-from manim import Indicate
-from manim import LaggedStart
-from manim import Mobject
-from manim import Rectangle
-from manim import SVGMobject
-from manim import Text
-from manim import Transform
-from manim import VGroup
-from manim import WHITE
-from manim.constants import DOWN, LEFT, RIGHT, UL, UP
+from typing import Any, Optional
+
 import numpy as np
+from manim import (
+    WHITE,
+    Animation,
+    AnimationGroup,
+    Arrow,
+    Create,
+    Dot,
+    FadeIn,
+    FadeOut,
+    Indicate,
+    LaggedStart,
+    Mobject,
+    Rectangle,
+    SVGMobject,
+    Text,
+    Transform,
+    VGroup,
+    config as manim_config,
+)
+from manim.constants import DOWN, LEFT, RIGHT, UL, UP
 from numpy import ndarray
-from typing import Any
-from typing import Optional
+
+from .base import Animator
 
 
 class SocialNetworkAnimator(Animator):

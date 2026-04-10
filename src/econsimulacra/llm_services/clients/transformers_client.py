@@ -1,13 +1,11 @@
 import asyncio
-from .base import LLMClient
-from outlines import generate
-from outlines import models
 import random
+from typing import Any, Callable, Optional, cast
+
 import torch
-from typing import Any
-from typing import Callable
-from typing import cast
-from typing import Optional
+from outlines import generate, models
+
+from .base import LLMClient
 
 
 class TransformersClient(LLMClient):

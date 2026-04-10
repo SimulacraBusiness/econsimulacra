@@ -1,7 +1,5 @@
 from econsimulacra.agents import LLMAgent
-from econsimulacra.llm_services import Big5PersonaBuilder
-from econsimulacra.llm_services import LLMClient
-from econsimulacra.llm_services import PromptBuilder
+from econsimulacra.llm_services import Big5PersonaBuilder, LLMClient, PromptBuilder
 
 
 class DummyClient(LLMClient):

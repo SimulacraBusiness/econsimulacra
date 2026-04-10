@@ -1,6 +1,6 @@
-from econsimulacra.envs import Order
-from econsimulacra.envs import SwapProposal
 import pytest
+
+from econsimulacra.envs import Order, SwapProposal
 
 
 class TestOrder:
