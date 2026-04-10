@@ -29,7 +29,7 @@ classifiers = [
 [tool.poetry.dependencies]
 python = ">=3.10,<3.13"
 typing-extensions = "^4.15.0"
-torch = "2.2.1"
+torch = "2.10.0"
 numpy = "^1.26.1"
 openai = "^2.21.0"
 outlines = "0.1.11"
@@ -69,3 +69,13 @@ ignore_missing_imports = true
 [[tool.mypy.overrides]]
 module = ["econsimulacra.animations", "econsimulacra.animations.*"]
 ignore_missing_imports = true
+
+# ---------------------------------------------------------
+# Ruff configuration
+# ---------------------------------------------------------
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+ignore = ["E501"]
+
+[tool.ruff.lint.isort]
+combine-as-imports = true
