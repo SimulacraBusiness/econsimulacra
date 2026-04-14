@@ -158,6 +158,21 @@ class SelfNameProvider(ObsProvider):
         return self.env.agent_id2agent[agent_id].get_self_name()
 
 
+class SelfIsHouseholdProvider(ObsProvider):
+    """Self Is Household Provider class."""
+
+    def get_obs(self, agent_id: int) -> bool:
+        """Get whether the agent is a household.
+
+        Args:
+            agent_id (int): The ID of the agent for which to get the observation.
+
+        Returns:
+            bool: Whether the agent is a household.
+        """
+        return agent_id in self.env.household_ids
+
+
 class SelfPosProvider(ObsProvider):
     """Self Position Provider class."""
 
