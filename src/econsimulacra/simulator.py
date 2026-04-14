@@ -222,9 +222,7 @@ class SimulationSummarizer:
                 agent_branch.add(f"[green]Name[/green]: {agent.agent_name}")
                 for item_name in self.env.item_name2item.keys():
                     item_amount: int = int(agent.get_item_amount(item_name=item_name))
-                    agent_branch.add(
-                        f"[green]{item_name}[/green]: {item_amount}"
-                    )
+                    agent_branch.add(f"[green]{item_name}[/green]: {item_amount}")
                 agent_branch.add(
                     f"[green]Receive Rich Info[/green]: {agent.is_rich_info_allowed}"
                 )
