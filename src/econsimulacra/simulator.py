@@ -221,9 +221,8 @@ class SimulationSummarizer:
                 )
                 agent_branch.add(f"[green]Name[/green]: {agent.agent_name}")
                 for item_name in self.env.item_name2item.keys():
-                    agent_branch.add(
-                        f"[green]{item_name}[/green]: {agent.get_item_amount(item_name=item_name):.1f}"
-                    )
+                    item_amount: int = int(agent.get_item_amount(item_name=item_name))
+                    agent_branch.add(f"[green]{item_name}[/green]: {item_amount}")
                 agent_branch.add(
                     f"[green]Receive Rich Info[/green]: {agent.is_rich_info_allowed}"
                 )
@@ -251,7 +250,7 @@ class SimulationSummarizer:
                     )
                 if len(event.trigger.logs) > 0:
                     event_branch_.add(
-                        f"[green]Trigger with logs[/green]: {[log.__class__ for log in event.trigger.logs]}"
+                        f"[green]Trigger with logs[/green]: {[log.__name__ for log in event.trigger.logs]}"
                     )
                 if event.trigger.between is not None:
                     event_branch_.add(
