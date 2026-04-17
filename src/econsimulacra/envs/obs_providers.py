@@ -284,7 +284,15 @@ class SelfInventoryProvider(ObsProvider):
             dict[str, float | int]: The agent's own inventory as a dictionary
                 mapping item names to their amounts.
         """
-        return self.env.agent_id2agent[agent_id].inventory_dic.copy()
+        inventory_dic: dict[str, float | int] = self.env.agent_id2agent[
+            agent_id
+        ].inventory_dic.copy()
+        inventory_dic = {
+            item_name: item_amount
+            for item_name, item_amount in inventory_dic.items()
+            if item_amount > 0
+        }
+        return inventory_dic
 
 
 class SelfTweetProvider(ObsProvider):
@@ -503,6 +511,8 @@ class ItemName2PriceProvider(ObsProvider):
         """
         item_name2prices: list[dict[str, Any]] = []
         for item_name, item in self.env.item_name2item.items():
+            if item_name == self.env.cash_name:
+                continue
             item_name2prices.append(
                 {
                     "item_name": item_name,
@@ -560,6 +570,8 @@ class OthersInventoriesProvider(ObsProviderFromCoLocatedAgents):
                 }
                 for item_name, item_amount in other_agent.inventory_dic.items():
                     if item_name == self.env.cash_name:
+                        continue
+                    if item_amount <= 0:
                         continue
                     price: float = self.env.item_name2item[item_name].price
                     amount: str | float | int = (
