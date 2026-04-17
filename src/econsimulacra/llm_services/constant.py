@@ -76,7 +76,7 @@ DEFAULT_ACTION_JSON_SCHEMA: dict[str, Any] = {
                 "required": ["kind", "id", "accept_amount", "accept"],
             },
         },
-        "set_price": {
+        "set_prices": {
             "type": "array",
             "items": {
                 "type": "object",
