@@ -108,7 +108,7 @@ DEFAULT_ACTION_JSON_SCHEMA: dict[str, Any] = {
         "orders",
         "proposals",
         "reactions",
-        "set_price",
+        "set_prices",
         "tweet",
         "follow",
         "unfollow",

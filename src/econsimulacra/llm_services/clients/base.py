@@ -127,8 +127,8 @@ class LLMClient(ABC):
                 json_schema["properties"]["proposals"]["items"]["properties"][
                     "get_item_name"
                 ]["enum"] = item_names
-            if "set_price" in json_schema["properties"]:
-                json_schema["properties"]["set_price"]["items"]["properties"][
+            if "set_prices" in json_schema["properties"]:
+                json_schema["properties"]["set_prices"]["items"]["properties"][
                     "item_name"
                 ]["enum"] = item_names
         if "numAgents" in config:
