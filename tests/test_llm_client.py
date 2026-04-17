@@ -88,7 +88,7 @@ MODIFIED_ACTION_JSON_SCHEMA = {
                 "required": ["kind", "id", "accept_amount", "accept"],
             },
         },
-        "set_price": {
+        "set_prices": {
             "type": "array",
             "items": {
                 "type": "object",
@@ -120,7 +120,7 @@ MODIFIED_ACTION_JSON_SCHEMA = {
         "orders",
         "proposals",
         "reactions",
-        "set_price",
+        "set_prices",
         "tweet",
         "follow",
         "unfollow",

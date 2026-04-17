@@ -75,7 +75,7 @@
                 "required": ["kind", "id", "accept_amount", "accept"]
             }
         },
-        "set_price": {
+        "set_prices": {
             "type": "array",
             "items": {
                 "type": "object",
@@ -107,7 +107,7 @@
         "orders",
         "proposals",
         "reactions",
-        "set_price",
+        "set_prices",
         "tweet",
         "follow",
         "unfollow"
