@@ -936,6 +936,7 @@ class Environment(Generic[ObsT]):
             - counterparty_id or counterparty_name in each order must be provided.
             - counterparty_id must be an existing agent id in the environment.
             - item_name in each order must be an existing item in the environment.
+            - item_name in each order cannot be the cash.
             - item_amount in each order must be positive
             - The agent must have enough cash to buy all of the items.
         """
@@ -953,6 +954,8 @@ class Environment(Generic[ObsT]):
                 return False
             item_name: str = order_dic["item_name"]
             if item_name not in self.item_name2item:
+                return False
+            if item_name == self.cash_name:
                 return False
             item_amount: float | int = order_dic.get("item_amount", 0)
             if item_amount <= 0:
