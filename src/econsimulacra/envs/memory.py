@@ -5,6 +5,8 @@ from collections import deque
 from dataclasses import dataclass
 from typing import Any, Callable, Deque, Literal, Optional
 
+from econsimulacra.logs.base import OrderExpirationLog, ProposalExpirationLog
+
 from ..logs import (
     AgentGenerationLog,
     ChangePriceLog,
@@ -543,11 +545,33 @@ class MemoryHandler:
         """
         pass
 
+    def _process_order_expiration_log(self, log: OrderExpirationLog) -> None:
+        """Process the OrderExpirationLog to update the order history of the agent in memory.
+
+        Args:
+            log (OrderExpirationLog): the log of order expiration.
+
+        Note:
+            Not implemented yet.
+        """
+        pass
+
     def _process_proposal_log(self, log: ProposalLog) -> None:
         """Process the ProposalLog to update the proposal history of the agent in memory.
 
         Args:
             log (ProposalLog): the log of proposal.
+
+        Note:
+            Not implemented yet.
+        """
+        pass
+
+    def _process_proposal_expiration_log(self, log: ProposalExpirationLog) -> None:
+        """Process the ProposalExpirationLog to update the proposal history of the agent in memory.
+
+        Args:
+            log (ProposalExpirationLog): the log of proposal expiration.
 
         Note:
             Not implemented yet.
