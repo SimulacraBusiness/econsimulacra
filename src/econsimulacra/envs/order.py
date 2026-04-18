@@ -106,7 +106,7 @@ class Order:
                 econsimulacra.envs.base.Environment._remove_expired_orders_and_proposals()
         """
         return self.item_amount <= 0 or self.expire_in <= 0
-    
+
     def is_expired(self) -> bool:
         """Check if the order is expired, which means the time to live has reached zero or below.
 
@@ -217,7 +217,7 @@ class SwapProposal:
             bool: whether the swap proposal is fulfilled.
         """
         return self.accept or self.expire_in <= 0
-    
+
     def is_expired(self) -> bool:
         """Check if the swap proposal is expired, which means the time to live has reached zero or below.
 
