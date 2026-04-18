@@ -95,6 +95,7 @@ class TestOrder:
         order.react(amount=5)
         order.execute()
         assert order.is_fulfilled()
+        assert not order.is_expired()
         order = Order(
             order_id=5,
             agent_id=1,
@@ -106,6 +107,7 @@ class TestOrder:
         )
         order.update_time()
         assert order.is_fulfilled()
+        assert order.is_expired()
 
 
 class TestSwapProposal:
@@ -175,6 +177,7 @@ class TestSwapProposal:
         assert not proposal.is_fulfilled()
         proposal.react(accept=True)
         assert proposal.is_fulfilled()
+        assert not proposal.is_expired()
         proposal = SwapProposal(
             proposer_agent_id=1,
             responder_agent_id=2,
@@ -187,3 +190,4 @@ class TestSwapProposal:
         )
         proposal.update_time()
         assert proposal.is_fulfilled()
+        assert proposal.is_expired()
