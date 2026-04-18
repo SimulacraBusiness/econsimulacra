@@ -5,8 +5,6 @@ from collections import deque
 from dataclasses import dataclass
 from typing import Any, Callable, Deque, Literal, Optional
 
-from econsimulacra.logs.base import OrderExpirationLog, ProposalExpirationLog
-
 from ..logs import (
     AgentGenerationLog,
     ChangePriceLog,
@@ -14,8 +12,10 @@ from ..logs import (
     FollowLog,
     Log,
     MoveLog,
+    OrderExpirationLog,
     OrderLog,
     OrderReactionLog,
+    ProposalExpirationLog,
     ProposalLog,
     ProposalReactionLog,
     SpaceAssignLog,
