@@ -12,8 +12,10 @@ from ..logs import (
     Log,
     Logger,
     MoveLog,
+    OrderExpirationLog,
     OrderLog,
     OrderReactionLog,
+    ProposalExpirationLog,
     ProposalLog,
     ProposalReactionLog,
     SpaceAssignLog,
@@ -1602,18 +1604,50 @@ class Environment(Generic[ObsT]):
             has reached 0 are considered expired and removed from the environment.
             See also:
             - econsimulacra.envs.order.Order.ttl
+            - econsimulacra.envs.order.Order.is_expired
             - econsimulacra.envs.order.Order.is_fulfilled
             - econsimulacra.envs.order.SwapProposal.ttl
+            - econsimulacra.envs.order.SwapProposal.is_expired
             - econsimulacra.envs.order.SwapProposal.is_fulfilled
         """
-        self.pending_orders = [
-            order for order in self.pending_orders if not order.is_fulfilled()
-        ]
-        self.pending_swap_proposals = [
-            proposal
-            for proposal in self.pending_swap_proposals
-            if not proposal.is_fulfilled()
-        ]
+        _pending_orders: list[Order] = []
+        for order in self.pending_orders:
+            if order.is_expired():
+                expired_order_log: OrderExpirationLog = OrderExpirationLog(
+                    time=self.get_time(),
+                    time_step=self.get_time_step(),
+                    order_id=order.order_id,
+                )
+                self.remember_log(expired_order_log)
+                self.event_manager.trigger_events_after_log(
+                    log=expired_order_log, env=self
+                )
+                if self.logger is not None:
+                    expired_order_log.read_and_write(logger=self.logger)
+            elif order.is_fulfilled():
+                continue
+            else:
+                _pending_orders.append(order)
+        self.pending_orders = _pending_orders
+        _pending_swap_proposals: list[SwapProposal] = []
+        for proposal in self.pending_swap_proposals:
+            if proposal.is_expired():
+                expired_proposal_log: ProposalExpirationLog = ProposalExpirationLog(
+                    time=self.get_time(),
+                    time_step=self.get_time_step(),
+                    proposal_id=proposal.proposal_id,
+                )
+                self.remember_log(expired_proposal_log)
+                self.event_manager.trigger_events_after_log(
+                    log=expired_proposal_log, env=self
+                )
+                if self.logger is not None:
+                    expired_proposal_log.read_and_write(logger=self.logger)
+            elif proposal.is_fulfilled():
+                continue
+            else:
+                _pending_swap_proposals.append(proposal)
+        self.pending_swap_proposals = _pending_swap_proposals
 
     def evaluate_agent_state(self, agent_id: int) -> None:
         """Evaluate the state of the agent. Generate agent evaluation log.

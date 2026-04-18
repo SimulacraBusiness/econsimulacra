@@ -12,8 +12,10 @@ from ..logs import (
     FollowLog,
     Log,
     MoveLog,
+    OrderExpirationLog,
     OrderLog,
     OrderReactionLog,
+    ProposalExpirationLog,
     ProposalLog,
     ProposalReactionLog,
     SpaceAssignLog,
@@ -401,7 +403,9 @@ class MemoryHandler:
             MoveLog: self._process_move_log,
             ConsumptionLog: self._process_consumption_log,
             OrderLog: self._process_order_log,
+            OrderExpirationLog: self._process_order_expiration_log,
             ProposalLog: self._process_proposal_log,
+            ProposalExpirationLog: self._process_proposal_expiration_log,
             OrderReactionLog: self._process_order_reaction_log,
             ProposalReactionLog: self._process_proposal_reaction_log,
             ChangePriceLog: self._process_change_price_log,
@@ -543,11 +547,33 @@ class MemoryHandler:
         """
         pass
 
+    def _process_order_expiration_log(self, log: OrderExpirationLog) -> None:
+        """Process the OrderExpirationLog to update the order history of the agent in memory.
+
+        Args:
+            log (OrderExpirationLog): the log of order expiration.
+
+        Note:
+            Not implemented yet.
+        """
+        pass
+
     def _process_proposal_log(self, log: ProposalLog) -> None:
         """Process the ProposalLog to update the proposal history of the agent in memory.
 
         Args:
             log (ProposalLog): the log of proposal.
+
+        Note:
+            Not implemented yet.
+        """
+        pass
+
+    def _process_proposal_expiration_log(self, log: ProposalExpirationLog) -> None:
+        """Process the ProposalExpirationLog to update the proposal history of the agent in memory.
+
+        Args:
+            log (ProposalExpirationLog): the log of proposal expiration.
 
         Note:
             Not implemented yet.

@@ -107,6 +107,16 @@ class Order:
         """
         return self.item_amount <= 0 or self.expire_in <= 0
 
+    def is_expired(self) -> bool:
+        """Check if the order is expired, which means the time to live has reached zero or below.
+
+        Note:
+            This should be called to determine if the order has expired and should be removed from the simulation.
+            See also:
+                econsimulacra.envs.base.Environment._remove_expired_orders_and_proposals()
+        """
+        return self.expire_in <= 0
+
     def __repr__(self) -> str:
         return (
             f"Order(order_id={self.order_id}, agent_id={self.agent_id}, counterparty_id={self.counterparty_id}, "
@@ -207,6 +217,16 @@ class SwapProposal:
             bool: whether the swap proposal is fulfilled.
         """
         return self.accept or self.expire_in <= 0
+
+    def is_expired(self) -> bool:
+        """Check if the swap proposal is expired, which means the time to live has reached zero or below.
+
+        Note:
+            This should be called to determine if the swap proposal has expired and should be removed from the simulation.
+            See also:
+                econsimulacra.envs.base.Environment._remove_expired_orders_and_proposals()
+        """
+        return self.expire_in <= 0
 
     def __repr__(self) -> str:
         return (

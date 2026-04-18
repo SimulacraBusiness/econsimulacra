@@ -256,6 +256,26 @@ class OrderReactionLog(Log):
         self.accept_amount: float | int = accept_amount
 
 
+class OrderExpirationLog(Log):
+    def __init__(
+        self,
+        time: int | str,
+        time_step: int,
+        order_id: int,
+    ) -> None:
+        """Initialization.
+
+        Args:
+            time (int | str): Current time of the environment when the order expires.
+            time_step (int): Current integer step index of the environment when the order expires.
+            order_id (int): The unique id of the expired order.
+        """
+        self.type: str = "order_expiration"
+        self.time: int | str = time
+        self.time_step: int = time_step
+        self.order_id: int = order_id
+
+
 class ProposalReactionLog(Log):
     def __init__(
         self,
@@ -295,6 +315,26 @@ class ProposalReactionLog(Log):
         self.get_item_name: str = get_item_name
         self.get_item_amount: float | int = get_item_amount
         self.accept: bool = accept
+
+
+class ProposalExpirationLog(Log):
+    def __init__(
+        self,
+        time: int | str,
+        time_step: int,
+        proposal_id: int,
+    ) -> None:
+        """Initialization.
+
+        Args:
+            time (int | str): Current time of the environment when the proposal expires.
+            time_step (int): Current integer step index of the environment when the proposal expires.
+            proposal_id (int): The unique id of the expired proposal.
+        """
+        self.type: str = "proposal_expiration"
+        self.time: int | str = time
+        self.time_step: int = time_step
+        self.proposal_id: int = proposal_id
 
 
 class ChangePriceLog(Log):
@@ -499,7 +539,13 @@ class Logger:
     def _process_order_reaction_log(self, log: OrderReactionLog) -> None:
         pass
 
+    def _process_order_expiration_log(self, log: OrderExpirationLog) -> None:
+        pass
+
     def _process_proposal_reaction_log(self, log: ProposalReactionLog) -> None:
+        pass
+
+    def _process_proposal_expiration_log(self, log: ProposalExpirationLog) -> None:
         pass
 
     def _process_change_price_log(self, log: ChangePriceLog) -> None:
