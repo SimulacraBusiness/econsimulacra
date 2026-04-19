@@ -1,6 +1,6 @@
 import asyncio
 
-from econsimulacra.agents import LLMAgent, AutoReactLLMAgent
+from econsimulacra.agents import AutoReactLLMAgent, LLMAgent
 from econsimulacra.llm_services import Big5PersonaBuilder, LLMClient, PromptBuilder
 
 

@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from .llm_agent import LLMAgent
-
 from typing import Any
+
+from .llm_agent import LLMAgent
 
 
 class AutoReactLLMAgent(LLMAgent):
@@ -95,12 +95,14 @@ class AutoReactLLMAgent(LLMAgent):
         Note:
             Always True as long as the agent has sufficient inventory to fulfill the intent.
         """
+        item_name: str
+        item_amount: float | int
         if is_order:
-            item_name: str = incoming_transactional_intent["item_name"]
-            item_amount: float | int = incoming_transactional_intent["item_amount"]
+            item_name = incoming_transactional_intent["item_name"]
+            item_amount = incoming_transactional_intent["item_amount"]
         else:
-            item_name: str = incoming_transactional_intent["get_item_name"]
-            item_amount: float | int = incoming_transactional_intent["get_item_amount"]
+            item_name = incoming_transactional_intent["get_item_name"]
+            item_amount = incoming_transactional_intent["get_item_amount"]
         judge: bool
         if current_inventory.get(item_name, 0) >= item_amount:
             current_inventory[item_name] = (
