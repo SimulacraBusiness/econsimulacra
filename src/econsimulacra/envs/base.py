@@ -63,6 +63,13 @@ from .time_translator import TimeTranslator
 
 ObsT = TypeVar("ObsT")
 
+# Life stress tuning parameters
+_LIFE_STRESS_NO_CONSUMPTION_INCREASE: float = 0.05
+_LIFE_STRESS_MONOTONY_INCREASE: float = 0.02
+_LIFE_STRESS_DIVERSITY_DECREASE: float = 0.01
+_LIFE_STRESS_DIVERSITY_THRESHOLD: float = 0.5
+_MAX_LIFE_STRESS: float = 1.0
+
 
 class Environment(Generic[ObsT]):
     """Environment class.
@@ -1745,9 +1752,12 @@ class Environment(Generic[ObsT]):
             item_name (str): the name of the consumed item.
 
         Note:
-            Resets hunger for any consumption.  Also applies item-specific stress reduction
-            effects defined in the item's ``stressEffects`` config key.
-            Tracks the item in ``agent_id2recent_item_names`` for life-stress calculation.
+            Hunger is always reset to 0.0 on any consumption, because hunger is defined as the
+            number of steps elapsed since the last consumption event.
+            Other stress components are reduced by the amounts specified in the item's
+            ``stressEffects`` config key (supported keys: "fatigue", "disease", "life",
+            "financial_affordance", "social_satisfaction").
+            The item is also tracked in ``agent_id2recent_item_names`` for life-stress calculation.
         """
         stress: dict[str, Any] = self.agent_id2stress[agent_id]
         self.agent_id2last_consumption_step[agent_id] = self._time
@@ -1757,11 +1767,7 @@ class Environment(Generic[ObsT]):
             return
         item: Item = self.item_name2item[item_name]
         for effect_key, effect_amount in item.stress_effects.items():
-            if effect_key == "hunger":
-                stress["physical"]["hunger"] = max(
-                    0.0, stress["physical"]["hunger"] - effect_amount
-                )
-            elif effect_key == "fatigue":
+            if effect_key == "fatigue":
                 stress["physical"]["fatigue"] = max(
                     0.0, stress["physical"]["fatigue"] - effect_amount
                 )
@@ -1857,14 +1863,22 @@ class Environment(Generic[ObsT]):
         # Increases with dietary monotony (same item repeated) or no consumption.
         recent: list[str] = self.agent_id2recent_item_names[agent_id]
         if not recent:
-            stress["life"] = min(1.0, stress["life"] + 0.05)
+            stress["life"] = min(
+                _MAX_LIFE_STRESS,
+                stress["life"] + _LIFE_STRESS_NO_CONSUMPTION_INCREASE,
+            )
         else:
             unique_items: int = len(set(recent))
             diversity_ratio: float = unique_items / len(recent)
-            if diversity_ratio < 0.5:
-                stress["life"] = min(1.0, stress["life"] + 0.02)
+            if diversity_ratio < _LIFE_STRESS_DIVERSITY_THRESHOLD:
+                stress["life"] = min(
+                    _MAX_LIFE_STRESS,
+                    stress["life"] + _LIFE_STRESS_MONOTONY_INCREASE,
+                )
             else:
-                stress["life"] = max(0.0, stress["life"] - 0.01)
+                stress["life"] = max(
+                    0.0, stress["life"] - _LIFE_STRESS_DIVERSITY_DECREASE
+                )
         self.agent_id2recent_item_names[agent_id] = []
 
         # --- Physical stress - hunger ---

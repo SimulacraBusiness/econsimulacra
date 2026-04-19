@@ -26,16 +26,18 @@ class Item:
         Note:
             The "stressEffects" config key maps stress component names to the amount of stress they
             reduce upon consumption. Supported keys:
-                - "hunger": reduces physical hunger stress.
                 - "fatigue": reduces physical fatigue stress.
+                - "disease": reduces physical disease stress.
                 - "life": reduces life (dietary) stress.
                 - "financial_affordance": reduces financial affordance stress.
                 - "social_satisfaction": reduces social satisfaction stress.
+            Note: Physical hunger stress is always reset to 0 upon any consumption, so no
+            "hunger" effect key is needed — consuming any item fully resets hunger.
             Example config:
                 {
                     "initialPrice": 500.0,
                     "stressEffects": {
-                        "hunger": 20.0,
+                        "fatigue": 2.0,
                         "life": 5.0
                     }
                 }

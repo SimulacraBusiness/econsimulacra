@@ -211,14 +211,15 @@ class TestPhysicalStress:
         )
         assert env.agent_id2stress[household_id]["physical"]["hunger"] == 0.0
 
-    def test_item_hunger_reduction(self) -> None:
+    def test_consumption_always_resets_hunger(self) -> None:
+        """Consuming any item resets hunger to 0, regardless of stressEffects config."""
         env = make_env()
         household_id = env.household_ids[0]
         # Manually set hunger high
         env.agent_id2stress[household_id]["physical"]["hunger"] = 50.0
-        # Consume Rice which has hunger stressEffects = 20.0
+        # Consume Rice (has stressEffects hunger=20.0 which is ignored for hunger reset)
         env._apply_item_stress_effects(agent_id=household_id, item_name="Rice")
-        # Hunger is reset to 0 on any consumption (not just reduced by effect)
+        # Hunger is always reset to 0 since it measures steps since last consumption
         assert env.agent_id2stress[household_id]["physical"]["hunger"] == 0.0
 
     def test_fatigue_increases_with_consecutive_moves(self) -> None:
