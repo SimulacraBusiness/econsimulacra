@@ -207,6 +207,13 @@ class StateEvaluationItem:
     Attributes:
         wealth (float): the wealth of the agent at the time of evaluation.
         time (int | str): the time of the state evaluation.
+        financial_stress (dict[str, float], optional): financial stress components
+            ("affordance", "relative_financial_status").
+        social_stress (dict[str, float], optional): social stress components
+            ("reputation", "satisfaction").
+        life_stress (float, optional): life stress value.
+        physical_stress (dict[str, float], optional): physical stress components
+            ("hunger", "fatigue", "disease").
 
     Note:
         This history item is generated based on the StateEvaluationLog.
@@ -217,6 +224,10 @@ class StateEvaluationItem:
 
     wealth: float
     time: int | str
+    financial_stress: Optional[dict[str, float]] = None
+    social_stress: Optional[dict[str, float]] = None
+    life_stress: Optional[float] = None
+    physical_stress: Optional[dict[str, float]] = None
 
 
 @dataclass
@@ -381,7 +392,7 @@ class MemoryHandler:
             summarized_memory["state_evaluation_history"] = (
                 "Your state evaluations are "
                 + "; ".join(
-                    f"Wealth: {int(item.wealth)} at {item.time}"
+                    self._format_state_evaluation_item(item)
                     for item in agent_memory.state_evaluation_history
                 )
             )
@@ -878,5 +889,46 @@ class MemoryHandler:
             agent_memory.state_evaluation_history
         )
         state_evaluation_history.append(
-            StateEvaluationItem(wealth=log.wealth, time=log.time)
+            StateEvaluationItem(
+                wealth=log.wealth,
+                time=log.time,
+                financial_stress=log.financial_stress,
+                social_stress=log.social_stress,
+                life_stress=log.life_stress,
+                physical_stress=log.physical_stress,
+            )
         )
+
+    @staticmethod
+    def _format_state_evaluation_item(item: "StateEvaluationItem") -> str:
+        """Format a StateEvaluationItem into a human-readable string for memory summaries.
+
+        Args:
+            item (StateEvaluationItem): the state evaluation item to format.
+
+        Returns:
+            str: A human-readable summary string.
+        """
+        parts: list[str] = [f"Wealth: {int(item.wealth)} at {item.time}"]
+        if item.financial_stress is not None:
+            fs = item.financial_stress
+            parts.append(
+                f"FinancialStress(affordance={fs.get('affordance', 0):.2f}, "
+                f"relative_status={fs.get('relative_financial_status', 0):.2f})"
+            )
+        if item.social_stress is not None:
+            ss = item.social_stress
+            parts.append(
+                f"SocialStress(reputation={ss.get('reputation', 0):.2f}, "
+                f"satisfaction={ss.get('satisfaction', 0):.2f})"
+            )
+        if item.life_stress is not None:
+            parts.append(f"LifeStress={item.life_stress:.2f}")
+        if item.physical_stress is not None:
+            ps = item.physical_stress
+            parts.append(
+                f"PhysicalStress(hunger={ps.get('hunger', 0):.2f}, "
+                f"fatigue={ps.get('fatigue', 0):.2f}, "
+                f"disease={ps.get('disease', 0):.2f})"
+            )
+        return ", ".join(parts)

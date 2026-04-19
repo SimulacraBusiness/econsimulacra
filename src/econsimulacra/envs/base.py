@@ -27,10 +27,12 @@ from ..sim_utils import find_class
 from .event import EventManager
 from .memory import MemoryHandler
 from .obs_providers import (
+    FinancialStressProvider,
     FollowCapProvider,
     IncomingOrdersProvider,
     IncomingSwapProposalsProvider,
     ItemName2PriceProvider,
+    LifeStressProvider,
     MemoryProvider,
     NumFollowersProvider,
     NumFollowsProvider,
@@ -38,6 +40,7 @@ from .obs_providers import (
     ObsProviderFromCoLocatedAgents,
     OthersInventoriesProvider,
     OthersPosProvider,
+    PhysicalStressProvider,
     RecommendedFollowsProvider,
     SelfDestinationProvider,
     SelfIDProvider,
@@ -48,6 +51,7 @@ from .obs_providers import (
     SelfNameProvider,
     SelfPosProvider,
     SelfTweetProvider,
+    SocialStressProvider,
     TimeDeltaProvider,
     TimeProvider,
     VisibleTLProvider,
@@ -310,6 +314,7 @@ class Environment(Generic[ObsT]):
         )
         item_keys: list[str] = self.config["environment"]["items"]
         self._generate_items(item_keys=item_keys)
+        self._init_stress_state()
         self.pending_orders: list[Order] = []
         self.pending_swap_proposals: list[SwapProposal] = []
         self.latest_order_id: int = 0
@@ -653,6 +658,8 @@ class Environment(Generic[ObsT]):
                 agent_id=agent_id,
                 where_to_move=where_to_move,
             )
+            if where_to_move is None:
+                self.agent_id2consecutive_moves[agent_id] = 0
         consumptions: list[dict[str, Any]] = action_dic.get("consumptions", [])
         consumptions_allowed: bool = self._check_consumptions(
             agent_id=agent_id, consumptions=consumptions
@@ -783,6 +790,7 @@ class Environment(Generic[ObsT]):
             current_pos=current_pos, destination_pos=destination_pos
         )
         self.grid_space.move_agent(agent_id=agent_id, new_pos=next_pos)
+        self.agent_id2consecutive_moves[agent_id] += 1
         log: MoveLog = MoveLog(
             time=self.get_time(),
             time_step=self.get_time_step(),
@@ -911,6 +919,7 @@ class Environment(Generic[ObsT]):
                 give_item_name=item_name,
                 give_item_amount=item_amount,
             )
+            self._apply_item_stress_effects(agent_id=agent_id, item_name=item_name)
             log: ConsumptionLog = ConsumptionLog(
                 time=self.get_time(),
                 time_step=self.get_time_step(),
@@ -1657,11 +1666,17 @@ class Environment(Generic[ObsT]):
         """
         agent: Agent = self.agent_id2agent[agent_id]
         wealth: float = self._calculate_wealth(agent.inventory_dic)
+        self._update_stress_state(agent_id=agent_id)
+        stress: dict[str, Any] = self.agent_id2stress[agent_id]
         log: StateEvaluationLog = StateEvaluationLog(
             time=self.get_time(),
             time_step=self.get_time_step(),
             agent_id=agent_id,
             wealth=wealth,
+            financial_stress=stress["financial"],
+            social_stress=stress["social"],
+            life_stress=stress["life"],
+            physical_stress=stress["physical"],
         )
         self.remember_log(log)
         self.event_manager.trigger_events_after_log(log=log, env=self)
@@ -1684,6 +1699,200 @@ class Environment(Generic[ObsT]):
                 item: Item = self.item_name2item[item_name]
                 wealth += item_amount * item.get_price()
         return wealth
+
+    def _init_stress_state(self) -> None:
+        """Initialize stress tracking state for all agents.
+
+        Note:
+            Called during reset() after agents and items have been generated.
+            Initializes per-agent dictionaries used to track stress factors:
+            - agent_id2stress: current stress values for each agent.
+            - agent_id2last_consumption_step: step index of the last consumption event (for hunger).
+            - agent_id2consecutive_moves: number of consecutive steps with movement (for fatigue).
+            - agent_id2recent_item_names: set of item names consumed since the last
+              life-stress evaluation window (for dietary diversity / life stress).
+        """
+        self.agent_id2stress: dict[int, dict[str, Any]] = {}
+        self.agent_id2last_consumption_step: dict[int, int] = {}
+        self.agent_id2consecutive_moves: dict[int, int] = {}
+        self.agent_id2recent_item_names: dict[int, list[str]] = {}
+        for agent_id in self.agent_ids:
+            self.agent_id2stress[agent_id] = {
+                "financial": {
+                    "affordance": 0.0,
+                    "relative_financial_status": 0.0,
+                },
+                "social": {
+                    "reputation": 0.0,
+                    "satisfaction": 0.0,
+                },
+                "life": 0.0,
+                "physical": {
+                    "hunger": 0.0,
+                    "fatigue": 0.0,
+                    "disease": 0.0,
+                },
+            }
+            self.agent_id2last_consumption_step[agent_id] = self._time
+            self.agent_id2consecutive_moves[agent_id] = 0
+            self.agent_id2recent_item_names[agent_id] = []
+
+    def _apply_item_stress_effects(self, agent_id: int, item_name: str) -> None:
+        """Apply the stress-reduction effects of a consumed item to the agent's stress state.
+
+        Args:
+            agent_id (int): agent id of the agent who consumed the item.
+            item_name (str): the name of the consumed item.
+
+        Note:
+            Resets hunger for any consumption.  Also applies item-specific stress reduction
+            effects defined in the item's ``stressEffects`` config key.
+            Tracks the item in ``agent_id2recent_item_names`` for life-stress calculation.
+        """
+        stress: dict[str, Any] = self.agent_id2stress[agent_id]
+        self.agent_id2last_consumption_step[agent_id] = self._time
+        stress["physical"]["hunger"] = 0.0
+        self.agent_id2recent_item_names[agent_id].append(item_name)
+        if item_name not in self.item_name2item:
+            return
+        item: Item = self.item_name2item[item_name]
+        for effect_key, effect_amount in item.stress_effects.items():
+            if effect_key == "hunger":
+                stress["physical"]["hunger"] = max(
+                    0.0, stress["physical"]["hunger"] - effect_amount
+                )
+            elif effect_key == "fatigue":
+                stress["physical"]["fatigue"] = max(
+                    0.0, stress["physical"]["fatigue"] - effect_amount
+                )
+            elif effect_key == "disease":
+                stress["physical"]["disease"] = max(
+                    0.0, stress["physical"]["disease"] - effect_amount
+                )
+            elif effect_key == "life":
+                stress["life"] = max(0.0, stress["life"] - effect_amount)
+            elif effect_key == "financial_affordance":
+                stress["financial"]["affordance"] = max(
+                    0.0, stress["financial"]["affordance"] - effect_amount
+                )
+            elif effect_key == "social_satisfaction":
+                stress["social"]["satisfaction"] = max(
+                    0.0, stress["social"]["satisfaction"] - effect_amount
+                )
+
+    def _update_stress_state(self, agent_id: int) -> None:
+        """Recompute the stress state for the given agent based on the current environment state.
+
+        Args:
+            agent_id (int): agent id of the agent whose stress should be updated.
+
+        Note:
+            This method is called from evaluate_agent_state() at each time step.
+            It updates all four stress categories:
+            - financial stress: affordance and relative financial status.
+            - social stress: reputation (followers) and satisfaction (TL content).
+            - life stress: dietary monotony / variety.
+            - physical stress: hunger (steps since last consumption) and fatigue
+              (consecutive moves).  Disease is only set via add_disease_stress().
+        """
+        stress: dict[str, Any] = self.agent_id2stress[agent_id]
+        agent: Agent = self.agent_id2agent[agent_id]
+        wealth: float = self._calculate_wealth(agent.inventory_dic)
+
+        # --- Financial stress ---
+        # Affordance: ratio of agent's cash to average non-cash item price.
+        non_cash_items = [
+            item
+            for item_name, item in self.item_name2item.items()
+            if item_name != self.cash_name and item.get_price() > 0
+        ]
+        if non_cash_items:
+            avg_price: float = sum(i.get_price() for i in non_cash_items) / len(
+                non_cash_items
+            )
+            cash_amount: float = float(agent.get_item_amount(self.cash_name))
+            affordance_ratio: float = cash_amount / avg_price if avg_price > 0 else 1.0
+            stress["financial"]["affordance"] = max(0.0, 1.0 - affordance_ratio)
+        else:
+            stress["financial"]["affordance"] = 0.0
+
+        # Relative financial status: rank among all agents (0 = poorest, 1 = richest).
+        all_wealths: list[float] = [
+            self._calculate_wealth(self.agent_id2agent[aid].inventory_dic)
+            for aid in self.agent_ids
+        ]
+        num_agents: int = len(all_wealths)
+        if num_agents > 1:
+            rank: int = sum(1 for w in all_wealths if w <= wealth)
+            relative_status: float = (rank - 1) / (num_agents - 1)
+        else:
+            relative_status = 1.0
+        stress["financial"]["relative_financial_status"] = 1.0 - relative_status
+
+        # --- Social stress ---
+        num_followers: int = self.social_network.get_num_followers(agent_id=agent_id)
+        max_followers: int = max(
+            (
+                self.social_network.get_num_followers(agent_id=aid)
+                for aid in self.agent_ids
+            ),
+            default=0,
+        )
+        stress["social"]["reputation"] = (
+            1.0 - num_followers / max_followers if max_followers > 0 else 0.0
+        )
+
+        follows: set[int] = self.social_network.get_follows(agent_id=agent_id)
+        if follows:
+            empty_tl_count: int = sum(
+                1
+                for fid in follows
+                if not self.social_network.get_tweet(agent_id=fid)
+            )
+            stress["social"]["satisfaction"] = empty_tl_count / len(follows)
+        else:
+            stress["social"]["satisfaction"] = 0.0
+
+        # --- Life stress ---
+        # Increases with dietary monotony (same item repeated) or no consumption.
+        recent: list[str] = self.agent_id2recent_item_names[agent_id]
+        if not recent:
+            stress["life"] = min(1.0, stress["life"] + 0.05)
+        else:
+            unique_items: int = len(set(recent))
+            diversity_ratio: float = unique_items / len(recent)
+            if diversity_ratio < 0.5:
+                stress["life"] = min(1.0, stress["life"] + 0.02)
+            else:
+                stress["life"] = max(0.0, stress["life"] - 0.01)
+        self.agent_id2recent_item_names[agent_id] = []
+
+        # --- Physical stress - hunger ---
+        steps_since_consumption: int = (
+            self._time - self.agent_id2last_consumption_step[agent_id]
+        )
+        stress["physical"]["hunger"] = float(steps_since_consumption)
+
+        # --- Physical stress - fatigue ---
+        stress["physical"]["fatigue"] = float(
+            self.agent_id2consecutive_moves[agent_id]
+        )
+
+    def add_disease_stress(self, agent_id: int, amount: float) -> None:
+        """Add disease stress to the agent.  Intended for use by event handlers.
+
+        Args:
+            agent_id (int): agent id of the agent to add disease stress to.
+            amount (float): the amount of disease stress to add.  Must be non-negative.
+
+        Note:
+            Disease stress is an irregular, event-driven component of physical stress.
+            It is added by events (e.g. a disease event) and does not decay automatically.
+            Use this method inside an Event.execute() to apply disease stress.
+        """
+        if amount < 0:
+            raise ValueError("Disease stress amount must be non-negative.")
+        self.agent_id2stress[agent_id]["physical"]["disease"] += amount
 
     def get_observations(self, agent_id: int) -> ObsT:
         """Get the observations for the agent with the given agent_id.
@@ -1771,6 +1980,10 @@ class Environment(Generic[ObsT]):
             "recommended_follows": RecommendedFollowsProvider(env=self),
             "incoming_orders": IncomingOrdersProvider(env=self),
             "incoming_proposals": IncomingSwapProposalsProvider(env=self),
+            "financial_stress": FinancialStressProvider(env=self),
+            "social_stress": SocialStressProvider(env=self),
+            "life_stress": LifeStressProvider(env=self),
+            "physical_stress": PhysicalStressProvider(env=self),
         }
 
     def _build_observation4allowed_agents_registry(self) -> dict[str, ObsProvider]:

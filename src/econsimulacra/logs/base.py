@@ -461,6 +461,10 @@ class StateEvaluationLog(Log):
         time_step: int,
         agent_id: int,
         wealth: float,
+        financial_stress: Optional[dict[str, float]] = None,
+        social_stress: Optional[dict[str, float]] = None,
+        life_stress: Optional[float] = None,
+        physical_stress: Optional[dict[str, float]] = None,
     ) -> None:
         """Initialization.
 
@@ -469,12 +473,24 @@ class StateEvaluationLog(Log):
             time_step (int): Current integer step index of the environment when the state evaluation occurs.
             agent_id (int): The unique id of the agent being evaluated.
             wealth (float): The wealth of the agent at the time of evaluation.
+            financial_stress (dict[str, float], optional): Financial stress components with keys
+                "affordance" and "relative_financial_status". Defaults to None.
+            social_stress (dict[str, float], optional): Social stress components with keys
+                "reputation" and "satisfaction". Defaults to None.
+            life_stress (float, optional): Life stress value representing dietary monotony/poverty.
+                Defaults to None.
+            physical_stress (dict[str, float], optional): Physical stress components with keys
+                "hunger", "fatigue", and "disease". Defaults to None.
         """
         self.type: str = "state_evaluation"
         self.time: int | str = time
         self.time_step: int = time_step
         self.agent_id: int = agent_id
         self.wealth: float = wealth
+        self.financial_stress: Optional[dict[str, float]] = financial_stress
+        self.social_stress: Optional[dict[str, float]] = social_stress
+        self.life_stress: Optional[float] = life_stress
+        self.physical_stress: Optional[dict[str, float]] = physical_stress
 
 
 class Logger:

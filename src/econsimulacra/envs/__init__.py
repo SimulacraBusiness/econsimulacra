@@ -6,10 +6,12 @@ from .event import (
 )
 from .memory import MemoryHandler as MemoryHandler
 from .obs_providers import (
+    FinancialStressProvider as FinancialStressProvider,
     FollowCapProvider as FollowCapProvider,
     IncomingOrdersProvider as IncomingOrdersProvider,
     IncomingSwapProposalsProvider as IncomingSwapProposalsProvider,
     ItemName2PriceProvider as ItemName2PriceProvider,
+    LifeStressProvider as LifeStressProvider,
     MemoryProvider as MemoryProvider,
     NumFollowersProvider as NumFollowersProvider,
     NumFollowsProvider as NumFollowsProvider,
@@ -17,6 +19,7 @@ from .obs_providers import (
     ObsProviderFromCoLocatedAgents as ObsProviderFromCoLocatedAgents,
     OthersInventoriesProvider as OthersInventoriesProvider,
     OthersPosProvider as OthersPosProvider,
+    PhysicalStressProvider as PhysicalStressProvider,
     RecommendedFollowsProvider as RecommendedFollowsProvider,
     SelfDestinationProvider as SelfDestinationProvider,
     SelfIDProvider as SelfIDProvider,
@@ -26,6 +29,7 @@ from .obs_providers import (
     SelfNameProvider as SelfNameProvider,
     SelfPosProvider as SelfPosProvider,
     SelfTweetProvider as SelfTweetProvider,
+    SocialStressProvider as SocialStressProvider,
     TimeDeltaProvider as TimeDeltaProvider,
     TimeProvider as TimeProvider,
     VisibleTLProvider as VisibleTLProvider,
@@ -75,4 +79,8 @@ __all__ = [
     "ItemName2PriceProvider",
     "OthersInventoriesProvider",
     "MemoryProvider",
+    "FinancialStressProvider",
+    "SocialStressProvider",
+    "LifeStressProvider",
+    "PhysicalStressProvider",
 ]

@@ -19,7 +19,26 @@ class Item:
         Args:
             item_id (int): The unique id for the item.
             item_name (str): The name of the item.
-            config (dict[str, Any], optional): Optional config. If it contains "initialPrice", it is used as the initial price. Defaults to None.
+            config (dict[str, Any], optional): Optional config. If it contains "initialPrice", it is
+                used as the initial price. If it contains "stressEffects", it is used as the stress
+                reduction effects when the item is consumed. Defaults to None.
+
+        Note:
+            The "stressEffects" config key maps stress component names to the amount of stress they
+            reduce upon consumption. Supported keys:
+                - "hunger": reduces physical hunger stress.
+                - "fatigue": reduces physical fatigue stress.
+                - "life": reduces life (dietary) stress.
+                - "financial_affordance": reduces financial affordance stress.
+                - "social_satisfaction": reduces social satisfaction stress.
+            Example config:
+                {
+                    "initialPrice": 500.0,
+                    "stressEffects": {
+                        "hunger": 20.0,
+                        "life": 5.0
+                    }
+                }
         """
         self.item_id: int = item_id
         self.item_name: str = item_name
@@ -30,6 +49,7 @@ class Item:
         else:
             self.price = 0.0
         self.price_set_by: Optional[int] = None
+        self.stress_effects: dict[str, float] = self.config.get("stressEffects", {})
 
     def get_price(self) -> float:
         """Get the price of the item.

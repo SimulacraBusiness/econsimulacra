@@ -604,3 +604,113 @@ class MemoryProvider(ObsProvider):
             return memory_handler.get_memory(agent_id=agent_id)
         else:
             return None
+
+
+class FinancialStressProvider(ObsProvider):
+    """Financial Stress Provider class.
+
+    Returns the current financial stress of the agent, comprising:
+    - "affordance": how much the agent can buy relative to average item prices.
+      Ranges from 0 (cannot buy anything) upward.  Higher values mean less stress.
+      Stress is calculated as max(0, 1 - affordance_ratio).
+    - "relative_financial_status": how wealthy the agent is compared to all other agents.
+      Ranges from 0 (poorest) to 1 (richest).  Stress is 1 - relative_status.
+
+    Note:
+        The stress values are provided by the environment's stress state tracker.
+        See also:
+            econsimulacra.envs.base.Environment._update_stress_state
+    """
+
+    def get_obs(self, agent_id: int) -> dict[str, float]:
+        """Get the financial stress observation for the given agent.
+
+        Args:
+            agent_id (int): The ID of the agent for which to get the observation.
+
+        Returns:
+            dict[str, float]: Financial stress with keys "affordance" and
+                "relative_financial_status". Each value is in [0, 1] where
+                1 represents maximum stress.
+        """
+        return self.env.agent_id2stress[agent_id]["financial"]
+
+
+class SocialStressProvider(ObsProvider):
+    """Social Stress Provider class.
+
+    Returns the current social stress of the agent, comprising:
+    - "reputation": stress derived from having few followers.
+      Calculated as max(0, 1 - followers / max_followers_in_env).
+    - "satisfaction": stress from not having interesting content in timeline.
+      Calculated as the fraction of followed agents with empty tweets.
+
+    Note:
+        The stress values are provided by the environment's stress state tracker.
+        See also:
+            econsimulacra.envs.base.Environment._update_stress_state
+    """
+
+    def get_obs(self, agent_id: int) -> dict[str, float]:
+        """Get the social stress observation for the given agent.
+
+        Args:
+            agent_id (int): The ID of the agent for which to get the observation.
+
+        Returns:
+            dict[str, float]: Social stress with keys "reputation" and "satisfaction".
+                Each value is in [0, 1] where 1 represents maximum stress.
+        """
+        return self.env.agent_id2stress[agent_id]["social"]
+
+
+class LifeStressProvider(ObsProvider):
+    """Life Stress Provider class.
+
+    Returns the current life stress of the agent.  Life stress accumulates
+    when the agent consumes the same item repeatedly (dietary monotony) or
+    consumes nothing (poverty).  It is reduced slightly each step and reduced
+    further by consuming a diverse set of items or items with a positive
+    "life" entry in their ``stressEffects`` config.
+    """
+
+    def get_obs(self, agent_id: int) -> float:
+        """Get the life stress observation for the given agent.
+
+        Args:
+            agent_id (int): The ID of the agent for which to get the observation.
+
+        Returns:
+            float: Life stress in [0, 1] where 1 represents maximum stress.
+        """
+        return self.env.agent_id2stress[agent_id]["life"]
+
+
+class PhysicalStressProvider(ObsProvider):
+    """Physical Stress Provider class.
+
+    Returns the current physical stress of the agent, comprising:
+    - "hunger": how long since the agent last consumed any item.
+      Increases by 1 each step without consumption and resets on consumption.
+    - "fatigue": how many consecutive steps the agent has moved.
+      Increases by 1 per move step and resets when the agent does not move.
+    - "disease": additional stress accumulated from irregular disease events.
+
+    Note:
+        The stress values are provided by the environment's stress state tracker.
+        See also:
+            econsimulacra.envs.base.Environment._update_stress_state
+    """
+
+    def get_obs(self, agent_id: int) -> dict[str, float]:
+        """Get the physical stress observation for the given agent.
+
+        Args:
+            agent_id (int): The ID of the agent for which to get the observation.
+
+        Returns:
+            dict[str, float]: Physical stress with keys "hunger", "fatigue",
+                and "disease". All values are non-negative; larger values
+                indicate higher stress.
+        """
+        return self.env.agent_id2stress[agent_id]["physical"]
