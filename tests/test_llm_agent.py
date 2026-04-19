@@ -1,4 +1,6 @@
-from econsimulacra.agents import LLMAgent
+import asyncio
+
+from econsimulacra.agents import LLMAgent, AutoReactLLMAgent
 from econsimulacra.llm_services import Big5PersonaBuilder, LLMClient, PromptBuilder
 
 
@@ -70,3 +72,100 @@ class TestLLMAgent:
                 env_service_dic=env_service_dic,
             )
             assert agent.agent_name == f"Dummy{agent_id}"
+
+
+class TestAutoReactLLMAgent:
+    def test_init(self):
+        prompt_builder = PromptBuilder(config={})
+        persona_builder = Big5PersonaBuilder(config={"maxMagnitude": 5})
+        llm_client = DummyClient(config={"modelName": "dummy"})
+        env_service_dic = {
+            "promptBuilder": prompt_builder,
+            "personaBuilder": persona_builder,
+            "llmClient": llm_client,
+        }
+        agent = AutoReactLLMAgent(
+            agent_id=0,
+            agent_name="AutoReactAgent",
+            config={"modelName": "dummy"},
+            env_service_dic=env_service_dic,
+        )
+        assert isinstance(agent, AutoReactLLMAgent)
+
+    def test_judge_reaction(self):
+        prompt_builder = PromptBuilder(config={})
+        persona_builder = Big5PersonaBuilder(config={"maxMagnitude": 5})
+        llm_client = DummyClient(config={"modelName": "dummy"})
+        env_service_dic = {
+            "promptBuilder": prompt_builder,
+            "personaBuilder": persona_builder,
+            "llmClient": llm_client,
+        }
+        agent = AutoReactLLMAgent(
+            agent_id=0,
+            agent_name="AutoReactAgent",
+            config={"modelName": "dummy"},
+            env_service_dic=env_service_dic,
+        )
+        current_inventory = {"itemA": 10, "itemB": 5.0}
+        incoming_order = {"item_name": "itemA", "item_amount": 3}
+        judge, _current_inventory = agent.judge_reaction(
+            incoming_transactional_intent=incoming_order,
+            current_inventory=current_inventory,
+            is_order=True,
+        )
+        incoming_order = {"item_name": "itemA", "item_amount": 9}
+        judge, _current_inventory = agent.judge_reaction(
+            incoming_transactional_intent=incoming_order,
+            current_inventory=_current_inventory,
+            is_order=True,
+        )
+        assert not judge
+        incoming_proposal = {"get_item_name": "itemB", "get_item_amount": 4}
+        judge, _current_inventory = agent.judge_reaction(
+            incoming_transactional_intent=incoming_proposal,
+            current_inventory=_current_inventory,
+            is_order=False,
+        )
+        assert judge
+        incoming_proposal = {"get_item_name": "itemB", "get_item_amount": 2}
+        judge, _current_inventory = agent.judge_reaction(
+            incoming_transactional_intent=incoming_proposal,
+            current_inventory=_current_inventory,
+            is_order=False,
+        )
+        assert not judge
+
+    def test_act(self):
+        prompt_builder = PromptBuilder(config={})
+        persona_builder = Big5PersonaBuilder(config={"maxMagnitude": 5})
+        llm_client = DummyClient(config={"modelName": "dummy"})
+        env_service_dic = {
+            "promptBuilder": prompt_builder,
+            "personaBuilder": persona_builder,
+            "llmClient": llm_client,
+        }
+        agent = AutoReactLLMAgent(
+            agent_id=0,
+            agent_name="AutoReactAgent",
+            config={
+                "modelName": "dummy",
+                "inventory": {"itemA": 10, "itemB": 5.0},
+            },
+            env_service_dic=env_service_dic,
+        )
+        obs = {
+            "incoming_orders": [
+                {"order_id": 1, "item_name": "itemA", "item_amount": 3},
+                {"order_id": 2, "item_name": "itemA", "item_amount": 15},
+            ],
+            "incoming_proposals": [
+                {"proposal_id": 1, "get_item_name": "itemB", "get_item_amount": 4},
+                {"proposal_id": 2, "get_item_name": "itemB", "get_item_amount": 6},
+            ],
+        }
+        llm_response = asyncio.run(agent.act(obs=obs))
+        reactions = llm_response["reactions"]
+        assert len(reactions) == 2
+        assert reactions[0] == {"kind": "order", "id": 1, "accept_amount": 3}
+        assert reactions[1] == {"kind": "proposal", "id": 1, "accept": True}
