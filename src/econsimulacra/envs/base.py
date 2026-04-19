@@ -474,7 +474,7 @@ class Environment(Generic[ObsT]):
                     time_step=self.get_time_step(),
                     agent_type=agent_instance.agent_type,
                     agent_name=agent_name,
-                    inventory_dic=agent_instance.inventory_dic.copy(),
+                    inventory_dic=agent_instance.get_inventory(),
                 )
                 self.remember_log(log)
                 self.event_manager.trigger_events_after_log(log=log, env=self)
@@ -1381,7 +1381,7 @@ class Environment(Generic[ObsT]):
                     if order.order_id == order_id and order.counterparty_id == agent_id:
                         if accept_amount > order.item_amount:
                             return False
-                        holding_amount = agent.inventory_dic.get(order.item_name, 0)
+                        holding_amount = agent.get_item_amount(order.item_name)
                         if accept_amount > holding_amount:
                             return False
                         find_corresponding_order = True
@@ -1404,8 +1404,8 @@ class Environment(Generic[ObsT]):
                         and proposal.responder_agent_id == agent_id
                     ):
                         if accept:
-                            holding_amount = agent.inventory_dic.get(
-                                proposal.get_item_name, 0
+                            holding_amount = agent.get_item_amount(
+                                proposal.get_item_name
                             )
                             if proposal.get_item_amount > holding_amount:
                                 return False
@@ -1656,7 +1656,7 @@ class Environment(Generic[ObsT]):
             agent_id (int): agent id of the agent to evaluate.
         """
         agent: Agent = self.agent_id2agent[agent_id]
-        wealth: float = self._calculate_wealth(agent.inventory_dic)
+        wealth: float = self._calculate_wealth(agent.get_inventory())
         log: StateEvaluationLog = StateEvaluationLog(
             time=self.get_time(),
             time_step=self.get_time_step(),

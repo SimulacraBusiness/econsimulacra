@@ -134,6 +134,10 @@ class Agent(ABC, Generic[ObsT]):
             inventory_dic[item_name] = amount
         return inventory_dic
 
+    def get_inventory(self) -> dict[str, float | int]:
+        """Get the inventory of the agent."""
+        return self.inventory_dic.copy()
+
     def get_item_amount(self, item_name: str) -> float | int:
         """Get the amount of a specific item in the agent's inventory."""
         return self.inventory_dic.get(item_name, 0)

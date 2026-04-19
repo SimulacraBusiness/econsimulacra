@@ -286,7 +286,7 @@ class SelfInventoryProvider(ObsProvider):
         """
         inventory_dic: dict[str, float | int] = self.env.agent_id2agent[
             agent_id
-        ].inventory_dic.copy()
+        ].get_inventory()
         inventory_dic = {
             item_name: item_amount
             for item_name, item_amount in inventory_dic.items()
@@ -568,7 +568,10 @@ class OthersInventoriesProvider(ObsProviderFromCoLocatedAgents):
                     "agent_id": other_agent_id,
                     "agent_name": other_agent.get_self_name(),
                 }
-                for item_name, item_amount in other_agent.inventory_dic.items():
+                other_agent_inventory_dic: dict[str, float | int] = (
+                    other_agent.get_inventory()
+                )
+                for item_name, item_amount in other_agent_inventory_dic.items():
                     if item_name == self.env.cash_name:
                         continue
                     if item_amount <= 0:

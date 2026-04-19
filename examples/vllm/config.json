@@ -1,7 +1,7 @@
 {
     "simulation": {
         "numSteps": 72,
-        "parallelBatchSize": 4
+        "parallelBatchSize": 32
     },
     "environment": {
         "space": "gridSpace",
@@ -38,7 +38,7 @@
         "iconScale": 0.2
     },
     "Retailer": {
-        "type": "LLMAgent",
+        "type": "AutoReactLLMAgent",
         "isRichInfoAllowed": true,
         "isHousehold": false,
         "initialCoords": [15, 25],
@@ -49,12 +49,13 @@
             "Pizza": 0
         },
         "provideInfo4CoLocatedAgents": ["inventory"],
+
         "provideInfo4AllAgents": ["self_pos"],
         "svgPath": "../../imgs/store.svg",
         "iconScale": 0.2
     },
     "Restaurant": {
-        "type": "LLMAgent",
+        "type": "AutoReactLLMAgent",
         "isRichInfoAllowed": true,
         "isHousehold": false,
         "initialCoords": [35, 25],
@@ -88,7 +89,7 @@
         "type": "VLLMClient",
         "modelName": "meta-llama/Meta-Llama-3-8B-Instruct",
         "other_choice": "Qwen/Qwen2.5-7B-Instruct, mistralai/Mistral-7B-Instruct-v0.3",
-        "vllmPython": "path_to_venv_vllm/econsimulacra/.venv-vllm/bin/python",
+        "vllmPython": "path_to_vllm/econsimulacra/.venv-vllm/bin/python",
         "useGpu": true,
         "gpuIds": [0, 1],
         "isDataParallel": true,
