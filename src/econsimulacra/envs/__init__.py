@@ -1,9 +1,4 @@
 from .base import Environment as Environment
-from .event import (
-    Event as Event,
-    EventManager as EventManager,
-    EventTrigger as EventTrigger,
-)
 from .obs_providers import (
     FollowCapProvider as FollowCapProvider,
     IncomingOrdersProvider as IncomingOrdersProvider,
@@ -40,9 +35,6 @@ from .time_translator import TimeTranslator as TimeTranslator
 
 __all__ = [
     "Environment",
-    "EventManager",
-    "Event",
-    "EventTrigger",
     "GridSpace",
     "SocialNetwork",
     "RecommenderSystem",

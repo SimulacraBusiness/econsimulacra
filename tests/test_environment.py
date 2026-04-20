@@ -3,7 +3,8 @@ from typing import Any, Callable, Optional
 import pytest
 
 from econsimulacra.agents import Agent
-from econsimulacra.envs import Environment, Event, EventTrigger, Order
+from econsimulacra.envs import Environment, Order
+from econsimulacra.events import Event, EventTrigger
 from econsimulacra.items import Item
 from econsimulacra.logs import DictLogger
 from econsimulacra.memory import MemoryHandler

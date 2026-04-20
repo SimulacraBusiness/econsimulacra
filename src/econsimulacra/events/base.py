@@ -7,7 +7,7 @@ from ..logs import Log
 from ..sim_utils import find_class
 
 if TYPE_CHECKING:
-    from .base import Environment
+    from ..envs import Environment
 
 
 class EventManager:
