@@ -53,7 +53,7 @@ from .obs_providers import (
     VisibleTLProvider,
 )
 from .order import Order, SwapProposal
-from .social_networks import SocialNetwork
+from ..social_networks import SocialNetwork
 from .space import GridSpace
 from .time_translator import TimeTranslator
 

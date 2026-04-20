@@ -25,20 +25,12 @@ from .obs_providers import (
     VisibleTLProvider as VisibleTLProvider,
 )
 from .order import Order as Order, SwapProposal as SwapProposal
-from .social_networks import (
-    RecommenderSystem as RecommenderSystem,
-    SocialNetwork as SocialNetwork,
-    TwoHopRecommenderSystem as TwoHopRecommenderSystem,
-)
 from .space import GridSpace as GridSpace
 from .time_translator import TimeTranslator as TimeTranslator
 
 __all__ = [
     "Environment",
     "GridSpace",
-    "SocialNetwork",
-    "RecommenderSystem",
-    "TwoHopRecommenderSystem",
     "Order",
     "SwapProposal",
     "TimeTranslator",

@@ -1,7 +1,7 @@
 from random import Random
 from typing import Any, Optional, Type
 
-from ...sim_utils import find_class
+from ..sim_utils import find_class
 from .recsys import RecommenderSystem
 
 
