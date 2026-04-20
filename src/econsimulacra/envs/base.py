@@ -25,7 +25,7 @@ from ..logs import (
 )
 from ..sim_utils import find_class
 from .event import EventManager
-from .memory import MemoryHandler
+from ..memory import MemoryHandler
 from .obs_providers import (
     FollowCapProvider,
     IncomingOrdersProvider,

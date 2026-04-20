@@ -3,9 +3,10 @@ from typing import Any, Callable, Optional
 import pytest
 
 from econsimulacra.agents import Agent
-from econsimulacra.envs import Environment, Event, EventTrigger, MemoryHandler, Order
+from econsimulacra.envs import Environment, Event, EventTrigger, Order
 from econsimulacra.items import Item
 from econsimulacra.logs import DictLogger
+from econsimulacra.memory import MemoryHandler
 
 Provider = Callable[[int], Any]
 

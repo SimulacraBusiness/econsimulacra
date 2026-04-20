@@ -7,7 +7,7 @@ from ..agents import Agent
 
 if TYPE_CHECKING:
     from .base import Environment
-    from .memory import MemoryHandler
+    from ..memory import MemoryHandler
 
 
 class ObsProvider(ABC):

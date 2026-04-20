@@ -4,7 +4,6 @@ from .event import (
     EventManager as EventManager,
     EventTrigger as EventTrigger,
 )
-from .memory import MemoryHandler as MemoryHandler
 from .obs_providers import (
     FollowCapProvider as FollowCapProvider,
     IncomingOrdersProvider as IncomingOrdersProvider,
@@ -44,7 +43,6 @@ __all__ = [
     "EventManager",
     "Event",
     "EventTrigger",
-    "MemoryHandler",
     "GridSpace",
     "SocialNetwork",
     "RecommenderSystem",
