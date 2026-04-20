@@ -3,6 +3,7 @@ from random import Random
 from typing import Any, Generic, Literal, Optional, Type, TypeVar
 
 from ..agents import Agent
+from ..events import EventManager
 from ..items import Item
 from ..logs import (
     AgentGenerationLog,
@@ -23,9 +24,9 @@ from ..logs import (
     TweetLog,
     UnfollowLog,
 )
-from ..sim_utils import find_class
-from ..events import EventManager
 from ..memory import MemoryHandler
+from ..sim_utils import find_class
+from ..social_networks import SocialNetwork
 from .obs_providers import (
     FollowCapProvider,
     IncomingOrdersProvider,
@@ -53,7 +54,6 @@ from .obs_providers import (
     VisibleTLProvider,
 )
 from .order import Order, SwapProposal
-from ..social_networks import SocialNetwork
 from .space import GridSpace
 from .time_translator import TimeTranslator
 
