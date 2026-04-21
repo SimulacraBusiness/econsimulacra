@@ -326,6 +326,10 @@ class MemoryHandler:
         if agent_id not in self.agent_id2memory:
             raise ValueError(f"Agent with id {agent_id} does not exist in memory.")
         agent_memory: AgentMemory = self.agent_id2memory[agent_id]
+        summarized_memory: dict[str, Any] = self.summarize_memory(agent_memory)
+        return summarized_memory
+
+    def summarize_memory(self, agent_memory: AgentMemory) -> dict[str, Any]:
         summarized_memory: dict[str, Any] = {
             "memory_length": f"Max memory length is {self.memory_length}.",
             "move_history": "",
@@ -337,55 +341,97 @@ class MemoryHandler:
             "social_history": "",
             "state_evaluation_history": "",
         }
-        if len(agent_memory.move_history) > 0:
-            summarized_memory["move_history"] = "You have moved to " + " -> ".join(
-                f"{item.pos}" for item in agent_memory.move_history
+        summarized_memory["move_history"] = self._summarize_move_history(
+            agent_memory.move_history
+        )
+        summarized_memory["consumption_history"] = self._summarize_consumption_history(
+            agent_memory.consumption_history
+        )
+        summarized_memory["purchase_history"] = self._summarize_purchase_history(
+            agent_memory.purchase_history
+        )
+        summarized_memory["sale_history"] = self._summarize_sale_history(
+            agent_memory.sale_history
+        )
+        summarized_memory["exchange_history"] = self._summarize_exchange_history(
+            agent_memory.exchange_history
+        )
+        summarized_memory["set_price_history"] = self._summarize_set_price_history(
+            agent_memory.set_price_history
+        )
+        summarized_memory["social_history"] = self._summarize_social_history(
+            agent_memory.social_history
+        )
+        summarized_memory["state_evaluation_history"] = (
+            self._summarize_state_evaluation_history(
+                agent_memory.state_evaluation_history
             )
-        if len(agent_memory.consumption_history) > 0:
-            summarized_memory["consumption_history"] = "You have consumed " + ", ".join(
-                f"{item.item_name} x {int(item.quantity)} at {item.time}"
-                for item in agent_memory.consumption_history
-            )
-        if len(agent_memory.purchase_history) > 0:
-            summarized_memory["purchase_history"] = "You have purchased " + ", ".join(
-                f"{item.item_name} x {int(item.quantity)} at {int(item.price)} from agent_id {item.from_agent_id} at {item.time}"
-                for item in agent_memory.purchase_history
-            )
-        if len(agent_memory.sale_history) > 0:
-            summarized_memory["sale_history"] = "You have sold " + ", ".join(
-                f"{item.item_name} x {int(item.quantity)} at {int(item.price)} to agent_id {item.to_agent_id} at {item.time}"
-                for item in agent_memory.sale_history
-            )
-        if len(agent_memory.exchange_history) > 0:
-            summarized_memory["exchange_history"] = "You have exchanged " + "; ".join(
-                f"give {item.give_item_name} x {int(item.give_item_quantity)}, get {item.get_item_name} x {int(item.get_item_quantity)} with agent_id {item.counterparty_id} at {item.time}"
-                for item in agent_memory.exchange_history
-            )
-        if len(agent_memory.set_price_history) > 0:
-            summarized_memory["set_price_history"] = (
-                "You have changed price "
-                + ", ".join(
-                    f"{item.item_name}: {int(item.old_price)} -> {int(item.new_price)} at {item.time}"
-                    for item in agent_memory.set_price_history
-                )
-            )
-        if len(agent_memory.social_history) > 0:
-            summarized_memory["social_history"] = (
-                "Your social actions are "
-                + "; ".join(
-                    f"{item.action} target_agent_id {item.target_agent_id} at {item.time} (num_followers: {int(item.num_followers)}, num_follows: {int(item.num_follows)})"
-                    for item in agent_memory.social_history
-                )
-            )
-        if len(agent_memory.state_evaluation_history) > 0:
-            summarized_memory["state_evaluation_history"] = (
-                "Your state evaluations are "
-                + "; ".join(
-                    f"Wealth: {int(item.wealth)} at {item.time}"
-                    for item in agent_memory.state_evaluation_history
-                )
-            )
+        )
         return summarized_memory
+
+    def _summarize_move_history(self, move_history: Deque[MoveHistoryItem]) -> Any:
+        return "You have moved to " + " -> ".join(
+            f"{item.pos}" for item in move_history
+        )
+
+    def _summarize_consumption_history(
+        self, consumption_history: Deque[ConsumptionHistoryItem]
+    ) -> Any:
+        return "You have consumed " + ", ".join(
+            f"{item.item_name} x {int(item.quantity)} at {item.time}"
+            for item in consumption_history
+        )
+
+    def _summarize_purchase_history(
+        self, purchase_history: Deque[PurchaseHistoryItem]
+    ) -> Any:
+        return "You have purchased " + ", ".join(
+            f"{item.item_name} x {int(item.quantity)} at "
+            + f"{int(item.price)} from agent_id {item.from_agent_id} at {item.time}"
+            for item in purchase_history
+        )
+
+    def _summarize_sale_history(self, sale_history: Deque[SaleHistoryItem]) -> Any:
+        return "You have sold " + ", ".join(
+            f"{item.item_name} x {int(item.quantity)} at {int(item.price)} "
+            + f"to agent_id {item.to_agent_id} at {item.time}"
+            for item in sale_history
+        )
+
+    def _summarize_exchange_history(
+        self, exchange_history: Deque[ExchangeHistoryItem]
+    ) -> Any:
+        return "You have exchanged " + "; ".join(
+            f"give {item.give_item_name} x {int(item.give_item_quantity)}, "
+            + f"get {item.get_item_name} x {int(item.get_item_quantity)} "
+            + f"with agent_id {item.counterparty_id} at {item.time}"
+            for item in exchange_history
+        )
+
+    def _summarize_set_price_history(
+        self, set_price_history: Deque[SetPriceHistoryItem]
+    ) -> Any:
+        return "You have changed price " + ", ".join(
+            f"{item.item_name}: {int(item.old_price)} -> {int(item.new_price)} at {item.time}"
+            for item in set_price_history
+        )
+
+    def _summarize_social_history(
+        self, social_history: Deque[SocialHistoryItem]
+    ) -> Any:
+        return "Your social actions are " + "; ".join(
+            f"{item.action} target_agent_id {item.target_agent_id} at {item.time} "
+            + f"(num_followers: {int(item.num_followers)}, num_follows: {int(item.num_follows)})"
+            for item in social_history
+        )
+
+    def _summarize_state_evaluation_history(
+        self, state_evaluation_history: Deque[StateEvaluationItem]
+    ) -> Any:
+        return "Your state evaluations are " + "; ".join(
+            f"Wealth: {int(item.wealth)} at {item.time}"
+            for item in state_evaluation_history
+        )
 
     def _build_memory_registry(self) -> dict[type[Log], Callable[[Any], None]]:
         """Build a dispatch dictionary that maps log types to their corresponding memory update handlers.
