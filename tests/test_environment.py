@@ -178,7 +178,13 @@ class TestEnvironment:
             "memoryLength": 2,
             "memorySummarizer": {
                 "type": "StressAwareSummarizer",
-                "stressCalculator": {"type": "StressCalculator"},
+                "stressCalculator": {
+                    "type": "StressCalculator",
+                    "item2Weight": {
+                        "Yen": 0,
+                        "Rice": 1,
+                    },
+                },
             },
         },
         "DummyEvent1": {
