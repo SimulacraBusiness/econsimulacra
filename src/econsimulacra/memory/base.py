@@ -215,6 +215,8 @@ class StateEvaluationItem:
 
     Attributes:
         wealth (float): the wealth of the agent at the time of evaluation.
+        inventory_dic (dict[str, int | float]): the inventory of the agent at the time of evaluation.
+        persona_dic (dict[str, Any], optional): the persona of the agent at the time of evaluation.
         time (int | str): the time of the state evaluation.
 
     Note:
@@ -225,6 +227,8 @@ class StateEvaluationItem:
     """
 
     wealth: float
+    inventory_dic: dict[str, int | float]
+    persona_dic: Optional[dict[str, Any]]
     time: int | str
     time_step: int
 
@@ -631,7 +635,7 @@ class MemoryHandler:
         """
         agent_id: int = log.agent_id
         if agent_id not in self.agent_id2memory:
-            self.agent_id2memory[agent_id] = AgentMemory(
+            agent_memory: AgentMemory = AgentMemory(
                 consumption_history=deque(maxlen=self.memory_length),
                 move_history=deque(maxlen=self.memory_length),
                 purchase_history=deque(maxlen=self.memory_length),
@@ -641,6 +645,16 @@ class MemoryHandler:
                 social_history=deque(maxlen=self.memory_length),
                 state_evaluation_history=deque(maxlen=self.memory_length),
             )
+            agent_memory.state_evaluation_history.append(
+                StateEvaluationItem(
+                    wealth=log.wealth,
+                    inventory_dic=log.inventory_dic,
+                    persona_dic=log.persona_dic,
+                    time=log.time,
+                    time_step=log.time_step,
+                )
+            )
+            self.agent_id2memory[agent_id] = agent_memory
         else:
             raise ValueError(f"Agent with id {agent_id} already exists in memory.")
 
@@ -1082,6 +1096,10 @@ class MemoryHandler:
         )
         state_evaluation_history.append(
             StateEvaluationItem(
-                wealth=log.wealth, time=log.time, time_step=log.time_step
+                wealth=log.wealth,
+                inventory_dic=log.inventory_dic,
+                persona_dic=log.persona_dic,
+                time=log.time,
+                time_step=log.time_step,
             )
         )

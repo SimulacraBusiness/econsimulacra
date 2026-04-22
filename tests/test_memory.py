@@ -43,11 +43,13 @@ class TestMemoryHandler:
             agent_id=1,
             agent_type="Dummy",
             agent_name="Dummy",
+            wealth=10000,
             inventory_dic={
                 "Yen": 10000,
                 "Rice": 10,
                 "Apple": 10,
             },
+            persona_dic={"trait1": "value1"},
         )
         memory_handler.update(log=log0)
         assert memory_handler.current_time == 0
