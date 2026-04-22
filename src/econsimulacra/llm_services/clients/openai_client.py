@@ -5,7 +5,7 @@ import copy
 import json
 import os
 import random
-from typing import Any, Optional, cast
+from typing import Any, Optional, Type, cast
 
 from openai import (
     APIConnectionError,
@@ -23,7 +23,10 @@ class OpenAIClient(LLMClient):
     """OpenAI client for interacting with OpenAI's language models."""
 
     def __init__(
-        self, config: dict[str, Any], prng: Optional[random.Random] = None
+        self,
+        config: dict[str, Any],
+        prng: Optional[random.Random] = None,
+        registered_classes: list[Type] = [],
     ) -> None:
         """Initialization.
 
@@ -46,7 +49,7 @@ class OpenAIClient(LLMClient):
                 "apiKey": "your_openai_api_key" # Optional if OPENAI_API_KEY environment variable is set
             }
         """
-        super().__init__(config, prng)
+        super().__init__(config, prng, registered_classes)
         api_key: Optional[str] = config.get("apiKey", os.getenv("OPENAI_API_KEY"))
         if api_key is None:
             raise ValueError(
