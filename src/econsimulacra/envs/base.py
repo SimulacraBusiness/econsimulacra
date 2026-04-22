@@ -5,6 +5,7 @@ from typing import Any, Generic, Literal, Optional, Type, TypeVar
 from ..agents import Agent
 from ..events import EventManager
 from ..items import Item
+from ..llm_services import PersonaBuilder
 from ..logs import (
     AgentGenerationLog,
     ChangePriceLog,
@@ -201,19 +202,24 @@ class Environment(Generic[ObsT]):
         self._time: int = -1
         self.service_dic: dict[str, Any] = {}
 
-    def get_time_translator(self) -> Optional[TimeTranslator]:
-        """Get the TimeTranslator service provider from the environment's service dictionary, if it exists."""
+    def get_service(self, service_type: Type[Any]) -> Optional[Any]:
+        """Return the first service instance matching the given type."""
         for provider in self.service_dic.values():
-            if isinstance(provider, TimeTranslator):
+            if isinstance(provider, service_type):
                 return provider
         return None
 
+    def get_time_translator(self) -> Optional[TimeTranslator]:
+        """Get the TimeTranslator service provider from the environment's service dictionary, if it exists."""
+        return self.get_service(TimeTranslator)
+
     def get_memory_handler(self) -> Optional[MemoryHandler]:
         """Get the MemoryHandler service provider from the environment's service dictionary, if it exists."""
-        for provider in self.service_dic.values():
-            if isinstance(provider, MemoryHandler):
-                return provider
-        return None
+        return self.get_service(MemoryHandler)
+
+    def get_persona_builder(self) -> Optional[PersonaBuilder]:
+        """Get the PersonaBuilder service provider from the environment's service dictionary, if it exists."""
+        return self.get_service(PersonaBuilder)
 
     def get_time(self) -> int | str:
         """Get the current time in the environment.
@@ -300,16 +306,16 @@ class Environment(Generic[ObsT]):
         )
         service_provider_keys: list[str] = self.config["environment"].get("service", [])
         self._generate_service_providers(service_provider_keys=service_provider_keys)
-        assert "agents" in self.config["environment"], (
-            "Environment config must include 'agents' key."
-        )
-        agent_keys: list[str] = self.config["environment"]["agents"]
-        self._generate_agents(agent_keys=agent_keys)
         assert "items" in self.config["environment"], (
             "Environment config must include 'items' key."
         )
         item_keys: list[str] = self.config["environment"]["items"]
         self._generate_items(item_keys=item_keys)
+        assert "agents" in self.config["environment"], (
+            "Environment config must include 'agents' key."
+        )
+        agent_keys: list[str] = self.config["environment"]["agents"]
+        self._generate_agents(agent_keys=agent_keys)
         self.pending_orders: list[Order] = []
         self.pending_swap_proposals: list[SwapProposal] = []
         self.latest_order_id: int = 0
@@ -406,7 +412,9 @@ class Environment(Generic[ObsT]):
                 name=instance_type, optional_class_list=self.registered_classes
             )
             service_provider_instance = service_provider_class(
-                config=service_provider_config, prng=self.prng
+                config=service_provider_config,
+                prng=self.prng,
+                registered_classes=self.registered_classes,
             )
             self.service_dic[service_provider_key] = service_provider_instance
 
@@ -423,6 +431,28 @@ class Environment(Generic[ObsT]):
         memory_handler: Optional[MemoryHandler] = self.get_memory_handler()
         if memory_handler is not None:
             memory_handler.update(log)
+
+    def get_persona(self, agent_id: int) -> Optional[dict[str, Any]]:
+        """Get the persona details for the given agent ID,
+        if PersonaBuilder service provider is available in the environment.
+
+        Args:
+            agent_id (int): the ID of the agent to get persona details for.
+
+        Returns:
+            persona_dic (dict[str, Any], optional): the persona details dictionary for the given agent ID,
+                or None if PersonaBuilder service provider is not available in the environment.
+        """
+        persona_builder: Optional[PersonaBuilder] = self.get_persona_builder()
+        persona_dic: Optional[dict[str, Any]] = None
+        if persona_builder is not None:
+            persona_dic = persona_builder.get_persona(agent_id=agent_id)
+            if persona_dic is None:
+                raise ValueError(
+                    "PersonaBuilder service provider is available in the environment, "
+                    + f"but persona not found for agent_id {agent_id}."
+                )
+        return persona_dic
 
     def _generate_agents(self, agent_keys: list[str]) -> None:
         """Generate agents and place them in the grid space.
@@ -468,13 +498,16 @@ class Environment(Generic[ObsT]):
                     config=agent_config,
                 )
                 agent_name: str = agent_instance.get_self_name()
+                inventory_dic: dict[str, int | float] = agent_instance.get_inventory()
                 log: AgentGenerationLog = AgentGenerationLog(
                     agent_id=current_agent_id,
                     time=self.get_time(),
                     time_step=self.get_time_step(),
                     agent_type=agent_instance.agent_type,
                     agent_name=agent_name,
-                    inventory_dic=agent_instance.get_inventory(),
+                    wealth=self._calculate_wealth(inventory_dic=inventory_dic),
+                    inventory_dic=inventory_dic,
+                    persona_dic=self.get_persona(agent_id=current_agent_id),
                 )
                 self.remember_log(log)
                 self.event_manager.trigger_events_after_log(log=log, env=self)
@@ -1662,6 +1695,8 @@ class Environment(Generic[ObsT]):
             time_step=self.get_time_step(),
             agent_id=agent_id,
             wealth=wealth,
+            inventory_dic=agent.get_inventory(),
+            persona_dic=self.get_persona(agent_id=agent_id),
         )
         self.remember_log(log)
         self.event_manager.trigger_events_after_log(log=log, env=self)
