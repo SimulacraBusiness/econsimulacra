@@ -3,7 +3,7 @@ from __future__ import annotations
 import random
 from collections import deque
 from dataclasses import dataclass
-from typing import Any, Callable, Deque, Literal, Optional
+from typing import Any, Callable, Deque, Literal, Optional, Type
 
 from ..logs import (
     AgentGenerationLog,
@@ -23,6 +23,7 @@ from ..logs import (
     TweetLog,
     UnfollowLog,
 )
+from ..sim_utils import find_class
 
 
 @dataclass
@@ -33,6 +34,7 @@ class ConsumptionHistoryItem:
         item_name (str): the name of the consumed item.
         quantity (int | float): the quantity of the consumed item.
         time (int | str): the time of the consumption.
+        time_step (int): the time step of the consumption.
 
     Note:
         This history item is generated based on the ConsumptionLog.
@@ -44,6 +46,7 @@ class ConsumptionHistoryItem:
     item_name: str
     quantity: int | float
     time: int | str
+    time_step: int
 
 
 @dataclass
@@ -66,6 +69,7 @@ class MoveHistoryItem:
 
     pos: tuple[int, ...]
     time: Optional[int | str]
+    time_step: int
 
 
 @dataclass
@@ -91,6 +95,7 @@ class PurchaseHistoryItem:
     quantity: int | float
     price: int | float
     time: int | str
+    time_step: int
     from_agent_id: int
 
 
@@ -117,6 +122,7 @@ class SaleHistoryItem:
     quantity: int | float
     price: int | float
     time: int | str
+    time_step: int
     to_agent_id: int
 
 
@@ -144,6 +150,7 @@ class ExchangeHistoryItem:
     get_item_name: str
     get_item_quantity: int | float
     time: int | str
+    time_step: int
     counterparty_id: int
 
 
@@ -168,6 +175,7 @@ class SetPriceHistoryItem:
     old_price: int | float
     new_price: int | float
     time: int | str
+    time_step: int
 
 
 @dataclass
@@ -196,6 +204,7 @@ class SocialHistoryItem:
     action: Literal["follow", "unfollow"]
     target_agent_id: int
     time: int | str
+    time_step: int
     num_followers: int
     num_follows: int
 
@@ -217,6 +226,7 @@ class StateEvaluationItem:
 
     wealth: float
     time: int | str
+    time_step: int
 
 
 @dataclass
@@ -251,17 +261,222 @@ class AgentMemory:
     state_evaluation_history: Deque[StateEvaluationItem]
 
 
+class MemorySummarizer:
+    """Memory Summarizer class.
+
+    MemorySummarizer is used to summarize the memory of the agent into
+    a form that can be provided as a part of the observation to the agent.
+    """
+
+    def __init__(
+        self,
+        config: dict[str, Any],
+        prng: Optional[random.Random] = None,
+        registered_classes: Optional[list[Type]] = None,
+    ) -> None:
+        self.config: dict[str, Any] = config
+        self.prng: random.Random = prng if prng is not None else random.Random()
+        self.registered_classes: list[Type] = (
+            registered_classes if registered_classes is not None else []
+        )
+        self.current_time: int | str = -1
+        self.current_time_step: int = -1
+
+    def sync_time(self, current_time: int | str, current_time_step: int) -> None:
+        """Synchronize the current time and time step in the summarizer with the MemoryHandler."""
+        self.current_time = current_time
+        self.current_time_step = current_time_step
+
+    def summarize_memory(self, agent_memory: AgentMemory) -> dict[str, str]:
+        summary_specs: dict[str, tuple[Deque, Callable[[Deque], str]]] = {
+            "move_history": (
+                agent_memory.move_history,
+                self._summarize_move_history,
+            ),
+            "consumption_history": (
+                agent_memory.consumption_history,
+                self._summarize_consumption_history,
+            ),
+            "purchase_history": (
+                agent_memory.purchase_history,
+                self._summarize_purchase_history,
+            ),
+            "sale_history": (
+                agent_memory.sale_history,
+                self._summarize_sale_history,
+            ),
+            "exchange_history": (
+                agent_memory.exchange_history,
+                self._summarize_exchange_history,
+            ),
+            "set_price_history": (
+                agent_memory.set_price_history,
+                self._summarize_set_price_history,
+            ),
+            "social_history": (
+                agent_memory.social_history,
+                self._summarize_social_history,
+            ),
+            "state_evaluation_history": (
+                agent_memory.state_evaluation_history,
+                self._summarize_state_evaluation_history,
+            ),
+        }
+
+        summarized_memory: dict[str, str] = {}
+        for field_name, (history, summarize_func) in summary_specs.items():
+            base_summary: str = summarize_func(history)
+            summarized_memory[field_name] = self._postprocess_summary(
+                field_name=field_name,
+                history=history,
+                base_summary=base_summary,
+            )
+        return summarized_memory
+
+    def _postprocess_summary(
+        self,
+        field_name: str,
+        history: Deque[
+            ConsumptionHistoryItem
+            | MoveHistoryItem
+            | PurchaseHistoryItem
+            | SaleHistoryItem
+            | ExchangeHistoryItem
+            | SetPriceHistoryItem
+            | SocialHistoryItem
+            | StateEvaluationItem
+        ],
+        base_summary: str,
+    ) -> str:
+        """Hook for subclasses to append or transform each summary."""
+        return base_summary
+
+    def _summarize_move_history(self, move_history: Deque[MoveHistoryItem]) -> str:
+        if not move_history:
+            return "You have no movement history."
+        return (
+            "You have moved to "
+            + " -> ".join(f"{item.pos}" for item in move_history)
+            + "."
+        )
+
+    def _summarize_consumption_history(
+        self, consumption_history: Deque[ConsumptionHistoryItem]
+    ) -> str:
+        if not consumption_history:
+            return "You have no consumption history."
+        return (
+            "You have consumed "
+            + ", ".join(
+                f"{item.item_name} x {int(item.quantity)} at time {item.time}"
+                for item in consumption_history
+            )
+            + "."
+        )
+
+    def _summarize_purchase_history(
+        self, purchase_history: Deque[PurchaseHistoryItem]
+    ) -> str:
+        if not purchase_history:
+            return "You have no purchase history."
+        return (
+            "You have purchased "
+            + ", ".join(
+                f"{item.item_name} x {int(item.quantity)} at "
+                f"{int(item.price)} from agent_id {item.from_agent_id} at time {item.time}"
+                for item in purchase_history
+            )
+            + "."
+        )
+
+    def _summarize_sale_history(self, sale_history: Deque[SaleHistoryItem]) -> str:
+        if not sale_history:
+            return "You have no sale history."
+        return (
+            "You have sold "
+            + ", ".join(
+                f"{item.item_name} x {int(item.quantity)} at {int(item.price)} "
+                f"to agent_id {item.to_agent_id} at time {item.time}"
+                for item in sale_history
+            )
+            + "."
+        )
+
+    def _summarize_exchange_history(
+        self, exchange_history: Deque[ExchangeHistoryItem]
+    ) -> str:
+        if not exchange_history:
+            return "You have no exchange history."
+        return (
+            "You have exchanged "
+            + "; ".join(
+                f"give {item.give_item_name} x {int(item.give_item_quantity)}, "
+                f"get {item.get_item_name} x {int(item.get_item_quantity)} "
+                f"with agent_id {item.counterparty_id} at time {item.time}"
+                for item in exchange_history
+            )
+            + "."
+        )
+
+    def _summarize_set_price_history(
+        self, set_price_history: Deque[SetPriceHistoryItem]
+    ) -> str:
+        if not set_price_history:
+            return "You have no price change history."
+        return (
+            "You have changed price "
+            + ", ".join(
+                f"{item.item_name}: {int(item.old_price)} -> {int(item.new_price)} at time {item.time}"
+                for item in set_price_history
+            )
+            + "."
+        )
+
+    def _summarize_social_history(
+        self, social_history: Deque[SocialHistoryItem]
+    ) -> str:
+        if not social_history:
+            return "You have no social action history."
+        return (
+            "Your social actions are "
+            + "; ".join(
+                f"{item.action} target_agent_id {item.target_agent_id} at time {item.time} "
+                f"(num_followers: {int(item.num_followers)}, num_follows: {int(item.num_follows)})"
+                for item in social_history
+            )
+            + "."
+        )
+
+    def _summarize_state_evaluation_history(
+        self, state_evaluation_history: Deque[StateEvaluationItem]
+    ) -> str:
+        if not state_evaluation_history:
+            return "You have no state evaluation history."
+        return (
+            "Your state evaluations are "
+            + "; ".join(
+                f"Wealth: {int(item.wealth)} at time {item.time}"
+                for item in state_evaluation_history
+            )
+            + "."
+        )
+
+
 class MemoryHandler:
     """Memory Handler class."""
 
     def __init__(
-        self, config: dict[str, Any], prng: Optional[random.Random] = None
+        self,
+        config: dict[str, Any],
+        prng: Optional[random.Random] = None,
+        registered_classes: list[Type] = [],
     ) -> None:
         """Initialization.
 
         Args:
             config (dict[str, Any]): the configuration for the MemoryHandler. It must contain the key:
                 "memoryLength": defines the maximum length of the memory for each agent.
+                "memorySummarizer": defines the summarizer to use for each type of history.
             prng (random.Random, optional): the pseudo-random number generator to use.
 
         Note:
@@ -272,6 +487,9 @@ class MemoryHandler:
                 "memoryHandler": {
                     "type": "MemoryHandler",
                     "memoryLength": int,
+                    "memorySummarizer": {
+                        "type": "MemorySummarizer",
+                    }
                 }
         """
         self.config: dict[str, Any] = config
@@ -282,11 +500,30 @@ class MemoryHandler:
                 "memoryLength must be specified in the config for MemoryHandler."
             )
         assert 1 <= self.memory_length, "memoryLength must be at least 1."
+        if "memorySummarizer" in self.config:
+            summarizer_config: dict[str, Any] = self.config["memorySummarizer"]
+            if "type" not in summarizer_config:
+                raise ValueError(
+                    "type must be specified in memorySummarizer config for MemoryHandler."
+                )
+            summarizer_type: str = summarizer_config["type"]
+            summarizer_class: Type[MemorySummarizer] = find_class(
+                summarizer_type, registered_classes
+            )
+            self.memory_summarizer: MemorySummarizer = summarizer_class(
+                summarizer_config, prng, registered_classes
+            )
+        else:
+            raise ValueError(
+                "memorySummarizer must be specified in the config for MemoryHandler."
+            )
         self.prng: random.Random = prng if prng is not None else random.Random()
         self.agent_id2memory: dict[int, AgentMemory] = {}
         self.memory_updaters: dict[type[Log], Callable[[Any], None]] = (
             self._build_memory_registry()
         )
+        self.current_time: int | str = -1
+        self.current_time_step: int = -1
 
     def get_memory(self, agent_id: int) -> dict[str, Any]:
         """Summarize and return the memory of the agent with the given agent_id.
@@ -330,108 +567,7 @@ class MemoryHandler:
         return summarized_memory
 
     def summarize_memory(self, agent_memory: AgentMemory) -> dict[str, Any]:
-        summarized_memory: dict[str, Any] = {
-            "memory_length": f"Max memory length is {self.memory_length}.",
-            "move_history": "",
-            "consumption_history": "",
-            "purchase_history": "",
-            "sale_history": "",
-            "exchange_history": "",
-            "set_price_history": "",
-            "social_history": "",
-            "state_evaluation_history": "",
-        }
-        summarized_memory["move_history"] = self._summarize_move_history(
-            agent_memory.move_history
-        )
-        summarized_memory["consumption_history"] = self._summarize_consumption_history(
-            agent_memory.consumption_history
-        )
-        summarized_memory["purchase_history"] = self._summarize_purchase_history(
-            agent_memory.purchase_history
-        )
-        summarized_memory["sale_history"] = self._summarize_sale_history(
-            agent_memory.sale_history
-        )
-        summarized_memory["exchange_history"] = self._summarize_exchange_history(
-            agent_memory.exchange_history
-        )
-        summarized_memory["set_price_history"] = self._summarize_set_price_history(
-            agent_memory.set_price_history
-        )
-        summarized_memory["social_history"] = self._summarize_social_history(
-            agent_memory.social_history
-        )
-        summarized_memory["state_evaluation_history"] = (
-            self._summarize_state_evaluation_history(
-                agent_memory.state_evaluation_history
-            )
-        )
-        return summarized_memory
-
-    def _summarize_move_history(self, move_history: Deque[MoveHistoryItem]) -> Any:
-        return "You have moved to " + " -> ".join(
-            f"{item.pos}" for item in move_history
-        )
-
-    def _summarize_consumption_history(
-        self, consumption_history: Deque[ConsumptionHistoryItem]
-    ) -> Any:
-        return "You have consumed " + ", ".join(
-            f"{item.item_name} x {int(item.quantity)} at {item.time}"
-            for item in consumption_history
-        )
-
-    def _summarize_purchase_history(
-        self, purchase_history: Deque[PurchaseHistoryItem]
-    ) -> Any:
-        return "You have purchased " + ", ".join(
-            f"{item.item_name} x {int(item.quantity)} at "
-            + f"{int(item.price)} from agent_id {item.from_agent_id} at {item.time}"
-            for item in purchase_history
-        )
-
-    def _summarize_sale_history(self, sale_history: Deque[SaleHistoryItem]) -> Any:
-        return "You have sold " + ", ".join(
-            f"{item.item_name} x {int(item.quantity)} at {int(item.price)} "
-            + f"to agent_id {item.to_agent_id} at {item.time}"
-            for item in sale_history
-        )
-
-    def _summarize_exchange_history(
-        self, exchange_history: Deque[ExchangeHistoryItem]
-    ) -> Any:
-        return "You have exchanged " + "; ".join(
-            f"give {item.give_item_name} x {int(item.give_item_quantity)}, "
-            + f"get {item.get_item_name} x {int(item.get_item_quantity)} "
-            + f"with agent_id {item.counterparty_id} at {item.time}"
-            for item in exchange_history
-        )
-
-    def _summarize_set_price_history(
-        self, set_price_history: Deque[SetPriceHistoryItem]
-    ) -> Any:
-        return "You have changed price " + ", ".join(
-            f"{item.item_name}: {int(item.old_price)} -> {int(item.new_price)} at {item.time}"
-            for item in set_price_history
-        )
-
-    def _summarize_social_history(
-        self, social_history: Deque[SocialHistoryItem]
-    ) -> Any:
-        return "Your social actions are " + "; ".join(
-            f"{item.action} target_agent_id {item.target_agent_id} at {item.time} "
-            + f"(num_followers: {int(item.num_followers)}, num_follows: {int(item.num_follows)})"
-            for item in social_history
-        )
-
-    def _summarize_state_evaluation_history(
-        self, state_evaluation_history: Deque[StateEvaluationItem]
-    ) -> Any:
-        return "Your state evaluations are " + "; ".join(
-            f"Wealth: {int(item.wealth)} at {item.time}"
-            for item in state_evaluation_history
-        )
+        return self.memory_summarizer.summarize_memory(agent_memory)
 
     def _build_memory_registry(self) -> dict[type[Log], Callable[[Any], None]]:
         """Build a dispatch dictionary that maps log types to their corresponding memory update handlers.
@@ -468,10 +604,21 @@ class MemoryHandler:
             See also:
                 econsimulacra.envs.base.Environment.remember_log(log: Log)
         """
+        self._update_time(log)
         for log_type, handler in self.memory_updaters.items():
             if isinstance(log, log_type):
                 handler(log)
                 return
+
+    def _update_time(self, log: Log) -> None:
+        """Update the current time and time step based on the log."""
+        t: Optional[int | str] = getattr(log, "time", None)
+        time_step: Optional[int] = getattr(log, "time_step", None)
+        if t is not None:
+            self.current_time = t
+        if time_step is not None:
+            self.current_time_step = time_step
+        self.memory_summarizer.sync_time(self.current_time, self.current_time_step)
 
     def _process_agent_generation_log(self, log: AgentGenerationLog) -> None:
         """Process the AgentGenerationLog to initialize AgentMemory for the generated agent.
@@ -517,7 +664,7 @@ class MemoryHandler:
             raise ValueError(
                 f"Agent with id {agent_id} already has a position assigned in memory."
             )
-        move_history.append(MoveHistoryItem(pos=log.pos, time=None))
+        move_history.append(MoveHistoryItem(pos=log.pos, time=None, time_step=-1))
 
     def _process_move_log(self, log: MoveLog) -> None:
         """Process the MoveLog to update the position of the agent in memory.
@@ -542,7 +689,9 @@ class MemoryHandler:
             raise ValueError(
                 f"Agent with id {agent_id} has a different position in memory ({old_pos}) and in log ({old_pos_in_log})."
             )
-        move_history.append(MoveHistoryItem(pos=log.new_pos, time=log.time))
+        move_history.append(
+            MoveHistoryItem(pos=log.new_pos, time=log.time, time_step=log.time_step)
+        )
 
     def _process_consumption_log(self, log: ConsumptionLog) -> None:
         """Process the ConsumptionLog to update the consumption history of the agent in memory.
@@ -579,6 +728,7 @@ class MemoryHandler:
                 item_name=log.item_name,
                 quantity=log.item_amount,
                 time=log.time,
+                time_step=log.time_step,
             )
         )
 
@@ -687,6 +837,7 @@ class MemoryHandler:
                 quantity=log.accept_amount,
                 price=log.price,
                 time=log.time,
+                time_step=log.time_step,
                 from_agent_id=sale_agent_id,
             )
         )
@@ -728,6 +879,7 @@ class MemoryHandler:
                 quantity=log.accept_amount,
                 price=log.price,
                 time=log.time,
+                time_step=log.time_step,
                 to_agent_id=purchase_agent_id,
             )
         )
@@ -787,6 +939,7 @@ class MemoryHandler:
                 get_item_name=log.get_item_name,
                 get_item_quantity=log.get_item_amount,
                 time=log.time,
+                time_step=log.time_step,
                 counterparty_id=responder_agent_id,
             )
         )
@@ -819,6 +972,7 @@ class MemoryHandler:
                 get_item_name=log.give_item_name,
                 get_item_quantity=log.give_item_amount,
                 time=log.time,
+                time_step=log.time_step,
                 counterparty_id=proposer_agent_id,
             )
         )
@@ -843,6 +997,7 @@ class MemoryHandler:
                 old_price=log.old_price,
                 new_price=log.new_price,
                 time=log.time,
+                time_step=log.time_step,
             )
         )
 
@@ -877,6 +1032,7 @@ class MemoryHandler:
                 action="follow",
                 target_agent_id=log.target_agent_id,
                 time=log.time,
+                time_step=log.time_step,
                 num_followers=log.num_followers,
                 num_follows=log.num_follows,
             )
@@ -902,6 +1058,7 @@ class MemoryHandler:
                 action="unfollow",
                 target_agent_id=log.target_agent_id,
                 time=log.time,
+                time_step=log.time_step,
                 num_followers=log.num_followers,
                 num_follows=log.num_follows,
             )
@@ -924,5 +1081,7 @@ class MemoryHandler:
             agent_memory.state_evaluation_history
         )
         state_evaluation_history.append(
-            StateEvaluationItem(wealth=log.wealth, time=log.time)
+            StateEvaluationItem(
+                wealth=log.wealth, time=log.time, time_step=log.time_step
+            )
         )

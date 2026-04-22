@@ -176,6 +176,10 @@ class TestEnvironment:
         "memoryHandler": {
             "type": "DummyMemoryHandler",
             "memoryLength": 2,
+            "memorySummarizer": {
+                "type": "StressAwareSummarizer",
+                "stressCalculator": {"type": "StressCalculator"},
+            },
         },
         "DummyEvent1": {
             "trigger": {
