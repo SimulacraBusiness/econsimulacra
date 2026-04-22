@@ -51,6 +51,10 @@ class PersonaBuilder(ABC):
         """
         pass
 
+    def get_persona(self, agent_id: int) -> Optional[dict[str, Any]]:
+        """Get the persona for the agent with the given agent_id."""
+        return self.agent_id2persona_dic.get(agent_id)
+
     def get_persona_description(self, agent_id: int) -> str:
         """Get the description of the persona for the agent with the given agent_id."""
         persona_desc: str = "Role-playing as the following persona.\n"
