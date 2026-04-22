@@ -1,13 +1,16 @@
 import random
 from datetime import datetime, timedelta
-from typing import Any, Optional
+from typing import Any, Optional, Type
 
 
 class TimeTranslator:
     """Time Translator class. Usually used as environment service."""
 
     def __init__(
-        self, config: dict[str, Any], prng: Optional[random.Random] = None
+        self,
+        config: dict[str, Any],
+        prng: Optional[random.Random] = None,
+        registered_classes: list[Type] = [],
     ) -> None:
         """Initialization.
 
@@ -43,6 +46,8 @@ class TimeTranslator:
         self.time_delta: timedelta = (
             self.end_datetime - self.start_datetime
         ) / self.num_steps
+        self.prng: random.Random = prng if prng is not None else random.Random()
+        self.registered_classes: list[Type] = registered_classes
 
     def step_to_datetime(self, step: int) -> str:
         """Convert a simulation step to a datetime.
