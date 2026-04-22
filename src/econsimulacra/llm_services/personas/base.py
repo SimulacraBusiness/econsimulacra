@@ -15,7 +15,10 @@ class PersonaBuilder(ABC):
     """
 
     def __init__(
-        self, config: dict[str, Any], prng: Optional[random.Random] = None
+        self,
+        config: dict[str, Any],
+        prng: Optional[random.Random] = None,
+        registered_classes: Optional[dict[str, type]] = None,
     ) -> None:
         """Initialization.
 
@@ -31,6 +34,7 @@ class PersonaBuilder(ABC):
         self.config: dict[str, Any] = config
         self.agent_id2persona_dic: dict[int, dict[str, Any]] = {}
         self.prng: random.Random = prng if prng is not None else random.Random()
+        self.registered_classes: Optional[dict[str, type]] = registered_classes
 
     @abstractmethod
     def build_persona(self, agent_id: int, agent_config: dict) -> None:
