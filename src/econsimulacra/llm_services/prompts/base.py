@@ -2,7 +2,7 @@ import json
 import pathlib
 import random
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Optional, Type
 
 from ..constant import (
     DEFAULT_ACTION_DESCRIPTION,
@@ -19,7 +19,10 @@ class PromptBuilder:
     """
 
     def __init__(
-        self, config: dict[str, Any], prng: Optional[random.Random] = None
+        self,
+        config: dict[str, Any],
+        prng: Optional[random.Random] = None,
+        registered_classes: list[Type] = [],
     ) -> None:
         """Initialization.
 
@@ -37,6 +40,7 @@ class PromptBuilder:
         self.simulation_desc: str = self._get_simulation_description(config)
         self.obs_desc, self.action_desc = self._get_obs_action_description(config)
         self.prng: random.Random = prng if prng is not None else random.Random()
+        self.registered_classes: list[Type] = registered_classes
 
     def build_prompt(self, obs: dict[str, Any]) -> str:
         """Translate the observation into a prompt for LLM input.
