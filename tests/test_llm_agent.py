@@ -1,7 +1,7 @@
 import asyncio
 
 from econsimulacra.agents import AutoReactLLMAgent, LLMAgent
-from econsimulacra.llm_services import Big5PersonaBuilder, LLMClient, PromptBuilder
+from econsimulacra.llm_services import LLMClient, PromptBuilder, ScoredPersonaBuilder
 
 
 class DummyClient(LLMClient):
@@ -9,7 +9,7 @@ class DummyClient(LLMClient):
         return {"response": f"Echo: {prompt}"}
 
 
-class DummpyBig5PersonaBuilder(Big5PersonaBuilder):
+class DummpyBig5PersonaBuilder(ScoredPersonaBuilder):
     def assign_name(self, agent_id: int, default_name: str, config: dict) -> str:
         return f"Dummy{agent_id}"
 
@@ -17,7 +17,18 @@ class DummpyBig5PersonaBuilder(Big5PersonaBuilder):
 class TestLLMAgent:
     def test_init(self):
         prompt_builder = PromptBuilder(config={})
-        persona_builder = Big5PersonaBuilder(config={"maxMagnitude": 5})
+        persona_builder = ScoredPersonaBuilder(
+            config={
+                "maxMagnitude": 5,
+                "attributes": [
+                    "Openness",
+                    "Conscientiousness",
+                    "Extraversion",
+                    "Agreeableness",
+                    "Neuroticism",
+                ],
+            }
+        )
         llm_client = DummyClient(config={"modelName": "dummy"})
         env_service_dic = {
             "promptBuilder": prompt_builder,
@@ -62,7 +73,16 @@ class TestLLMAgent:
             )
             assert agent.agent_name == f"TestAgent{agent_id}"
         env_service_dic["personaBuilder"] = DummpyBig5PersonaBuilder(
-            config={"maxMagnitude": 5}
+            config={
+                "maxMagnitude": 5,
+                "attributes": [
+                    "Openness",
+                    "Conscientiousness",
+                    "Extraversion",
+                    "Agreeableness",
+                    "Neuroticism",
+                ],
+            }
         )
         for agent_id in range(60, 90):
             agent = LLMAgent(
@@ -77,7 +97,18 @@ class TestLLMAgent:
 class TestAutoReactLLMAgent:
     def test_init(self):
         prompt_builder = PromptBuilder(config={})
-        persona_builder = Big5PersonaBuilder(config={"maxMagnitude": 5})
+        persona_builder = DummpyBig5PersonaBuilder(
+            config={
+                "maxMagnitude": 5,
+                "attributes": [
+                    "Openness",
+                    "Conscientiousness",
+                    "Extraversion",
+                    "Agreeableness",
+                    "Neuroticism",
+                ],
+            }
+        )
         llm_client = DummyClient(config={"modelName": "dummy"})
         env_service_dic = {
             "promptBuilder": prompt_builder,
@@ -94,7 +125,18 @@ class TestAutoReactLLMAgent:
 
     def test_judge_reaction(self):
         prompt_builder = PromptBuilder(config={})
-        persona_builder = Big5PersonaBuilder(config={"maxMagnitude": 5})
+        persona_builder = DummpyBig5PersonaBuilder(
+            config={
+                "maxMagnitude": 5,
+                "attributes": [
+                    "Openness",
+                    "Conscientiousness",
+                    "Extraversion",
+                    "Agreeableness",
+                    "Neuroticism",
+                ],
+            }
+        )
         llm_client = DummyClient(config={"modelName": "dummy"})
         env_service_dic = {
             "promptBuilder": prompt_builder,
@@ -138,7 +180,18 @@ class TestAutoReactLLMAgent:
 
     def test_act(self):
         prompt_builder = PromptBuilder(config={})
-        persona_builder = Big5PersonaBuilder(config={"maxMagnitude": 5})
+        persona_builder = DummpyBig5PersonaBuilder(
+            config={
+                "maxMagnitude": 5,
+                "attributes": [
+                    "Openness",
+                    "Conscientiousness",
+                    "Extraversion",
+                    "Agreeableness",
+                    "Neuroticism",
+                ],
+            }
+        )
         llm_client = DummyClient(config={"modelName": "dummy"})
         env_service_dic = {
             "promptBuilder": prompt_builder,
