@@ -8,7 +8,7 @@
         "socialNetwork": "socialNetwork",
         "cashName": "Yen",
         "agents": ["Household", "Retailer", "Restaurant"],
-        "items": ["Yen", "Rice", "Pizza"],
+        "items": ["Yen", "Rice", "Pizza", "Apple"],
         "service": ["promptBuilder", "llmClient", "timeTranslator", "personaBuilder", "memoryHandler"]
     },
     "gridSpace": {
@@ -32,7 +32,8 @@
         "inventory": {
             "Yen": [100000, 200000],
             "Rice": [3, 10],
-            "Pizza": 0
+            "Pizza": 0,
+            "Apple": [0, 5]
         },
         "svgPath": "../../imgs/human.svg",
         "iconScale": 0.2
@@ -46,7 +47,8 @@
         "inventory": {
             "Yen": 1000000,
             "Rice": 10000,
-            "Pizza": 0
+            "Pizza": 0,
+            "Apple": 10000
         },
         "provideInfo4CoLocatedAgents": ["inventory"],
 
@@ -63,7 +65,8 @@
         "inventory": {
             "Yen": 1000000,
             "Pizza": 10000,
-            "Rice": 0
+            "Rice": 0,
+            "Apple": 0
         },
         "provideInfo4CoLocatedAgents": ["inventory"],
         "provideInfo4AllAgents": ["self_pos"],
@@ -78,6 +81,10 @@
         "type": "Item",
         "initialPrice": 1000.0
     },
+    "Apple": {
+        "type": "Item",
+        "initialPrice": 100.0
+    },
     "Pizza": {
         "type": "Item",
         "initialPrice": 1500.0
@@ -87,9 +94,9 @@
     },
     "llmClient": {
         "type": "VLLMClient",
-        "modelName": "meta-llama/Meta-Llama-3-8B-Instruct",
-        "other_choice": "Qwen/Qwen2.5-7B-Instruct, mistralai/Mistral-7B-Instruct-v0.3",
-        "vllmPython": "path_to_vllm/econsimulacra/.venv-vllm/bin/python",
+        "modelName": "Qwen/Qwen2.5-7B-Instruct",
+        "other_choice": "meta-llama/Meta-Llama-3-8B-Instruct, mistralai/Mistral-7B-Instruct-v0.3",
+        "vllmPython": "/home/m2023rhashimoto/econsimulacra/.venv-vllm/bin/python",
         "useGpu": true,
         "gpuIds": [0, 1],
         "isDataParallel": true,
@@ -103,7 +110,7 @@
         "gpuMemoryUtilization": 0.9,
         "modifySchema": true,
         "gridSpace": [50, 50],
-        "items": ["Yen", "Rice", "Pizza"],
+        "items": ["Yen", "Rice", "Pizza", "Apple"],
         "numAgents": 120
     },
     "timeTranslator": {
@@ -113,12 +120,34 @@
         "endDatetime": "2025-10-12 21:00:00"
     },
     "personaBuilder": {
-        "type": "Big5PersonaBuilder",
-        "maxMagnitude": 3
+        "type": "ScoredPersonaBuilder",
+        "attributes": [
+            "Openness",
+            "Conscientiousness",
+            "Extraversion",
+            "Agreeableness",
+            "Neuroticism"
+        ],
+        "maxMagnitude": 3,
+        "personaDescriptionPath": "persona_description.txt"
     },
     "memoryHandler": {
         "type": "MemoryHandler",
-        "memoryLength": 5
+        "memoryLength": 5,
+        "memorySummarizer": {
+            "type": "StressAwareSummarizer",
+            "stressCalculator": {
+                "type": "StressCalculator",
+                "item2Weight": {
+                    "Yen": 0.0, "Rice": 10.0, "Pizza": 8.0, "Apple": 1.0
+                },
+                "maxMagnitude": 100,
+                "targetConsumptionQuantity": 15,
+                "windowSizeForConsumption": 20,
+                "timeDecayForConsumption": 0.9,
+                "toleranceThresholdForStress": 20
+            }
+        }
     },
     "animation": {
         "cellSize": 1,
