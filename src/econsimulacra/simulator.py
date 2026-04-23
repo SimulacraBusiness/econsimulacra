@@ -286,6 +286,13 @@ class SimulationSummarizer:
                         persona_builder_branch.add(
                             f"[green]Max Magnitude[/green]: {max_magnitude}"
                         )
+                    attributes: Optional[list[str]] = getattr(
+                        service, "attributes", None
+                    )
+                    if attributes is not None:
+                        persona_builder_branch.add(
+                            f"[green]Attributes[/green]: {attributes}"
+                        )
                 elif isinstance(service, PromptBuilder):
                     service_branch.add(
                         f"[green]Prompt Builder: {service.__class__.__name__}[/green]"
