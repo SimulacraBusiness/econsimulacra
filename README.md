@@ -112,11 +112,11 @@ The LLM-based agent system is modular and consists of several customizable submo
 - [**LLMClient**](https://github.com/SimulacraBusiness/econsimulacra/blob/main/src/econsimulacra/llm_services/clients/base.py) – manages the underlying language model and inference settings
 - [**PersonaBuilder**](https://github.com/SimulacraBusiness/econsimulacra/blob/main/src/econsimulacra/llm_services/personas/base.py) – assigns role-playing personas to agents
 - [**PromptBuilder**](https://github.com/SimulacraBusiness/econsimulacra/blob/main/src/econsimulacra/llm_services/prompts/base.py) – constructs prompts used for agent reasoning
-- [**MemoryHandler**](https://github.com/SimulacraBusiness/econsimulacra/blob/main/src/econsimulacra/envs/memory.py) - stores and provides each agent the sequence of their experience in the past time steps as memory
+- [**MemoryHandler**](https://github.com/SimulacraBusiness/econsimulacra/blob/main/src/econsimulacra/memory/base.py) - stores and provides each agent the sequence of their experience in the past time steps as memory
 
 By customizing these components, users can easily modify LLM configurations and experiment with different prompting strategies, personas, and model backends without changing the core simulation logic.
 
-## [**Event**](https://github.com/SimulacraBusiness/econsimulacra/blob/main/src/econsimulacra/envss/event.py)
+## [**Event**](https://github.com/SimulacraBusiness/econsimulacra/blob/main/src/econsimulacra/events/base.py)
 
 An **EventManager** is responsible for managing events and triggering them at appropriate times during the simulation. Events can be scheduled based on:
 
@@ -156,6 +156,29 @@ $ export OPENAI_API_KEY="your_api_key"
 }
 ```
 
+### 2. Configure Simulation
+
+An example configuration is provided at: ```config.json```. This file defines simulation parameters (e.g., number of steps), environment settings (e.g., agents, items, space) and LLM-related services (e.g., llm client, prompt settings). You can modify this file to design your own simulation scenario.
+
+### 3. Set Log Output Path
+
+To save simulation logs, set the following environment variable:
+
+```bash
+$ export LOG_TXT_PATH="path/to/output_log.txt"
+```
+
+### 4. Run Simulation
+
+Move to the example directory and execute:
+
+```bash
+$ cd examples/openai
+$ python main.py
+```
+
+In this script, custom ```Event``` class: ```SubsidyEvent``` is implemented. The script will 1) load ```config.json```, 2) generate simulator and register the ```SubsidyEvent``` to the simulator, 3) reset the environment and run the simulation loop, and 4) output logs to the specified path.
+
 ## VLLM
 
 This section explains how to run EconSimulacra by using a vLLM-backed OpenAI-compatible server.
@@ -194,25 +217,3 @@ $ pip install vllm
 ```
 
 
-### 2. Configure Simulation
-
-An example configuration is provided at: ```config.json```. This file defines simulation parameters (e.g., number of steps), environment settings (e.g., agents, items, space) and LLM-related services (e.g., llm client, prompt settings). You can modify this file to design your own simulation scenario.
-
-### 3. Set Log Output Path
-
-To save simulation logs, set the following environment variable:
-
-```bash
-$ export LOG_TXT_PATH="path/to/output_log.txt"
-```
-
-### 4. Run Simulation
-
-Move to the example directory and execute:
-
-```bash
-$ cd examples/openai
-$ python main.py
-```
-
-In this script, custom ```Event``` class: ```SubsidyEvent``` is implemented. The script will 1) load ```config.json```, 2) generate simulator and register the ```SubsidyEvent``` to the simulator, 3) reset the environment and run the simulation loop, and 4) output logs to the specified path.
