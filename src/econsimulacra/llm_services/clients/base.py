@@ -5,7 +5,7 @@ import pathlib
 import random
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Optional, Type
 
 from ..constant import DEFAULT_ACTION_JSON_SCHEMA
 
@@ -22,7 +22,10 @@ class LLMClient(ABC):
     """
 
     def __init__(
-        self, config: dict[str, Any], prng: Optional[random.Random] = None
+        self,
+        config: dict[str, Any],
+        prng: Optional[random.Random] = None,
+        registered_classes: list[Type] = [],
     ) -> None:
         """Initialization.
 
@@ -52,6 +55,7 @@ class LLMClient(ABC):
             raise ValueError("'modelName' must be specified in the LLMClient config.")
         self.model_name: str = config["modelName"]
         self.prng: random.Random = prng if prng is not None else random.Random()
+        self.registered_classes: Optional[list[Type]] = registered_classes
         self._lock = asyncio.Lock()
         self._sem = asyncio.Semaphore(config.get("maxConcurrentGenerations", 4))
 

@@ -102,12 +102,23 @@
         "endDatetime": "2025-10-12 21:00:00"
     },
     "personaBuilder": {
-        "type": "Big5PersonaBuilder",
-        "maxMagnitude": 3
+        "type": "ScoredPersonaBuilder",
+        "attributes": [
+            "Openness",
+            "Conscientiousness",
+            "Extraversion",
+            "Agreeableness",
+            "Neuroticism"
+        ],
+        "maxMagnitude": 3,
+        "personaDescriptionPath": "persona_description.txt"
     },
     "memoryHandler": {
         "type": "MemoryHandler",
-        "memoryLength": 3
+        "memoryLength": 3,
+        "memorySummarizer": {
+            "type": "MemorySummarizer"
+        }
     },
     "provideSubsidy": {
         "type": "SubsidyEvent",

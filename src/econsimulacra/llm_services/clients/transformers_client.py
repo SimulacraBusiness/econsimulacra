@@ -1,6 +1,6 @@
 import asyncio
 import random
-from typing import Any, Callable, Optional, cast
+from typing import Any, Callable, Optional, Type, cast
 
 import torch
 from outlines import generate, models
@@ -12,7 +12,10 @@ class TransformersClient(LLMClient):
     """Transformers client using Outlines for structured generation."""
 
     def __init__(
-        self, config: dict[str, Any], prng: Optional[random.Random] = None
+        self,
+        config: dict[str, Any],
+        prng: Optional[random.Random] = None,
+        registered_classes: list[Type] = [],
     ) -> None:
         """Initialization.
 
@@ -38,7 +41,7 @@ class TransformersClient(LLMClient):
                 "jsonSchemaPath": "path/to/schema.json"
             }
         """
-        super().__init__(config, prng)
+        super().__init__(config, prng, registered_classes)
         device_str: str = config.get("device", "cuda")
         self.max_concurrent_generations: int = config.get("maxConcurrentGenerations", 2)
         if device_str == "cuda":

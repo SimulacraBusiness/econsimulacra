@@ -11,14 +11,11 @@ from rich.table import Table
 from rich.tree import Tree
 from tqdm import tqdm
 
-from .agents.base import Agent
-from .envs.base import Environment
-from .envs.event import Event
-from .envs.time_translator import TimeTranslator
-from .llm_services.clients import LLMClient
-from .llm_services.personas import PersonaBuilder
-from .llm_services.prompts import PromptBuilder
-from .logs.base import Logger
+from .agents import Agent
+from .envs import Environment, TimeTranslator
+from .events import Event
+from .llm_services import LLMClient, PersonaBuilder, PromptBuilder
+from .logs import Logger
 
 ObsT = TypeVar("ObsT")
 
@@ -288,6 +285,13 @@ class SimulationSummarizer:
                     if max_magnitude is not None:
                         persona_builder_branch.add(
                             f"[green]Max Magnitude[/green]: {max_magnitude}"
+                        )
+                    attributes: Optional[list[str]] = getattr(
+                        service, "attributes", None
+                    )
+                    if attributes is not None:
+                        persona_builder_branch.add(
+                            f"[green]Attributes[/green]: {attributes}"
                         )
                 elif isinstance(service, PromptBuilder):
                     service_branch.add(

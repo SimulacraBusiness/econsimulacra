@@ -6,8 +6,8 @@ from typing import TYPE_CHECKING, Any, Optional
 from ..agents import Agent
 
 if TYPE_CHECKING:
+    from ..memory import MemoryHandler
     from .base import Environment
-    from .memory import MemoryHandler
 
 
 class ObsProvider(ABC):

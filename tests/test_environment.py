@@ -3,9 +3,11 @@ from typing import Any, Callable, Optional
 import pytest
 
 from econsimulacra.agents import Agent
-from econsimulacra.envs import Environment, Event, EventTrigger, MemoryHandler, Order
+from econsimulacra.envs import Environment, Order
+from econsimulacra.events import Event, EventTrigger
 from econsimulacra.items import Item
 from econsimulacra.logs import DictLogger
+from econsimulacra.memory import MemoryHandler
 
 Provider = Callable[[int], Any]
 
@@ -174,6 +176,16 @@ class TestEnvironment:
         "memoryHandler": {
             "type": "DummyMemoryHandler",
             "memoryLength": 2,
+            "memorySummarizer": {
+                "type": "StressAwareSummarizer",
+                "stressCalculator": {
+                    "type": "StressCalculator",
+                    "item2Weight": {
+                        "Yen": 0,
+                        "Rice": 1,
+                    },
+                },
+            },
         },
         "DummyEvent1": {
             "trigger": {

@@ -4,7 +4,8 @@ import os
 import pathlib
 from pathlib import Path
 
-from econsimulacra.envs import Environment, Event
+from econsimulacra.envs import Environment
+from econsimulacra.events import Event
 from econsimulacra.logs import DictLogger
 from econsimulacra.simulator import SimulationSummarizer, Simulator
 

@@ -12,9 +12,12 @@ def find_class(name: str, optional_class_list: Optional[list[Type]] = None) -> T
     _1 = __import__("econsimulacra", globals(), locals())
     _2 = __import__("econsimulacra.agents", globals(), locals(), ["*"])
     _3 = __import__("econsimulacra.envs", globals(), locals(), ["*"])
-    _4 = __import__("econsimulacra.items", globals(), locals(), ["*"])
-    _5 = __import__("econsimulacra.logs", globals(), locals(), ["*"])
-    _6 = __import__("econsimulacra.llm_services", globals(), locals(), ["*"])
+    _4 = __import__("econsimulacra.events", globals(), locals(), ["*"])
+    _5 = __import__("econsimulacra.items", globals(), locals(), ["*"])
+    _6 = __import__("econsimulacra.logs", globals(), locals(), ["*"])
+    _7 = __import__("econsimulacra.llm_services", globals(), locals(), ["*"])
+    _8 = __import__("econsimulacra.memory", globals(), locals(), ["*"])
+    _9 = __import__("econsimulacra.social_networks", globals(), locals(), ["*"])
     candidates_spaces = [*globals().values(), *locals().values()]
     object_class_candidates = [
         getattr(m, name) for m in candidates_spaces if hasattr(m, name)

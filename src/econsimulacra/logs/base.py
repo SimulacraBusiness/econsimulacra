@@ -1,4 +1,4 @@
-from typing import Callable, Optional
+from typing import Any, Callable, Optional
 
 
 class Log:
@@ -38,7 +38,9 @@ class AgentGenerationLog(Log):
         agent_id: int,
         agent_type: str,
         agent_name: str,
+        wealth: float,
         inventory_dic: dict[str, float | int],
+        persona_dic: Optional[dict[str, Any]],
     ) -> None:
         """Initialization.
 
@@ -48,7 +50,11 @@ class AgentGenerationLog(Log):
             agent_id (int): The unique id of the generated agent.
             agent_type (str): The type of the generated agent.
             agent_name (str): The name of the generated agent.
-            inventory_dic (dict[str, float | int]): The initial inventory of the generated agent. The keys are item names, and the values are the amounts.
+            wealth (float): The initial wealth of the generated agent.
+            inventory_dic (dict[str, float | int]): The initial inventory of the generated agent.
+                The keys are item names, and the values are the amounts.
+            persona_dic (Optional[dict[str, Any]]): The persona details of the generated agent.
+                The keys are persona attributes, and the values are the attribute values.
         """
         self.type: str = "agent_generation"
         self.time: int | str = time
@@ -56,13 +62,20 @@ class AgentGenerationLog(Log):
         self.agent_id: int = agent_id
         self.agent_type: str = agent_type
         self.agent_name: str = agent_name
+        self.wealth: float = wealth
         self.inventory_dic: dict[str, float | int] = inventory_dic.copy()
+        self.persona_dic: Optional[dict[str, Any]] = (
+            persona_dic.copy() if persona_dic is not None else None
+        )
 
     def to_dict(self) -> dict[str, object]:
-        """Convert this log object into a dictionary. Overrides the base method to include inventory details.
+        """Convert this log object into a dictionary.
+
+        Overrides the base method to include inventory abd persona details.
 
         Returns:
-            dict[str, object]: The dictionary representation of the log, including inventory details.
+            dict[str, object]: The dictionary representation of the log,
+                including inventory and persona details.
         """
         d: dict[str, object] = {
             "type": self.type,
@@ -71,9 +84,12 @@ class AgentGenerationLog(Log):
             "agent_id": self.agent_id,
             "agent_type": self.agent_type,
             "agent_name": self.agent_name,
+            "wealth": self.wealth,
         }
         for item_name, item_amount in self.inventory_dic.items():
             d[f"inventory_{item_name}"] = item_amount
+        for persona_key, persona_value in (self.persona_dic or {}).items():
+            d[f"persona_{persona_key}"] = persona_value
         return d
 
 
@@ -461,6 +477,8 @@ class StateEvaluationLog(Log):
         time_step: int,
         agent_id: int,
         wealth: float,
+        inventory_dic: dict[str, float | int],
+        persona_dic: Optional[dict[str, Any]],
     ) -> None:
         """Initialization.
 
@@ -469,12 +487,40 @@ class StateEvaluationLog(Log):
             time_step (int): Current integer step index of the environment when the state evaluation occurs.
             agent_id (int): The unique id of the agent being evaluated.
             wealth (float): The wealth of the agent at the time of evaluation.
+            inventory_dic (dict[str, float | int]): The inventory of the agent at the time of evaluation.
+                The keys are item names, and the values are the amounts.
+            persona_dic (Optional[dict[str, Any]]): The persona details of the agent at the time of evaluation.
+                The keys are persona attributes, and the values are the attribute values.
         """
         self.type: str = "state_evaluation"
         self.time: int | str = time
         self.time_step: int = time_step
         self.agent_id: int = agent_id
         self.wealth: float = wealth
+        self.inventory_dic: dict[str, float | int] = inventory_dic.copy()
+        self.persona_dic: Optional[dict[str, Any]] = (
+            persona_dic.copy() if persona_dic is not None else None
+        )
+
+    def to_dict(self) -> dict[str, object]:
+        """Convert this log object into a dictionary. Overrides the base method to include inventory details.
+
+        Returns:
+            dict[str, object]: The dictionary representation of the log,
+                including inventory and persona details.
+        """
+        d: dict[str, object] = {
+            "type": self.type,
+            "time": self.time,
+            "time_step": self.time_step,
+            "agent_id": self.agent_id,
+            "wealth": self.wealth,
+        }
+        for item_name, item_amount in self.inventory_dic.items():
+            d[f"inventory_{item_name}"] = item_amount
+        for persona_key, persona_value in (self.persona_dic or {}).items():
+            d[f"persona_{persona_key}"] = persona_value
+        return d
 
 
 class Logger:

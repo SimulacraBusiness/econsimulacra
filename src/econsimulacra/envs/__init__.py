@@ -1,10 +1,4 @@
 from .base import Environment as Environment
-from .event import (
-    Event as Event,
-    EventManager as EventManager,
-    EventTrigger as EventTrigger,
-)
-from .memory import MemoryHandler as MemoryHandler
 from .obs_providers import (
     FollowCapProvider as FollowCapProvider,
     IncomingOrdersProvider as IncomingOrdersProvider,
@@ -31,24 +25,12 @@ from .obs_providers import (
     VisibleTLProvider as VisibleTLProvider,
 )
 from .order import Order as Order, SwapProposal as SwapProposal
-from .social_networks import (
-    RecommenderSystem as RecommenderSystem,
-    SocialNetwork as SocialNetwork,
-    TwoHopRecommenderSystem as TwoHopRecommenderSystem,
-)
 from .space import GridSpace as GridSpace
 from .time_translator import TimeTranslator as TimeTranslator
 
 __all__ = [
     "Environment",
-    "EventManager",
-    "Event",
-    "EventTrigger",
-    "MemoryHandler",
     "GridSpace",
-    "SocialNetwork",
-    "RecommenderSystem",
-    "TwoHopRecommenderSystem",
     "Order",
     "SwapProposal",
     "TimeTranslator",

@@ -11,7 +11,7 @@ import subprocess
 import sys
 import time
 import urllib.request
-from typing import Any, Optional, cast
+from typing import Any, Optional, Type, cast
 
 from openai import (
     APIConnectionError,
@@ -30,6 +30,7 @@ class VLLMClient(LLMClient):
         self,
         config: dict[str, Any],
         prng: Optional[Any] = None,
+        registered_classes: list[Type] = [],
     ) -> None:
         """Initialization.
 
@@ -93,7 +94,7 @@ class VLLMClient(LLMClient):
                     Additional command-line arguments passed directly to vLLM.
             prng: Optional pseudo-random number generator (not used in this client).
         """
-        super().__init__(config, prng)
+        super().__init__(config, prng, registered_classes)
         self.use_gpu: bool = config.get("useGpu", True)
         if not self.use_gpu:
             raise ValueError("VLLMClient currently supports only useGpu=True.")
