@@ -115,7 +115,7 @@ class Order:
             See also:
                 econsimulacra.envs.base.Environment._remove_expired_orders_and_proposals()
         """
-        return self.expire_in <= 0
+        return self.expire_in <= 0 and self.item_amount > 0
 
     def __repr__(self) -> str:
         return (
@@ -226,7 +226,7 @@ class SwapProposal:
             See also:
                 econsimulacra.envs.base.Environment._remove_expired_orders_and_proposals()
         """
-        return self.expire_in <= 0
+        return self.expire_in <= 0 and self.accept is not True
 
     def __repr__(self) -> str:
         return (
