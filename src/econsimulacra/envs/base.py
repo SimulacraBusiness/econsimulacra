@@ -447,11 +447,6 @@ class Environment(Generic[ObsT]):
         persona_dic: Optional[dict[str, Any]] = None
         if persona_builder is not None:
             persona_dic = persona_builder.get_persona(agent_id=agent_id)
-            if persona_dic is None:
-                raise ValueError(
-                    "PersonaBuilder service provider is available in the environment, "
-                    + f"but persona not found for agent_id {agent_id}."
-                )
         return persona_dic
 
     def _generate_agents(self, agent_keys: list[str]) -> None:
