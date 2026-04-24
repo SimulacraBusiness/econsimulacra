@@ -23,7 +23,7 @@ extensions = [
     "myst_parser",
 ]
 
-autosummary_generate = True
+autosummary_generate = False
 autodoc_member_order = "bysource"
 autodoc_typehints = "description"
 autodoc_typehints_format = "short"
@@ -56,6 +56,12 @@ intersphinx_mapping = {
 
 templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
+
+# Suppress warnings that are acceptable (e.g. network unavailable in CI,
+# pre-existing docstring formatting issues in source files).
+suppress_warnings = [
+    "intersphinx.fetch",   # network not always available in CI
+]
 
 # -- Options for HTML output ---------------------------------------------------
 html_theme = "sphinx_rtd_theme"

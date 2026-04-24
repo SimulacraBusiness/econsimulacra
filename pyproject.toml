@@ -55,6 +55,18 @@ mypy = "^1.19.1"
 ruff = "^0.14.13"
 
 # ---------------------------------------------------------
+# Sphinx documentation dependencies
+# Install with:
+#   poetry install --with docs
+# Used by the docs GitHub Actions workflow
+# ---------------------------------------------------------
+[tool.poetry.group.docs.dependencies]
+sphinx = "^8.2.3"
+sphinx-rtd-theme = "^3.0.2"
+myst-parser = "^4.0.1"
+sphinx-autobuild = "^2024.10.3"
+
+# ---------------------------------------------------------
 # Mypy configuration
 # Animations layer is excluded because manim lacks full type hints
 # ---------------------------------------------------------
