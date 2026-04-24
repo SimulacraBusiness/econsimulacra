@@ -558,10 +558,8 @@ class OthersInventoriesProvider(ObsProviderFromCoLocatedAgents):
                 Each dictionary has the following keys:
                 - "agent_id": The ID of the other agent.
                 - "agent_name": The name of the other agent.
-                - For each item in the other agent's inventory (except cash),
-                    there is a key with the item name, and its value is another dictionary with the following keys:
-                    - "price": The price of the item.
-                    - "amount": The amount of the item in the inventory.
+                - ``<item_name>`` (dict): For each non-cash item in the other agent's inventory,
+                  a key with the item name mapping to ``{"price": float, "amount": float | str}``.
 
         Note:
             The inventories of co-located agents are provided only when the other agents are willing to share

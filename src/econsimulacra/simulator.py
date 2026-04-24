@@ -100,16 +100,13 @@ class Simulator(Generic[ObsT]):
 
             1. The environment is reset with the given random seed.
             2. If a summarizer is configured, the simulation start is recorded.
-            3. For each simulation step:
-            - observations are generated for all agents,
-            - each agent asynchronously computes its action via :meth:`act`,
-            - agents are evaluated in chunks determined by ``parallel_batch_size``,
-                so that multiple agents can act concurrently without launching all
-                coroutines at once,
-            - list-valued actions are recursively converted into tuples for
-                downstream consistency and hashability,
-            - the resulting joint action dictionary is passed to
-                :meth:`self.env.step`.
+            3. For each simulation step: observations are generated for all agents;
+               each agent asynchronously computes its action via ``act()``;
+               agents are evaluated in chunks determined by ``parallel_batch_size``
+               so that multiple agents can act concurrently without launching all
+               coroutines at once; list-valued actions are recursively converted
+               into tuples for downstream consistency and hashability; the resulting
+               joint action dictionary is passed to ``env.step()``.
             4. After all steps are completed, the logger is saved if present.
             5. If a summarizer is configured, the simulation end is recorded.
 
@@ -120,12 +117,11 @@ class Simulator(Generic[ObsT]):
             improving throughput while still preserving step-level synchronization:
             all actions for a step are collected before the environment advances.
 
-            Concurrency Model:
-                Agent actions are computed concurrently within each batch, but the
-                environment transition itself is performed once per step after all
-                actions have been collected. Therefore, this method implements
-                synchronous environment stepping with asynchronous per-agent action
-                generation.
+            Concurrency model: agent actions are computed concurrently within each
+            batch, but the environment transition itself is performed once per step
+            after all actions have been collected. Therefore, this method implements
+            synchronous environment stepping with asynchronous per-agent action
+            generation.
         """
 
         def _chunked(seq: list[int], size: int) -> list[list[int]]:

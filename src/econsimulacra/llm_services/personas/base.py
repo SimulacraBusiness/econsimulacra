@@ -53,8 +53,7 @@ class PersonaBuilder(ABC):
 
         Note:
             Called when LLMAgent is initialized.
-            See also:
-                econsimulacra.agents.llm_agent.LLMAgent._setup_env_services()
+            See also: econsimulacra.agents.llm_agent.LLMAgent._setup_env_services()
         """
         pass
 

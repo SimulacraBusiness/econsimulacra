@@ -1,18 +1,8 @@
 LLM Services
 ============
 
-.. automodule:: econsimulacra.llm_services
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 LLM Clients
 -----------
-
-.. automodule:: econsimulacra.llm_services.clients
-   :members:
-   :undoc-members:
-   :show-inheritance:
 
 .. automodule:: econsimulacra.llm_services.clients.base
    :members:
@@ -37,11 +27,6 @@ LLM Clients
 Prompt Builders
 ---------------
 
-.. automodule:: econsimulacra.llm_services.prompts
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 .. automodule:: econsimulacra.llm_services.prompts.base
    :members:
    :undoc-members:
@@ -49,11 +34,6 @@ Prompt Builders
 
 Persona Builders
 ----------------
-
-.. automodule:: econsimulacra.llm_services.personas
-   :members:
-   :undoc-members:
-   :show-inheritance:
 
 .. automodule:: econsimulacra.llm_services.personas.base
    :members:

@@ -272,9 +272,8 @@ class SocialNetwork:
 
         Note:
             The recommendations are generated based on the recommender system's algorithm.
-            See also:
-                econsimulacra.envs.social_networks.recsys.RecommenderSystem
-                econsimulacra.envs.obs_providers.RecommendedFollowsProvider
+            See also: econsimulacra.social_networks.recsys.RecommenderSystem,
+            econsimulacra.envs.obs_providers.RecommendedFollowsProvider
         """
         recommended_follows: list[int] = self.rec_sys.get_recommendations(
             agent_id=agent_id

@@ -38,9 +38,8 @@ class ConsumptionHistoryItem:
 
     Note:
         This history item is generated based on the ConsumptionLog.
-        See also:
-            econsimulacra.logs.base.ConsumptionLog
-            econsimulacra.envs.base.Environment._consume_items(agent_id: int, consumptions: list[dict[str, Any]])
+        See also: econsimulacra.logs.base.ConsumptionLog,
+        econsimulacra.envs.base.Environment._consume_items(agent_id, consumptions)
     """
 
     item_name: str
@@ -59,12 +58,11 @@ class MoveHistoryItem:
             It can be None for the initial position assigned by the environment, which is based on the SpaceAssignLog.
 
     Note:
+    Note:
         This history item is generated based on the MoveLog and SpaceAssignLog.
-        See also:
-            econsimulacra.logs.base.MoveLog
-            econsimulacra.logs.base.SpaceAssignLog
-            econsimulacra.envs.base.Environment._move(agent_id: int, new_pos: tuple[int, ...])
-            econsimulacra.envs.base.Environment._assign_agent_to_space(agent_id: int, coords: tuple[int, ...])
+        See also: econsimulacra.logs.base.MoveLog, econsimulacra.logs.base.SpaceAssignLog,
+        econsimulacra.envs.base.Environment._move(agent_id, new_pos),
+        econsimulacra.envs.base.Environment._assign_agent_to_space(agent_id, coords)
     """
 
     pos: tuple[int, ...]
@@ -86,9 +84,8 @@ class PurchaseHistoryItem:
     Note:
         This history item is generated based on the OrderReactionLog where the agent is the purchase agent
         and the reaction is accept.
-        See also:
-            econsimulacra.logs.base.OrderReactionLog
-            econsimulacra.envs.base.Environment._process_reactions(agent_id: int, reactions: list[dict[str, Any]])
+        See also: econsimulacra.logs.base.OrderReactionLog,
+        econsimulacra.envs.base.Environment._process_reactions(agent_id, reactions)
     """
 
     item_name: str
@@ -113,9 +110,8 @@ class SaleHistoryItem:
     Note:
         This history item is generated based on the OrderReactionLog where the agent is the sale agent
         and the reaction is accept.
-        See also:
-            econsimulacra.logs.base.OrderReactionLog
-            econsimulacra.envs.base.Environment._process_reactions(agent_id: int, reactions: list[dict[str, Any]])
+        See also: econsimulacra.logs.base.OrderReactionLog,
+        econsimulacra.envs.base.Environment._process_reactions(agent_id, reactions)
     """
 
     item_name: str
@@ -140,9 +136,8 @@ class ExchangeHistoryItem:
 
     Note:
         This history item is generated based on the ProposalReactionLog where the reaction is accept.
-        See also:
-            econsimulacra.logs.base.ProposalReactionLog
-            econsimulacra.envs.base.Environment._process_reactions(agent_id: int, reactions: list[dict[str, Any]])
+        See also: econsimulacra.logs.base.ProposalReactionLog,
+        econsimulacra.envs.base.Environment._process_reactions(agent_id, reactions)
     """
 
     give_item_name: str
@@ -166,9 +161,8 @@ class SetPriceHistoryItem:
 
     Note:
         This history item is generated based on the ChangePriceLog.
-        See also:
-            econsimulacra.logs.base.ChangePriceLog
-            econsimulacra.envs.base.Environment._set_price(agent_id: int, set_prices: list[dict[str, Any]])
+        See also: econsimulacra.logs.base.ChangePriceLog,
+        econsimulacra.envs.base.Environment._set_price(agent_id, set_prices)
     """
 
     item_name: str
@@ -191,14 +185,8 @@ class SocialHistoryItem:
 
     Note:
         This history item is generated based on the FollowLog and UnfollowLog.
-        See also:
-            econsimulacra.logs.base.FollowLog
-            econsimulacra.logs.base.UnfollowLog
-            econsimulacra.envs.base.Environment._act_in_social_network(
-                agent_id: int, tweet: Optional[str],
-                follow_agent_id: Optional[int],
-                unfollow_agent_id: Optional[int],
-            )
+        See also: econsimulacra.logs.base.FollowLog, econsimulacra.logs.base.UnfollowLog,
+        econsimulacra.envs.base.Environment._act_in_social_network(agent_id, tweet, follow_agent_id, unfollow_agent_id)
     """
 
     action: Literal["follow", "unfollow"]
@@ -221,9 +209,8 @@ class StateEvaluationItem:
 
     Note:
         This history item is generated based on the StateEvaluationLog.
-        See also:
-            econsimulacra.logs.base.StateEvaluationLog
-            econsimulacra.envs.base.Environment.evaluate_agent_state(agent_id: int)
+        See also: econsimulacra.logs.base.StateEvaluationLog,
+        econsimulacra.envs.base.Environment.evaluate_agent_state(agent_id)
     """
 
     wealth: float
@@ -541,27 +528,20 @@ class MemoryHandler:
         Note:
             Memory is provided as a part of the observation to the agent.
             econsimulacra.envs.obs_providers.MemoryProvider calls this method to get the memory of the agent.
-            See also:
-                econsimulacra.envs.obs_providers.MemoryProvider
-            The structure of the summarized memory is defined as the following dictionary:
+            See also: econsimulacra.envs.obs_providers.MemoryProvider
+
+            The structure of the summarized memory is::
+
                 {
                     "memory_length": int,
-                    # the maximum number of logs to be stored in memory for the agent.
                     "move_history": "(x0,y0) -> (x1,y1) -> (x2,y2)",
-                    # the history of the agent's movement.
-                    "consumption_history": "item_name1 x quantity1 at time1, item_name2 x quantity2 at time2, ...",
-                    # the history of the agent's consumption.
-                    "purchase_history": "item_name1 x quantity1 at price1 from agent_id1 at time1, item_name2 x quantity2 at price2 from agent_id2 at time2, ...",
-                    # the history of the agent's purchase.
-                    "sale_history": "item_name1 x quantity1 at price1 to agent_id1 at time1, item_name2 x quantity2 at price2 to agent_id2 at time2, ...",
-                    # the history of the agent's sale.
-                    "exchange_history": "give item_name1 x quantity1, get item_name2 x quantity2 with agent_id1 at time1; give item_name3 x quantity3, get item_name4 x quantity4 with agent_id2 at time2; ...",
-                    # the history of the agent's exchange.
-                    "set_price_history": "item_name1: old_price1 -> new_price1 at time1, item_name2: old_price2 -> new_price2 at time2, ...",
-                    # the history of the agent's price change.
-                    "social_history": "follow target_agent_id1 at time1 (num_followers: num_followers1, num_follows: num_follows1); unfollow target_agent_id2 at time2 (num_followers: num_followers2, num_follows: num_follows2); ...",
-                    # the history of the agent's social actions.
-                    "state_evaluation_history": "Wealth: wealth1 at time1; Wealth: wealth2 at time2; ...",
+                    "consumption_history": "item_name x quantity at time, ...",
+                    "purchase_history": "item_name x quantity at price from agent_id at time, ...",
+                    "sale_history": "item_name x quantity at price to agent_id at time, ...",
+                    "exchange_history": "give item_name x quantity, get item_name x quantity with agent_id at time; ...",
+                    "set_price_history": "item_name: old_price -> new_price at time, ...",
+                    "social_history": "follow target_agent_id at time (num_followers: N, num_follows: M); ...",
+                    "state_evaluation_history": "Wealth: wealth at time; ...",
                 }
         """
         if agent_id not in self.agent_id2memory:

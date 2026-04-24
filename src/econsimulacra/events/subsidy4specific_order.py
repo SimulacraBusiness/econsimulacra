@@ -16,8 +16,8 @@ class Subsidy4SpecificOrder(Event):
 
     This event provides subsidies to the agents who purchase
     specific items during specific periods.
-    The subsidy amount is calculated as:
-        subsidy_amount = accept_amount * subsidy_rate.
+    The subsidy amount is calculated as
+    ``subsidy_amount = accept_amount * subsidy_rate``.
     """
 
     def __init__(
