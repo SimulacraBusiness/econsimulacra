@@ -295,6 +295,27 @@ class SelfInventoryProvider(ObsProvider):
         return inventory_dic
 
 
+class SelfSalaryProvider(ObsProvider):
+    """Salary Provider class."""
+
+    def get_obs(self, agent_id: int) -> float | int:
+        """Get the salary of the agent.
+
+        Args:
+            agent_id (int): The ID of the agent for which to get the observation.
+
+        Returns:
+            float | int: The salary of the agent.
+
+        Note:
+            The initial cash amount is regarded as the salary in this implementation.
+            Seealso: econsimulacra.events.ConstantSalary
+        """
+        return self.env.agent_id2initial_inventory[agent_id].get(
+            self.env.cash_name, 0.0
+        )
+
+
 class SelfTweetProvider(ObsProvider):
     """Self Tweet Provider class."""
 

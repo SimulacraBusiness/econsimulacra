@@ -49,6 +49,7 @@ from .obs_providers import (
     SelfIsMovingProvider,
     SelfNameProvider,
     SelfPosProvider,
+    SelfSalaryProvider,
     SelfTweetProvider,
     TimeDeltaProvider,
     TimeProvider,
@@ -472,6 +473,7 @@ class Environment(Generic[ObsT]):
         self.others_ids: list[int] = []
         self.agent_id2agent: dict[int, Agent] = {}
         self.agent_id2agent_name: dict[int, str] = {}
+        self.agent_id2initial_inventory: dict[int, dict[str, int | float]] = {}
         self.agent_name2agent_id: dict[str, int] = {}
         self.agent_id2initial_coords: dict[int, tuple[int, ...]] = {}
         self.agent_id2is_moving: dict[int, bool] = {}
@@ -520,6 +522,7 @@ class Environment(Generic[ObsT]):
                 else:
                     self.others_ids.append(current_agent_id)
                 self.agent_id2agent[current_agent_id] = agent_instance
+                self.agent_id2initial_inventory[current_agent_id] = inventory_dic.copy()
                 self._assign_agent_to_space(
                     agent_id=current_agent_id,
                     coords=agent_config.get("initialCoords", None),
@@ -1792,6 +1795,7 @@ class Environment(Generic[ObsT]):
             "self_is_moving": SelfIsMovingProvider(env=self),
             "self_destination": SelfDestinationProvider(env=self),
             "others_pos": OthersPosProvider(env=self),
+            "self_salary": SelfSalaryProvider(env=self),
             "self_inventory": SelfInventoryProvider(env=self),
             "self_tweet": SelfTweetProvider(env=self),
             "follow_cap": FollowCapProvider(env=self),
