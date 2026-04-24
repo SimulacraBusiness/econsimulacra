@@ -87,10 +87,7 @@ class GridSpace:
             pos (tuple[int, ...]): The position to place the agent at.
 
         Note:
-            See also:
-                econsimulacra.envs.base.Environment._assign_agent_to_space(
-                    agent_id: int, coords: Optional[tuple[int, ...]]
-                )
+            See also: ``econsimulacra.envs.base.Environment._assign_agent_to_space``
         """
         self._check_bounds(pos=pos)
         if agent_id in self.agent_id2pos:
@@ -136,10 +133,7 @@ class GridSpace:
             new_pos (tuple[int, ...]): The new position to move the agent to.
 
         Note:
-            See also:
-                econsimulacra.envs.base.Environment._move(
-                    agent_id: int, where_to_move: Optional[tuple[int, ...] | str]
-                )
+            See also: ``econsimulacra.envs.base.Environment._move``
         """
         self._check_bounds(pos=new_pos)
         if agent_id not in self.agent_id2pos:

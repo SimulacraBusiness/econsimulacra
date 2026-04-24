@@ -1,0 +1,66 @@
+# Configuration file for the Sphinx documentation builder.
+# https://www.sphinx-doc.org/en/master/usage/configuration.html
+
+import os
+import sys
+
+# Make the package importable without a full installation
+sys.path.insert(0, os.path.abspath("../src"))
+
+# -- Project information -------------------------------------------------------
+project = "EconSimulacra"
+copyright = "2024, Simulacra Business Inc."
+author = "Ryuji Hashimoto"
+release = "0.9.0"
+
+# -- General configuration -----------------------------------------------------
+extensions = [
+    "sphinx.ext.autodoc",
+    "sphinx.ext.autosummary",
+    "sphinx.ext.napoleon",
+    "sphinx.ext.viewcode",
+    "sphinx.ext.intersphinx",
+    "myst_parser",
+]
+
+autosummary_generate = True
+autodoc_member_order = "bysource"
+autodoc_typehints = "description"
+autodoc_typehints_format = "short"
+napoleon_google_docstring = True
+napoleon_numpy_docstring = False
+napoleon_use_param = True
+napoleon_use_rtype = True
+
+# Heavy runtime dependencies that are not installed in the docs environment
+autodoc_mock_imports = [
+    "torch",
+    "numpy",
+    "openai",
+    "outlines",
+    "rich",
+    "accelerate",
+    "datasets",
+    "transformers",
+    "statsmodels",
+    "sentencepiece",
+    "protobuf",
+    "tqdm",
+    "manim",
+    "typing_extensions",
+]
+
+intersphinx_mapping = {
+    "python": ("https://docs.python.org/3", None),
+}
+
+templates_path = ["_templates"]
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
+
+# -- Options for HTML output ---------------------------------------------------
+html_theme = "sphinx_rtd_theme"
+html_static_path = ["_static"]
+html_theme_options = {
+    "navigation_depth": 4,
+    "titles_only": False,
+}

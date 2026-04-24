@@ -121,27 +121,38 @@ class EventManager:
 class Event:
     """Event class.
 
-    Usage:
-    1. Define a new event class that inherits from Event and implements the execute method.
-        >>> class MyEvent(Event):
-        >>>     def execute(self, env: Environment, log: Optional[Log] = None) -> None:
-        >>>         # Implement the event logic here
-    2. Write simulation configuration to include the new event.
-        >>> {
-        >>>     "simulation": {
-        >>>         ...
-        >>>         "events": ["myEvent"]
-        >>>     },
-        >>>     "myEvent": {
-        >>>         "type": "MyEvent",
-        >>>         "trigger": {
-        >>>             "at": [1, 5, 10]
-        >>>         }
-        >>>     }
-        >>> }
-    3. Register the new event class in the environment.
-        >>> env.register_classes([MyEvent])
-    4. Run the simulation and observe the event being triggered at the specified time steps.
+    To add a custom event:
+
+    1. Define a subclass implementing ``execute``:
+
+       .. code-block:: python
+
+          class MyEvent(Event):
+              def execute(self, env: Environment, log: Optional[Log] = None) -> None:
+                  # implement event logic here
+                  pass
+
+    2. Add the event to the simulation config:
+
+       .. code-block:: json
+
+          {
+              "simulation": {
+                  "events": ["myEvent"]
+              },
+              "myEvent": {
+                  "type": "MyEvent",
+                  "trigger": {"at": [1, 5, 10]}
+              }
+          }
+
+    3. Register the event class with the environment before running:
+
+       .. code-block:: python
+
+          env.register_classes([MyEvent])
+
+    4. Run the simulation and observe the event being triggered at the specified steps.
     """
 
     def __init__(

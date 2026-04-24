@@ -445,8 +445,7 @@ class IncomingOrdersProvider(ObsProvider):
                 - "agent_name": The name of the agent who placed the order.
                 - "item_name": The name of the item to be sold.
                 - "item_amount": The amount of the item to be sold.
-                - "description": A description of the order, including
-                    the potential earnings for accepting the order.
+                - "description": A description of the order, including the potential earnings for accepting the order.
         """
         incoming_orders: list[dict[str, Any]] = []
         for order in self.env.pending_orders:
@@ -487,8 +486,7 @@ class IncomingSwapProposalsProvider(ObsProvider):
                 - "give_item_amount": The amount of the item to be given.
                 - "get_item_name": The name of the item to be received.
                 - "get_item_amount": The amount of the item to be received.
-                - "description": A description of the swap proposal, including
-                    the potential benefits for accepting the proposal.
+                - "description": A description of the swap proposal, including the potential benefits for accepting the proposal.
         """
 
         incoming_proposals: list[dict[str, Any]] = []
@@ -567,12 +565,13 @@ class OthersInventoriesProvider(ObsProviderFromCoLocatedAgents):
 
         Note:
             The inventories of co-located agents are provided only when the other agents are willing to share
-            their inventory information with co-located agents:
-            i.e. "inventory" is included in the agent config like follows:
-            "Restaurant": {
-                ...
-                "provideInfo4CoLocatedAgents": ["inventory"],
-            }
+            their inventory information with co-located agents,
+            i.e. when ``"inventory"`` is included in the agent's ``provideInfo4CoLocatedAgents`` config::
+
+                "Restaurant": {
+                    ...
+                    "provideInfo4CoLocatedAgents": ["inventory"],
+                }
         """
         inventory_infos: list[dict[str, Any]] = []
         for other_agent_id in self.env.agent_ids:

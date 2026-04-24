@@ -16,8 +16,8 @@ class ConsumptionTax(Event):
 
     This event levies a consumption tax on all orders.
     When an order is executed, the buyer pays an additional tax amount
-    to the government, which is calculated as:
-        tax_amount = execution_amount * tax_rate.
+    to the government, calculated as
+    ``tax_amount = execution_amount * price * tax_rate``.
     """
 
     def __init__(
@@ -30,25 +30,20 @@ class ConsumptionTax(Event):
         Args:
             trigger: The trigger for this event. It should be triggered by logs.
             config: The configuration for this event. It should contain:
-                - taxRates:  A list of dictionaries, each containing:
-                    - "start": The start time of the tax period.
-                    - "end": The end time of the tax period.
-                    - "rate": The tax rate for that period.
-                    The time can be represented as either
-                    int (timestamp) or str (ISO format).
-                    For example:
-                    [
-                        {
-                            "start": "2025-03-01 00:00:00",
-                            "end": "2025-04-30 23:59:59",
-                            "rate": 0.1
-                        },
-                        {
-                            "start": "2025-05-01 00:00:00",
-                            "end": "2025-05-31 23:59:59",
-                            "rate": 0.15
-                        }
-                    ]
+                - taxRates: a list of time-period / rate mappings::
+
+                        [
+                            {
+                                "start": "2025-03-01 00:00:00",
+                                "end":   "2025-04-30 23:59:59",
+                                "rate":  0.1
+                            },
+                            {
+                                "start": "2025-05-01 00:00:00",
+                                "end":   "2025-05-31 23:59:59",
+                                "rate":  0.15
+                            }
+                        ]
         """
         super().__init__(trigger, config)
         self._validate_trigger(trigger)
