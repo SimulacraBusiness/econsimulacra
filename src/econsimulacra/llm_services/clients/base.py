@@ -55,7 +55,7 @@ class LLMClient(ABC):
             raise ValueError("'modelName' must be specified in the LLMClient config.")
         self.model_name: str = config["modelName"]
         self.prng: random.Random = prng if prng is not None else random.Random()
-        self.registered_classes: Optional[list[Type]] = registered_classes
+        self.registered_classes: list[Type] = registered_classes
         self._lock = asyncio.Lock()
         self._sem = asyncio.Semaphore(config.get("maxConcurrentGenerations", 4))
 

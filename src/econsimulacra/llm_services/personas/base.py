@@ -1,7 +1,7 @@
 import json
 import random
 from abc import ABC, abstractmethod
-from typing import Any, Optional
+from typing import Any, Optional, Type
 
 from ..llm_utils import get_description
 
@@ -20,7 +20,7 @@ class PersonaBuilder(ABC):
         self,
         config: dict[str, Any],
         prng: Optional[random.Random] = None,
-        registered_classes: Optional[dict[str, type]] = None,
+        registered_classes: list[Type] = [],
     ) -> None:
         """Initialization.
 
@@ -41,7 +41,7 @@ class PersonaBuilder(ABC):
         self.persona_desc: str = self._get_persona_description(config)
         self.agent_id2persona_dic: dict[int, dict[str, Any]] = {}
         self.prng: random.Random = prng if prng is not None else random.Random()
-        self.registered_classes: Optional[dict[str, type]] = registered_classes
+        self.registered_classes: list[Type] = registered_classes
 
     @abstractmethod
     def build_persona(self, agent_id: int, agent_config: dict) -> None:

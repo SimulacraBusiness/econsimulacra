@@ -1,5 +1,5 @@
 import random
-from typing import Any, Optional
+from typing import Any, Optional, Type
 
 from .base import PersonaBuilder
 
@@ -15,7 +15,7 @@ class ScoredPersonaBuilder(PersonaBuilder):
         self,
         config: dict[str, Any],
         prng: Optional[random.Random] = None,
-        registered_classes: Optional[dict[str, type]] = None,
+        registered_classes: list[Type] = [],
     ) -> None:
         """Initialization.
 
