@@ -1,0 +1,228 @@
+import asyncio
+import random
+from typing import Any
+
+from econsimulacra.agents import Agent
+from econsimulacra.envs import Environment, Order
+from econsimulacra.events import ConstantSalary, EventTrigger
+from econsimulacra.memory import MemoryHandler
+
+
+class DummyHousehold(Agent):
+    async def act(self, obs: dict[str, Any]) -> dict[str, Any]:
+        action_dic: dict[str, Any] = {}
+        is_moving: bool = obs["self_is_moving"]
+        if is_moving:
+            action_dic["move"] = obs["self_destination"]
+        else:
+            pos: tuple[int, int] = obs["self_pos"]
+            retailer_pos: tuple[int, int] = obs["others_pos"][0]["pos"]
+            if pos == obs["self_init_pos"]:
+                if self.inventory_dic["Rice"] >= 75:
+                    action_dic["consumptions"] = [
+                        {"item_name": "Rice", "item_amount": 10}
+                    ]
+                else:
+                    action_dic["move"] = retailer_pos
+            elif pos == retailer_pos:
+                if self.inventory_dic["Rice"] < 75:
+                    info4co_located_agents: list[dict[str, Any]] = obs[
+                        "others_inventory"
+                    ]
+                    retailer_inventory_dic: dict[str, Any] = info4co_located_agents[0]
+                    retailer_id: int = retailer_inventory_dic["agent_id"]
+                    action_dic["orders"] = [
+                        {
+                            "item_name": "Rice",
+                            "item_amount": 10,
+                            "counterparty_id": retailer_id,
+                        }
+                    ]
+                else:
+                    action_dic["move"] = obs["self_pos"]
+            else:
+                action_dic["move"] = obs["self_pos"]
+        action_dic["tweet"] = "Hello, world!"
+        follow_id: int | None = None
+        unfollow_id: int | None = None
+        visible_tl: list[dict[str, Any]] = obs["visible_tl"]
+        follows: set[int] = [tl_dic["agent_id"] for tl_dic in visible_tl]
+        unfollow_id = follows[0] if len(follows) > 0 else None
+        recommended_follows: list[int] = obs["recommended_follows"]
+        follow_id = recommended_follows[0] if len(recommended_follows) > 0 else None
+        action_dic["follow"] = follow_id
+        action_dic["unfollow"] = unfollow_id
+        return action_dic
+
+
+class DummyRetailer(Agent):
+    def self_assign_name(self, config: dict[str, Any]) -> None:
+        self.agent_name = "DummyRetailer"
+
+    def _initialize_inventory(self, config) -> dict[str, float | int]:
+        return {"Yen": 500, "Rice": 10000}
+
+    async def act(self, obs):
+        action_dic: dict[str, list[dict[str, Any]]] = {
+            "reactions": [],
+            "set_prices": [],
+        }
+        item_name2prices: list[dict[str, Any]] = obs["item_name2price"]
+        for d in item_name2prices:
+            item_name: str = d["item_name"]
+            if item_name == "Rice":
+                action_dic["set_prices"].append(
+                    {
+                        "item_name": item_name,
+                        "price": d["price"] * self.prng.uniform(0.99, 1.11),
+                    }
+                )
+        incoming_orders: list[Order] = obs["incoming_orders"]
+        for order_info in incoming_orders:
+            action_dic["reactions"].append(
+                {
+                    "kind": "order",
+                    "id": order_info["order_id"],
+                    "accept_amount": order_info["item_amount"],
+                }
+            )
+        return action_dic
+
+
+class DummyMemoryHandler(MemoryHandler):
+    def get_memory(self, agent_id: int) -> dict[str, Any] | None:
+        return {}
+
+
+class TestConstantSalary:
+    config = {
+        "type": "ConstantSalary",
+        "trigger": {"with": ["AgentGenerationLog"], "every": 10},
+        "unpaidAgentNames": ["Retailer", "Government"],
+    }
+
+    def test_init(self) -> None:
+        event = ConstantSalary(
+            trigger=EventTrigger(
+                config=self.config["trigger"],
+                registered_classes=[],
+                prng=random.Random(),
+            ),
+            config=self.config,
+        )
+        assert event.unpaid_agent_names == ["Retailer", "Government"]
+
+
+class TestConstantSalaryinEnv:
+    config = {
+        "simulation": {
+            "numSteps": 100,
+            "events": ["ConstantSalary"],
+        },
+        "environment": {
+            "space": "gridSpace",
+            "socialNetwork": "socialNetwork",
+            "cashName": "Yen",
+            "agents": ["DummyHousehold", "DummyRetailer", "Government"],
+            "items": ["Yen", "Rice"],
+            "service": ["timeTranslator", "memoryHandler"],
+        },
+        "gridSpace": {
+            "type": "GridSpace",
+            "gridSize": [10, 10],
+        },
+        "socialNetwork": {
+            "type": "SocialNetwork",
+            "followCap": 2,
+            "recSys": {
+                "type": "TwoHopRecommenderSystem",
+                "maxRecommendations": 2,
+            },
+        },
+        "Government": {
+            "type": "Government",
+            "name": "Government",
+            "isHousehold": False,
+            "numAgents": 1,
+            "initialCoords": (0, 0),
+            "inventory": {
+                "Yen": 1000000,
+            },
+        },
+        "DummyHousehold": {
+            "type": "DummyHousehold",
+            "isHousehold": True,
+            "numAgents": 5,
+            "inventory": {
+                "Yen": [100000, 200000],
+                "Rice": [50, 100],
+            },
+        },
+        "DummyRetailer": {
+            "type": "DummyRetailer",
+            "isRichInfoAllowed": True,
+            "isHousehold": False,
+            "numAgents": 1,
+            "initialCoords": (9, 9),
+            "inventory": {
+                "Yen": 100000,
+                "Rice": 1000,
+            },
+            "provideInfo4CoLocatedAgents": ["inventory"],
+            "provideInfo4AllAgents": ["self_pos"],
+        },
+        "Yen": {
+            "type": "Item",
+            "initialPrice": 1.0,
+        },
+        "Rice": {
+            "type": "Item",
+            "initialPrice": 1000.0,
+        },
+        "timeTranslator": {
+            "type": "TimeTranslator",
+            "numSteps": 100,
+            "startDatetime": "2025-01-01 00:00:00",
+            "endDatetime": "2025-01-01 00:10:00",
+        },
+        "memoryHandler": {
+            "type": "DummyMemoryHandler",
+            "memoryLength": 2,
+            "memorySummarizer": {"type": "MemorySummarizer"},
+        },
+        "ConstantSalary": {
+            "type": "ConstantSalary",
+            "trigger": {"with": ["AgentGenerationLog"], "every": 10},
+            "unpaidAgentNames": ["Retailer", "Government"],
+        },
+    }
+
+    def test_step(self) -> None:
+        env = Environment(config=self.config)
+        env.register_classes(
+            [
+                DummyHousehold,
+                DummyRetailer,
+                DummyMemoryHandler,
+            ]
+        )
+        env.reset(seed=42)
+        event = env.event_manager.events[0]
+        agent_id2salary = event.agent_id2salary
+        assert len(agent_id2salary) == len(env.agent_ids)
+        for _ in range(self.config["simulation"]["numSteps"]):
+            all_actions_dic = {}
+            for agent_id in env.agent_ids:
+                agent = env.agent_id2agent[agent_id]
+                obs = env.get_observations(agent_id=agent_id)
+                action_dic = asyncio.run(agent.act(obs=obs))
+                all_actions_dic[agent_id] = action_dic
+            env.step(all_actions_dic=all_actions_dic)
+        for agent_id in env.agent_ids:
+            agent = env.agent_id2agent[agent_id]
+            if "DummyRetailer" in agent.agent_name:
+                assert agent.inventory_dic["Yen"] > 100000
+            elif "Government" in agent.agent_name:
+                assert agent.inventory_dic["Yen"] == 1000000
+            else:
+                assert agent.inventory_dic["Yen"] > 100000
