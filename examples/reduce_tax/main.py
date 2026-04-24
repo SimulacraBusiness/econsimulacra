@@ -50,7 +50,9 @@ class PromptBuilderWithRetailer(PromptBuilder):
         )
         self.obs_desc, self.action_desc = self._get_obs_action_description(config)
         self.prng: random.Random = prng if prng is not None else random.Random()
-        self.registered_classes: list[Type] = registered_classes if registered_classes is not None else []
+        self.registered_classes: list[Type] = (
+            registered_classes if registered_classes is not None else []
+        )
 
     def _get_tupled_simulation_description(
         self, config: dict[str, Any]
@@ -133,6 +135,7 @@ class PromptBuilderWithRetailer(PromptBuilder):
         else:
             return self.simulation_desc4retailers
 
+
 # export LOG_TXT_PATH="log.txt"
 
 
@@ -145,9 +148,7 @@ def conduct_simulation():
         logger=logger,
         summarizer_class=SimulationSummarizer,
     )
-    simulator.register_classes(
-        [PromptBuilderWithRetailer]
-    )
+    simulator.register_classes([PromptBuilderWithRetailer])
     asyncio.run(simulator.simulate(seed=42))
     logs: list[dict] = logger.logs
     log_txt_path: Path = pathlib.Path(os.environ["LOG_TXT_PATH"])
