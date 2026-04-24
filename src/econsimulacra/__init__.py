@@ -1,6 +1,7 @@
 from econsimulacra import (
     agents as agents,
     envs as envs,
+    events as events,
     items as items,
     llm_services as llm_services,
     logs as logs,
@@ -16,6 +17,7 @@ from econsimulacra.simulator import (
 __all__ = [
     "agents",
     "envs",
+    "events",
     "items",
     "llm_services",
     "logs",
