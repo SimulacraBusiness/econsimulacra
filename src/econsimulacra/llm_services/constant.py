@@ -134,6 +134,7 @@ DEFAULT_OBS_DESCRIPTION: dict[str, str] = {
     + "If you are not currently moving, this will be null.",
     "others_pos": "A list of dictionaries representing the positions of other agents in the grid space. "
     + "Each dictionary has 'agent_id', 'agent_name', and 'pos' (coordinates) of the other agent.",
+    "self_salary": "Your salary that is supposed to be paid.",
     "self_inventory": "A dictionary representing your inventory, where the keys are item names and the values are the amounts of each item you have. "
     + "The items included in this inventory constitute the complete set of goods that exist in this world.",
     "self_tweet": "Your most recent tweet. If you have not tweeted yet, this will be null.",

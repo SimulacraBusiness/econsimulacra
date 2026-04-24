@@ -15,8 +15,8 @@ class EventManager:
         self,
         event_names: list[str],
         events_dic: dict[str, dict[str, Any]],
-        registered_classes: list[Type],
         prng: Optional[random.Random] = None,
+        registered_classes: list[Type] = [],
     ):
         """Initialization.
 

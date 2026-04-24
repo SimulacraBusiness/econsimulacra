@@ -1,0 +1,424 @@
+{
+    "simulation": {
+        "numSteps": 182,
+        "parallelBatchSize": 64,
+        "events": ["constantSalary", "constantSupply", "consumptionTax"]
+    },
+    "environment": {
+        "space": "gridSpace",
+        "socialNetwork": "socialNetwork",
+        "cashName": "Yen",
+        "agents": ["Government", "Retailer", "lowRestaurant", "medRestaurant", "highRestaurant", "Household"],
+        "items": [
+            "Yen",
+            "Rice", "Eggs", "Milk", "Bread", "Cooking oil",
+            "Tomatoes", "Cheese", "Chicken", "Beef",
+            "Instant noodles", "Potato chips", "Chocolate",
+            "Premium coffee", "Beer",
+            "Laptop", "Tablet", "Headphones", "Smartwatch",
+            "Ramen", "Curry rice", "Bento",
+            "Pasta", "Casual dinner set",
+            "Sushi", "Course meals", "Wagyu beef steak", "Wine"
+        ],
+        "service": ["promptBuilder", "llmClient", "timeTranslator", "personaBuilder", "memoryHandler"]
+    },
+    "gridSpace": {
+        "type": "GridSpace",
+        "gridSize": [9, 15]
+    },
+    "socialNetwork": {
+        "type": "SocialNetwork",
+        "followCap": 5,
+        "recSys": {
+            "type": "TwoHopRecommenderSystem",
+            "maxRecommendations": 2,
+            "isRandomized": true,
+            "temperature": 0.4
+        }
+    },
+    "Government": {
+        "type": "Government",
+        "name": "Government",
+        "inventory": {
+            "Yen": 10000000000
+        },
+        "tweets": [
+            {
+                "start": "2025-03-01 00:00:00",
+                "end": "2025-04-30 23:59:59",
+                "tweet": "Currently, the consumption tax rate is 10%. We are pleased to announce that the consumption tax rate will be reduced to 5% for the month of March to support our citizens during these challenging times."
+            },
+            {
+                "start": "2025-05-01 00:00:00",
+                "end": "2025-05-31 23:59:59",
+                "tweet": "The consumption tax rate will remain at 5% as part of our ongoing efforts to stimulate economic growth and provide relief to our citizens."
+            }
+        ]
+    },
+    "Household": {
+        "type": "LLMAgent",
+        "isHousehold": true,
+        "numAgents": 115,
+        "inventory": {
+            "Yen": {"expon": [200000]}
+        }
+    },
+    "Retailer": {
+        "type": "AutoReactLLMAgent",
+        "name": "Daily Mart",
+        "isRichInfoAllowed": true,
+        "isHousehold": false,
+        "initialCoords": [5, 8],
+        "numAgents": 1,
+        "inventory": {
+            "Yen": 0,
+            "Rice": 80,
+            "Eggs": 80,
+            "Milk": 80,
+            "Bread": 80,
+            "Cooking oil": 80,
+            "Tomatoes": 40,
+            "Cheese": 40,
+            "Chicken": 40,
+            "Beef": 40,
+            "Instant noodles": 30,
+            "Potato chips": 30,
+            "Chocolate": 30,
+            "Premium coffee": 20,
+            "Beer": 20,
+            "Laptop": 5,
+            "Tablet": 5,
+            "Headphones": 5,
+            "Smartwatch": 5
+        },
+        "provideInfo4CoLocatedAgents": ["inventory"],
+        "provideInfo4AllAgents": ["self_pos"]
+    },
+    "lowRestaurant": {
+        "type": "AutoReactLLMAgent",
+        "name": "QuickBite",
+        "isRichInfoAllowed": true,
+        "isHousehold": false,
+        "initialCoords": [5, 3],
+        "numAgents": 1,
+        "inventory": {
+            "Yen": 0,
+            "Ramen": 40,
+            "Curry rice": 40,
+            "Bento": 40
+        },
+        "provideInfo4CoLocatedAgents": ["inventory"],
+        "provideInfo4AllAgents": ["self_pos"]
+    },
+    "medRestaurant": {
+        "type": "AutoReactLLMAgent",
+        "name": "TableHouse",
+        "isRichInfoAllowed": true,
+        "isHousehold": false,
+        "initialCoords": [5, 11],
+        "numAgents": 1,
+        "inventory": {
+            "Yen": 0,
+            "Pasta": 30,
+            "Casual dinner set": 30
+        },
+        "provideInfo4CoLocatedAgents": ["inventory"],
+        "provideInfo4AllAgents": ["self_pos"]
+    },
+    "highRestaurant": {
+        "type": "AutoReactLLMAgent",
+        "name": "PrimeDiner",
+        "isRichInfoAllowed": true,
+        "isHousehold": false,
+        "initialCoords": [8, 14],
+        "numAgents": 1,
+        "inventory": {
+            "Yen": 0,
+            "Sushi": 20,
+            "Course meals": 20,
+            "Wagyu beef steak": 20,
+            "Wine": 20
+        },
+        "provideInfo4CoLocatedAgents": ["inventory"],
+        "provideInfo4AllAgents": ["self_pos"]
+    },
+    "promptBuilder": {
+        "type": "PromptBuilderWithRetailer",
+        "simulationDescriptionPathForRetailers": "simulation_description_retailers.txt",
+        "simulationDescriptionPathForHouseholds": "simulation_description_households.txt"
+    },
+    "llmClient": {
+        "type": "VLLMClient",
+        "modelName": "Qwen/Qwen2.5-7B-Instruct",
+        "vllmPython": "/home/m2023rhashimoto/sbpm/.venv-vllm/bin/python",
+        "maxConcurrentGenerations": 12,
+        "useGpu": true,
+	    "isDataParallel": true,
+        "gpuIds": [0, 1],
+        "host": "127.0.0.1",
+        "port": 8000,
+        "timeOut": 600,
+        "maxRetries": 3,
+        "serverStartTimeout": 300,
+        "trustRemoteCode": false,
+        "gpuMemoryUtilization": 0.85,
+        "modifySchema": true,
+        "gridSpace": [9, 15],
+        "items": [
+            "Yen",
+            "Rice", "Eggs", "Milk", "Bread", "Cooking oil",
+            "Tomatoes", "Cheese", "Chicken", "Beef",
+            "Instant noodles", "Potato chips", "Chocolate",
+            "Premium coffee", "Beer",
+            "Laptop", "Tablet", "Headphones", "Smartwatch",
+            "Ramen", "Curry rice", "Bento",
+            "Pasta", "Casual dinner set",
+            "Sushi", "Course meals", "Wagyu beef steak", "Wine"
+        ],
+        "numAgents": 120
+    },
+    "timeTranslator": {
+        "type": "TimeTranslator",
+        "numSteps": 184,
+        "startDatetime": "2025-03-01 09:00:00",
+        "endDatetime": "2025-05-31 21:00:00"
+    },
+    "personaBuilder": {
+        "type": "ScoredPersonaBuilder",
+        "attributes": [
+            "Openness",
+            "Conscientiousness",
+            "Extraversion",
+            "Agreeableness",
+            "Neuroticism",
+            "Trust in Government",
+            "Interest in Politics",
+            "Interest in Economics",
+            "Interest in Health",
+            "Interest in Entertainment",
+            "Interest in Daily Life"
+        ],
+        "maxMagnitude": 3,
+        "personaDescriptionPath": "persona_description.txt"
+    },
+    "memoryHandler": {
+        "type": "MemoryHandler",
+        "memoryLength": 5,
+        "memorySummarizer": {
+            "type": "StressAwareSummarizer",
+            "stressCalculator": {
+                "type": "StressCalculator",
+                "item2Weight": {
+                    "Yen": 0.0,
+                    "Rice": 10.0,
+                    "Eggs": 3.0,
+                    "Milk": 1.0,
+                    "Bread": 5.0,
+                    "Cooking oil": 1.0,
+                    "Tomatoes": 3.0,
+                    "Cheese": 3.0,
+                    "Chicken": 5.0,
+                    "Beef": 7.0,
+                    "Instant noodles": 6.0,
+                    "Potato chips": 5.0,
+                    "Chocolate": 2.0,
+                    "Premium coffee": 1.0,
+                    "Beer": 1.0,
+                    "Laptop": 0.0,
+                    "Tablet": 0.0,
+                    "Headphones": 0.0,
+                    "Smartwatch": 0.0,
+                    "Ramen": 10.0,
+                    "Curry rice": 10.0,
+                    "Bento": 8.0,
+                    "Pasta": 10.0,
+                    "Casual dinner set": 15.0,
+                    "Sushi": 15.0,
+                    "Course meals": 20.0,
+                    "Wagyu beef steak": 30.0,
+                    "Wine": 3.0
+                },
+                "maxMagnitude": 100,
+                "targetConsumptionQuantity": 15,
+                "windowSizeForConsumption": 20,
+                "timeDecayForConsumption": 0.9,
+                "toleranceThresholdForStress": 20
+            }
+        }
+    },
+    "constantSalary": {
+        "type": "ConstantSalary",
+        "trigger": {
+            "with": ["AgentGenerationLog"],
+            "every": 60
+        },
+        "unpaidAgentNames": ["Retailer", "Restaurant", "Government"]
+    },
+    "constantSupply": {
+        "type": "ConstantSupply",
+        "trigger": {
+            "with": ["AgentGenerationLog"],
+            "every": 60
+        },
+        "suppliedAgentNames": ["Daily Mart", "QuickBite", "TableHouse", "PrimeDiner"]
+    },
+    "consumptionTax": {
+        "type": "ConsumptionTax",
+        "governmentName": "Government",
+        "trigger": {
+            "with": ["OrderReactionLog"]
+        },
+        "taxRates": [
+            {
+                "start": "2025-03-01 00:00:00",
+                "end": "2025-04-30 23:59:59",
+                "rate": 0.1
+            },
+            {
+                "start": "2025-05-01 00:00:00",
+                "end": "2025-05-31 23:59:59",
+                "rate": 0.05
+            }
+        ]
+    },
+    "Yen": {
+        "type": "Item",
+        "initialPrice": 1.0,
+        "comment": "cash"
+    },
+    "Rice": {
+        "type": "Item",
+        "initialPrice": 500.0,
+        "comment": "necessity"
+    },
+    "Eggs": {
+        "type": "Item",
+        "initialPrice": 250.0,
+        "comment": "necessity"
+    },
+    "Milk": {
+        "type": "Item",
+        "initialPrice": 220.0,
+        "comment": "necessity"
+    },
+    "Bread": {
+        "type": "Item",
+        "initialPrice": 180.0,
+        "comment": "necessity"
+    },
+    "Cooking oil": {
+        "type": "Item",
+        "initialPrice": 400.0,
+        "comment": "necessity"
+    },
+    "Tomatoes": {
+        "type": "Item",
+        "initialPrice": 300.0,
+        "comment": "fresh food"
+    },
+    "Cheese": {
+        "type": "Item",
+        "initialPrice": 600.0,
+        "comment": "fresh food"
+    },
+    "Chicken": {
+        "type": "Item",
+        "initialPrice": 800.0,
+        "comment": "fresh food"
+    },
+    "Beef": {
+        "type": "Item",
+        "initialPrice": 1200.0,
+        "comment": "fresh food"
+    },
+    "Instant noodles": {
+        "type": "Item",
+        "initialPrice": 150.0,
+        "comment": "convenience food"
+    },
+    "Potato chips": {
+        "type": "Item",
+        "initialPrice": 200.0,
+        "comment": "convenience food"
+    },
+    "Chocolate": {
+        "type": "Item",
+        "initialPrice": 250.0,
+        "comment": "convenience food"
+    },
+    "Premium coffee": {
+        "type": "Item",
+        "initialPrice": 600.0,
+        "comment": "luxury food"
+    },
+    "Beer": {
+        "type": "Item",
+        "initialPrice": 600.0,
+        "comment": "luxury food"
+    },
+    "Laptop": {
+        "type": "Item",
+        "initialPrice": 150000.0,
+        "comment": "durable goods"
+    },
+    "Tablet": {
+        "type": "Item",
+        "initialPrice": 70000.0,
+        "comment": "durable goods"
+    },
+    "Headphones": {
+        "type": "Item",
+        "initialPrice": 15000.0,
+        "comment": "durable goods"
+    },
+    "Smartwatch": {
+        "type": "Item",
+        "initialPrice": 30000.0,
+        "comment": "durable goods"
+    },
+    "Ramen": {
+        "type": "Item",
+        "initialPrice": 800.0,
+        "comment": "cheap meal"
+    },
+    "Curry rice": {
+        "type": "Item",
+        "initialPrice": 850.0,
+        "comment": "cheap meal"
+    },
+    "Bento": {
+        "type": "Item",
+        "initialPrice": 850.0,
+        "comment": "cheap meal"
+    },
+    "Pasta": {
+        "type": "Item",
+        "initialPrice": 2000.0,
+        "comment": "mid-range meal"
+    },
+    "Casual dinner set": {
+        "type": "Item",
+        "initialPrice": 2500.0,
+        "comment": "mid-range meal"
+    },
+    "Sushi": {
+        "type": "Item",
+        "initialPrice": 5000.0,
+        "comment": "luxury meal"
+    },
+    "Course meals": {
+        "type": "Item",
+        "initialPrice": 15000.0,
+        "comment": "luxury meal"
+    },
+    "Wagyu beef steak": {
+        "type": "Item",
+        "initialPrice": 20000.0,
+        "comment": "luxury meal"
+    },
+    "Wine": {
+        "type": "Item",
+        "initialPrice": 4000.0,
+        "comment": "luxury meal"
+    }
+}
