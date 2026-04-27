@@ -1,11 +1,6 @@
 Agents
 ======
 
-.. automodule:: econsimulacra.agents
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 Agent Base Class
 ----------------
 

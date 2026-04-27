@@ -1,11 +1,6 @@
 Environment
 ===========
 
-.. automodule:: econsimulacra.envs
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 Environment Base Class
 ----------------------
 

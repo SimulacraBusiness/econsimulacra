@@ -1,11 +1,6 @@
 Logs
 ====
 
-.. automodule:: econsimulacra.logs
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 Log Base Class
 --------------
 
