@@ -7,6 +7,11 @@ EconSimulacra
    :target: https://pypi.org/project/econsimulacra
 .. image:: https://github.com/SimulacraBusiness/econsimulacra/actions/workflows/ci.yml/badge.svg
    :target: https://github.com/SimulacraBusiness/econsimulacra/actions/workflows/ci.yml
+.. image:: https://github.com/SimulacraBusiness/econsimulacra/actions/workflows/release.yml/badge.svg
+   :target: https://github.com/SimulacraBusiness/econsimulacra/actions/workflows/release.yml
+.. image:: https://img.shields.io/badge/code%20style-black-000000.svg
+   :target: https://github.com/psf/black
+
 
 **EconSimulacra** is a simulation platform for studying complex socio-economic
 systems with large language model (LLM) agents.  The framework enables
