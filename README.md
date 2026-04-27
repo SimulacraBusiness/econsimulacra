@@ -30,6 +30,10 @@ By combining agent-based modeling with LLM reasoning, EconSimulacra allows resea
 - ⚡ Parallel simulation execution
 - 🧩 Modular architecture for extensibility
 
+# Documentations & User Guides
+
+Documentations are available on [GitHub Pages](https://simulacrabusiness.github.io/econsimulacra/index.html#).
+
 # Install
 
 This package is available on pypi as [`econsimulacra`](https://pypi.org/project/econsimulacra/)
