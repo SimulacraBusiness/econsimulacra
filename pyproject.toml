@@ -54,17 +54,11 @@ pytest-cov = "^7.0.0"
 mypy = "^1.19.1"
 ruff = "^0.14.13"
 
-# ---------------------------------------------------------
-# Sphinx documentation dependencies
-# Install with:
-#   poetry install --with docs
-# Used by the docs GitHub Actions workflow
-# ---------------------------------------------------------
 [tool.poetry.group.docs.dependencies]
-sphinx = "^8.2.3"
-sphinx-rtd-theme = "^3.0.2"
-myst-parser = "^4.0.1"
-sphinx-autobuild = "^2024.10.3"
+sphinx = { version = "^8.2.3", python = ">=3.11,<3.13" }
+sphinx-rtd-theme = { version = "^3.0.2", python = ">=3.11,<3.13" }
+myst-parser = { version = "^4.0.1", python = ">=3.11,<3.13" }
+sphinx-autobuild = { version = "^2024.10.3", python = ">=3.11,<3.13" }
 
 # ---------------------------------------------------------
 # Mypy configuration
