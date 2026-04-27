@@ -60,7 +60,7 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 # Suppress warnings that are acceptable (e.g. network unavailable in CI,
 # pre-existing docstring formatting issues in source files).
 suppress_warnings = [
-    "intersphinx.fetch",   # network not always available in CI
+    "intersphinx.fetch",  # network not always available in CI
 ]
 
 # -- Options for HTML output ---------------------------------------------------
