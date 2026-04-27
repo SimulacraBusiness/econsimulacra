@@ -28,24 +28,23 @@ class EventManager:
             prng: An optional random number generator for reproducibility.
 
         Note:
-            events_dic example:
-            {
-                "event_name_1": { # must be one of the event_names
-                    "type": ..., # required
-                    "trigger": { # config for EventTrigger. If not provided, the event will never be triggered.
-                        "at": tuple[int], # optional
-                        "every": int, # optional
-                        "with": tuple["Log"], # optional
-                        "between": tuple[int, int], # optional,
-                        "probability": float, # optional
+            events_dic example::
+
+                {
+                    "event_name_1": {
+                        "type": ...,
+                        "trigger": {
+                            "at": tuple[int],
+                            "every": int,
+                            "with": tuple["Log"],
+                            "between": tuple[int, int],
+                            "probability": float,
+                        },
+                        "other_parameters": ...
                     },
-                    "other_parameters": ...
-                },
-                "event_name_2": {
+                    "event_name_2": {...},
                     ...
-                },
-                ...
-            }
+                }
         """
         self.prng = prng if prng is not None else random.Random()
         self.events: list[Event] = self._generate_events(

@@ -22,11 +22,9 @@ class LLMAgent(Agent[dict[str, Any]]):
                 and may include:
                 - "personaBuilder": (optional) an instance of PersonaBuilder for constructing persona prompts.
 
-        See also:
-            econsimulacra.envs.base._generate_service_providers
-            econsimulacra.llm_services.clients
-            econsimulacra.llm_services.prompts
-            econsimulacra.llm_services.personas
+        See also: econsimulacra.envs.base._generate_service_providers,
+        econsimulacra.llm_services.clients, econsimulacra.llm_services.prompts,
+        econsimulacra.llm_services.personas
         """
         if "llmClient" not in env_service_dic:
             raise ValueError(

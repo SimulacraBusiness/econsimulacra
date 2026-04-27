@@ -29,8 +29,7 @@ class SocialNetwork:
             prng (Random): A pseudo random number generator.
 
         Note:
-            See also:
-                econsimulacra.envs.base.Environment._generate_social_network(social_network_key: str)
+            See also: econsimulacra.envs.base.Environment._generate_social_network(social_network_key)
         """
         self.config: dict[str, Any] = config
         self.prng: Random = prng
@@ -83,8 +82,7 @@ class SocialNetwork:
             agent_id (int): The agent ID for the agent to be added.
 
         Note:
-            See also:
-                econsimulacra.envs.base.Environment._generate_agents
+            See also: econsimulacra.envs.base.Environment._generate_agents
         """
         if agent_id in self.nodes:
             raise ValueError(
@@ -105,8 +103,7 @@ class SocialNetwork:
             message (str): The content of the tweet.
 
         Note:
-            See also:
-                econsimulacra.envs.base.Environment._act_in_social_network
+            See also: econsimulacra.envs.base.Environment._act_in_social_network
         """
         if agent_id not in self.nodes:
             raise ValueError(f"Agent ID {agent_id} not found in the social network.")
@@ -121,8 +118,7 @@ class SocialNetwork:
             target_agent_id (int): The agent ID to be followed.
 
         Note:
-            See also:
-                econsimulacra.envs.base.Environment._act_in_social_network
+            See also: econsimulacra.envs.base.Environment._act_in_social_network
         """
         if agent_id not in self.nodes:
             raise ValueError(f"Agent ID {agent_id} not found in the social network.")
@@ -149,8 +145,7 @@ class SocialNetwork:
             target_agent_id (int): The agent ID to be unfollowed.
 
         Note:
-            See also:
-                econsimulacra.envs.base.Environment._act_in_social_network
+            See also: econsimulacra.envs.base.Environment._act_in_social_network
         """
         if agent_id not in self.nodes:
             raise ValueError(f"Agent ID {agent_id} not found in the social network.")

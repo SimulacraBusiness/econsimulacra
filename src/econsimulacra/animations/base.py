@@ -37,44 +37,26 @@ class Animator(Scene):
                 agent_id2name_dic[agent_id] = agent_name
         return agent_id2name_dic
 
-    def _get_log_configs(self, config: dict[str, Any]):
+    def _get_log_configs(self, config: dict[str, Any]) -> None:
         """Get additional configurations from the config file.
 
-        config example:
-        {
-            "simulation": {
-                "numSteps": int,
-            },
-            "environment": {
-                "gridSpace": [int, ...],
-                "cashName": str,
-                "agents": ["Household", "Retailer", "Restaurant", ...],
-                "items": ["Yen", "Rice", ...]
-            }
-            "Household": {
-                "svgPath": str, # Optional, default None
-                "isHousehold": bool,
-                "numAgents": int, # Optional, default 1
-                ...
-            },
-            "Retailer": {
-                "svgPath": str, # Optional, default None
-                "isHousehold": bool, # Optional, default False
-                ...
-            },
-            "Restaurant": {
-                "svgPath": str, # Optional, default None
-                "isHousehold": bool, # Optional, default False
-                ...
-            },
-            "annimation": {
-                "cellSize": int, # Optional, default 1
-                "drawMarginCells": int, # Optional, default 2
-            }
-        }
-
         Args:
-            config (_type_): _description_
+            config (dict[str, Any]): The full simulation config dict. Expected keys include
+                ``simulation.numSteps``, ``environment.agents``, and per-agent-type dicts
+                with optional ``svgPath`` and ``iconScale`` entries.
+
+        Example config structure::
+
+            {
+                "simulation": {"numSteps": int},
+                "environment": {
+                    "gridSpace": [int, ...],
+                    "cashName": str,
+                    "agents": ["Household", "Retailer", ...]
+                },
+                "Household": {"svgPath": str, "isHousehold": bool, ...},
+                "animation": {"cellSize": int, "drawMarginCells": int}
+            }
         """
         assert "simulation" in config
         assert "numSteps" in config["simulation"]

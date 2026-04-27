@@ -31,17 +31,17 @@ class ConstantSalary(Event):
             config: The configuration for this event. It should contain:
                 - unpaidAgentNames: The list of agent names who
                     do not receive the salary.
-                Example:
-                "constantSalary": {
-                    "type": "ConstantSalary",
-                    "trigger": {
-                        "with": ["AgentGenerationLog"],
-                        "every": 60
-                    },
-                    "unpaidAgentNames": [
-                        "Retailer", "Restaurant", "Government"
-                    ]
-                },
+
+                Example::
+
+                    "constantSalary": {
+                        "type": "ConstantSalary",
+                        "trigger": {
+                            "with": ["AgentGenerationLog"],
+                            "every": 60
+                        },
+                        "unpaidAgentNames": ["Retailer", "Restaurant", "Government"]
+                    }
 
         Note:
             The salary amount for each agent is stored in agent_id2salary.

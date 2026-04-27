@@ -39,15 +39,17 @@ def calc_stress_from_consumption_history(
     Note:
         The stress level is calculated based on the quantity of items consumed
         within the specified time window, weighted by their respective weights,
-        and decayed over time. The quantity of items consumed are calculated
-        as follows:
+        and decayed over time. The weighted quantity is::
+
             sum(
-                time_decay ** (current_time_step - consumption_time_step)}
+                time_decay ** (current_time_step - consumption_time_step)
                 * weight_on_the_item * quantity
                 for each consumption event in the time window
             )
-        If the calcluated item quantity exceeds or under the target quantity,
-        the stress level is calculated as:
+
+        If the calculated quantity exceeds or falls under the target quantity,
+        the stress level is::
+
             stress_level = min(
                 max_stress,
                 int(
@@ -55,10 +57,13 @@ def calc_stress_from_consumption_history(
                     * max_stress
                 ),
             )
+
         Corner cases:
-            - If consumption_history is empty, the stress level is:
-                - max_stress if current_time_step >= window_size
-                - 0 otherwise
+
+        - If ``consumption_history`` is empty and ``current_time_step >= window_size``,
+          stress level equals ``max_stress``.
+        - If ``consumption_history`` is empty and ``current_time_step < window_size``,
+          stress level is 0.
     """
     quantity: float = 0.0
     for history_item in consumption_history:

@@ -42,12 +42,14 @@ class OpenAIClient(LLMClient):
                 - "timeOut": timeout for API calls in seconds (optional, default is 30).
                 - "maxRetries": max retries for transient failures (optional, default is 3).
 
-        Note: config example:
-            {
-                "type": "OpenAIClient",
-                "modelName": "gpt-4o-mini",
-                "apiKey": "your_openai_api_key" # Optional if OPENAI_API_KEY environment variable is set
-            }
+        Note:
+            config example::
+
+                {
+                    "type": "OpenAIClient",
+                    "modelName": "gpt-4o-mini",
+                    "apiKey": "your_openai_api_key"
+                }
         """
         super().__init__(config, prng, registered_classes)
         api_key: Optional[str] = config.get("apiKey", os.getenv("OPENAI_API_KEY"))

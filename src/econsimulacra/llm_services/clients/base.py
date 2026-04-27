@@ -46,9 +46,8 @@ class LLMClient(ABC):
 
         Note:
             The LLMClient class is used as an environment service, and used by the LLMAgent.
-            See also:
-                econsimulacra.envs.base.Environment._generate_service_providers(service_provider_keys: list[str])
-                econsimulacra.agents.llm_agent.LLMAgent
+            See also: econsimulacra.envs.base.Environment._generate_service_providers,
+            econsimulacra.agents.llm_agent.LLMAgent
         """
         self.config: dict[str, Any] = config
         if "modelName" not in config:

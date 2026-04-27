@@ -31,15 +31,17 @@ class ConstantSupply(Event):
             config: The configuration for this event. It should contain:
                 - suppliedAgentNames: The list of agent names who
                     receive the supply.
-                Example:
-                "constantSupply": {
-                    "type": "ConstantSupply",
-                    "trigger": {
-                        "with": ["AgentGenerationLog"],
-                        "every": 60
-                    },
-                    "suppliedAgentNames": ["Daily Mart", "QuickBite", "TableHouse", "PrimeDiner"]
-                },
+
+                Example::
+
+                    "constantSupply": {
+                        "type": "ConstantSupply",
+                        "trigger": {
+                            "with": ["AgentGenerationLog"],
+                            "every": 60
+                        },
+                        "suppliedAgentNames": ["Daily Mart", "QuickBite"]
+                    }
 
         Note:
             The supply amount for each agent is stored in agent_id2supply_dic.

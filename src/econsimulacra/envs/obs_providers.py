@@ -555,11 +555,9 @@ class OthersInventoriesProvider(ObsProviderFromCoLocatedAgents):
 
         Returns:
             list[dict[str, Any]]: A list of inventories of other co-located agents as dictionaries.
-                Each dictionary has the following keys:
-                - "agent_id": The ID of the other agent.
-                - "agent_name": The name of the other agent.
-                - ``<item_name>`` (dict): For each non-cash item in the other agent's inventory,
-                  a key with the item name mapping to ``{"price": float, "amount": float | str}``.
+                Each dict contains ``"agent_id"`` (int), ``"agent_name"`` (str), and one key per
+                non-cash item in the agent's inventory whose value is
+                ``{"price": float, "amount": float | str}``.
 
         Note:
             The inventories of co-located agents are provided only when the other agents are willing to share

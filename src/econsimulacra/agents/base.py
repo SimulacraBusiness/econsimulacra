@@ -35,36 +35,24 @@ class Agent(ABC, Generic[ObsT]):
             config (Optional[dict[str, Any]], optional): configuration dictionary for the agent. Defaults to None.
 
         Note:
-            config example:
-            {
-                "isHousehold": True,
-                # If isHousehold, the agent is allowed to move, otherwise, the agent is allowed to set price of goods it has.
-                "numAgents": 10,
-                "name": str, # optional, if not provided, the agent name will be agent_name
-                "inventory": {
-                    "Yen": [1000000, 10000000],
-                    "Rice": [3, 10],
-                    "Fish": [3, 10]
-                },
-                "isRichInfoAllowed": False,
-                "requestObs": ["all"],
-                # If set "all", the agent tries to request all available information from the environment
-                # built-in options: "time", "timedelta", "self_agent_id", "self_name", "memory",
-                # "self_pos", "self_init_pos", "self_is_moving",
-                # "self_destination", "others_pos", "self_inventory
-                # "self_tweet", "follow_cap", "num_followers", "num_follows", "visible_tl", "recommended_follows",
-                # "incoming_orders", "incoming_proposals",
-                # "others_inventory", <- usually provided for co-located agents.
-                # "item_name2price" <- provided if the agent.is_rich_info_allowed.
-                "provideInfo4AllAgents": [],
-                # built-in option: "self_pos" <- If set, every other agents know where the agent is at each step.
-                "provideInfo4CoLocatedAgents": [],
-                # built-in option: "inventory" <- If set, co-located agents know the inventory of the agent at each step.
-                "provideInfo4AllowedAgents": [],
-                # built-in option: None,
-                "personaConfig": {}
-                # optional, see also econsimulacra.agents.llm_agent.LLMAgent.self_assign_name
-            }
+            config example::
+
+                {
+                    "isHousehold": True,
+                    "numAgents": 10,
+                    "name": "AgentName",
+                    "inventory": {
+                        "Yen": [1000000, 10000000],
+                        "Rice": [3, 10],
+                        "Fish": [3, 10]
+                    },
+                    "isRichInfoAllowed": False,
+                    "requestObs": ["all"],
+                    "provideInfo4AllAgents": [],
+                    "provideInfo4CoLocatedAgents": [],
+                    "provideInfo4AllowedAgents": [],
+                    "personaConfig": {}
+                }
         """
         self.agent_id: int = agent_id
         self.agent_type: str = self.__class__.__name__
@@ -118,9 +106,8 @@ class Agent(ABC, Generic[ObsT]):
     def _setup_env_services(self, env_service_dic: dict[str, Any]) -> None:
         """setup environment services for the agent based on self.service_dic.
 
-        See also:
-            econsimulacra.envs.base._generate_service_providers
-            econsimulacra.agents.LLMAgent
+        See also: econsimulacra.envs.base._generate_service_providers,
+        econsimulacra.agents.LLMAgent
         """
         pass
 

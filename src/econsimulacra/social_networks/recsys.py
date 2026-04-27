@@ -230,13 +230,11 @@ class TwoHopRecommenderSystem(RecommenderSystem):
         Args:
             agent_id (int): The unique identifier of the agent for whom to generate recommendations.
 
-
         Note:
             The recommendation score for a candidate agent is based on:
             1. The number of two-hop paths from the given agent to the candidate (higher is better).
             2. The number of followers the candidate agent has (higher is better).
-            3. A random tie-breaker (only if ``self.is_randomized`` is True,
-               controlled by ``self.temperature``).
+            3. A random tie-breaker, when ``self.is_randomized`` is True (controlled by ``self.temperature``).
 
             Agents that are already followed by the given agent are excluded from the recommendations.
         """

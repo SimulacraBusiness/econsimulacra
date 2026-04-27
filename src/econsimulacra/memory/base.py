@@ -58,7 +58,6 @@ class MoveHistoryItem:
             It can be None for the initial position assigned by the environment, which is based on the SpaceAssignLog.
 
     Note:
-    Note:
         This history item is generated based on the MoveLog and SpaceAssignLog.
         See also: econsimulacra.logs.base.MoveLog, econsimulacra.logs.base.SpaceAssignLog,
         econsimulacra.envs.base.Environment._move(agent_id, new_pos),

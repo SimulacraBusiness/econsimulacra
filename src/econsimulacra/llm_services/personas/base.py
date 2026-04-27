@@ -12,8 +12,7 @@ class PersonaBuilder(ABC):
     You can implement your own persona builder by inheriting this class and implementing the build_persona method.
     Currently, Big5PersonaBuilder is implemented as a built-in option, which builds personas based on the Big5 personality traits.
 
-    See also:
-        - econsimulacra.llm_services.personas.big5.Big5PersonaBuilder
+    See also: econsimulacra.llm_services.personas.big5.Big5PersonaBuilder
     """
 
     def __init__(
@@ -27,7 +26,6 @@ class PersonaBuilder(ABC):
         Args:
             config (dict): Configuration dictionary for the persona builder. This must include:
                 - "type": the type of persona builder to use (e.g., "Big5PersonaBuilder").
-                and may include:
                 and may include:
                 - "personaDescriptionPath": the file path to the persona description,
                     which is a text file describing the persona
