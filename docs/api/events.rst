@@ -1,11 +1,6 @@
 Events
 ======
 
-.. automodule:: econsimulacra.events
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 Event Base Class
 ----------------
 

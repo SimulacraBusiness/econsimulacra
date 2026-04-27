@@ -1,10 +1,6 @@
 Social Networks
 ===============
 
-.. automodule:: econsimulacra.social_networks
-   :members:
-   :undoc-members:
-   :show-inheritance:
 
 Social Network Base Class
 -------------------------
