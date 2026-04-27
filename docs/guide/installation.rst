@@ -28,6 +28,6 @@ dependencies conflict with the core package:
 
 .. code-block:: bash
 
-   python3.10 -m venv .venv-vllm
+   python -m venv .venv-vllm
    source .venv-vllm/bin/activate
    pip install vllm

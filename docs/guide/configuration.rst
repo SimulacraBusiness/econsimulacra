@@ -21,7 +21,7 @@ Top-Level Structure
        "<eventName>": { ... }
    }
 
-``simulation``
+Simulation Configuration
 --------------
 
 Controls the overall simulation run.
@@ -45,7 +45,7 @@ Controls the overall simulation run.
      - List of event configuration keys.  Each key must appear as a
        top-level entry in the config.
 
-``environment``
+Environment Configuration
 ---------------
 
 Declares the components that make up the simulation world.
@@ -77,7 +77,7 @@ Declares the components that make up the simulation world.
      -
      - List of service configuration keys (e.g., ``"llmClient"``).
 
-Grid Space (``GridSpace``)
+Space Configuration
 --------------------------
 
 .. code-block:: json
@@ -101,7 +101,7 @@ Grid Space (``GridSpace``)
      - ✓
      - ``[width, height]`` of the 2-D discrete grid.
 
-Social Network (``SocialNetwork``)
+Social Network Configuration
 -----------------------------------
 
 .. code-block:: json

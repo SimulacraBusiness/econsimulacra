@@ -46,10 +46,10 @@ in parallel while the environment step itself remains synchronous.
 Spatial Layer — GridSpace
 --------------------------
 
-Agents that have ``isHousehold: true`` occupy a cell
+Agents occupy a cell
 :math:`(x, y) \in \{0,\ldots,W-1\} \times \{0,\ldots,H-1\}` of a discrete
-2-D grid.  At each step a household agent can move to an adjacent cell or
-stay in place.  Non-household agents (firms) have fixed coordinates.
+2-D grid.  At each step an agent can move to an adjacent cell or
+stay in place.
 
 Social Layer — SocialNetwork
 -----------------------------

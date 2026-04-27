@@ -9,7 +9,7 @@ sys.path.insert(0, os.path.abspath("../src"))
 
 # -- Project information -------------------------------------------------------
 project = "EconSimulacra"
-copyright = "2024, Simulacra Business Inc."
+copyright = "2026, Simulacra Inc"
 author = "Ryuji Hashimoto"
 release = "0.9.0"
 

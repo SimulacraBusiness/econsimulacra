@@ -1,4 +1,4 @@
-EconSimulacra Documentation
+EconSimulacra
 ============================
 
 .. image:: https://img.shields.io/pypi/pyversions/econsimulacra.svg
