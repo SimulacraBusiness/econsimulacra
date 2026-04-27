@@ -116,8 +116,8 @@ class PromptBuilder:
 
         Note:
             For the default observation and action descriptions, see also:
-                - econsimulacra.constant.DEFAULT_OBS_DESCRIPTION
-                - econsimulacra.constant.DEFAULT_ACTION_DESCRIPTION, respectively.
+            econsimulacra.constant.DEFAULT_OBS_DESCRIPTION and
+            econsimulacra.constant.DEFAULT_ACTION_DESCRIPTION.
         """
         obs_desc: str = get_description(
             path_str=config.get("obsDescriptionPath"),

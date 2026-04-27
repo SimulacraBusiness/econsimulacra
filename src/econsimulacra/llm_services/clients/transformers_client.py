@@ -27,19 +27,20 @@ class TransformersClient(LLMClient):
                 - "trust_remote_code": whether to trust remote code when loading the model.
                 - "jsonSchemaPath": path to a custom JSON schema file for structured generation (optional, if not provided, a default schema will be used).
                 - "modifySchema": whether to modify the default JSON schema based on config (optional, default is False).
-                - - "modifySchema": whether to modify the default JSON schema based on config (optional, default is False).
                     See also: ._get_json_schema() and ._modify_json_schema()
                 - "gridSpace": a list of two integers representing the dimensions of the grid space (optional, may be provided if modifySchema is True).
                 - "items": a list of item names available in the environment (optional, may be provided if modifySchema is True).
                 - "numAgents": the number of agents in the environment (optional, may be provided if modifySchema is True).
 
-        Note: config example:
-            {
-                "modelName": "meta-llama/Meta-Llama-3-8B-Instruct",
-                "device": "cuda",
-                "dtype": "float16",
-                "jsonSchemaPath": "path/to/schema.json"
-            }
+        Note:
+            config example::
+
+                {
+                    "modelName": "meta-llama/Meta-Llama-3-8B-Instruct",
+                    "device": "cuda",
+                    "dtype": "float16",
+                    "jsonSchemaPath": "path/to/schema.json"
+                }
         """
         super().__init__(config, prng, registered_classes)
         device_str: str = config.get("device", "cuda")

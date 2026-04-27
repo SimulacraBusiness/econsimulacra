@@ -169,10 +169,9 @@ class TwoHopRecommenderSystem(RecommenderSystem):
             target_agent_id (int): The unique identifier of the agent being followed.
 
         Note:
-            When agent_id follows target_agent_id, we need to update the two-hop follow counts for
-                agent_id -> target_agent_id -> * and
-                * -> agent_id -> target_agent_id
-            for all relevant intermediate agents *.
+            When agent_id follows target_agent_id, we update the two-hop follow counts for
+            ``agent_id -> target_agent_id -> X`` and ``X -> agent_id -> target_agent_id``
+            for all relevant intermediate agents X.
         """
         self.agent_id2follows[agent_id].add(target_agent_id)
         self.agent_id2followers[target_agent_id].add(agent_id)
@@ -196,10 +195,9 @@ class TwoHopRecommenderSystem(RecommenderSystem):
             target_agent_id (int): The unique identifier of the agent being unfollowed.
 
         Note:
-            When agent_id unfollows target_agent_id, we need to update the two-hop follow counts for
-                agent_id -> target_agent_id -> * and
-                * -> agent_id -> target_agent_id
-            for all relevant intermediate agents *.
+            When agent_id unfollows target_agent_id, we update the two-hop follow counts for
+            ``agent_id -> target_agent_id -> X`` and ``X -> agent_id -> target_agent_id``
+            for all relevant intermediate agents X.
         """
         self.agent_id2follows[agent_id].remove(target_agent_id)
         self.agent_id2followers[target_agent_id].remove(agent_id)
@@ -232,12 +230,12 @@ class TwoHopRecommenderSystem(RecommenderSystem):
         Args:
             agent_id (int): The unique identifier of the agent for whom to generate recommendations.
 
-
         Note:
             The recommendation score for a candidate agent is based on:
-                1) The number of two-hop paths from the given agent to the candidate agent (higher is better).
-                2) The number of followers the candidate agent has (higher is better).
-                3) A random tie-breaker (only if self.is_randomized is True, and controlled by self.temperature).
+            1. The number of two-hop paths from the given agent to the candidate (higher is better).
+            2. The number of followers the candidate agent has (higher is better).
+            3. A random tie-breaker, when ``self.is_randomized`` is True (controlled by ``self.temperature``).
+
             Agents that are already followed by the given agent are excluded from the recommendations.
         """
         if agent_id in self._cache and agent_id not in self._dirty:

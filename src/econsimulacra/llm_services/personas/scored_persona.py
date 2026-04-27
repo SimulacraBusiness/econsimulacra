@@ -45,8 +45,7 @@ class ScoredPersonaBuilder(PersonaBuilder):
 
         Note:
             Called when LLMAgent is initialized.
-            See also:
-                econsimulacra.agents.llm_agent.LLMAgent._setup_env_services()
+            See also: econsimulacra.agents.llm_agent.LLMAgent._setup_env_services()
         """
         if agent_id in self.agent_id2persona_dic:
             raise ValueError(f"Agent ID {agent_id} already exists in persona builder.")

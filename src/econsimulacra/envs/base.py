@@ -69,9 +69,10 @@ class Environment(Generic[ObsT]):
     a social network where agents can follow each other and interact, a set of items that agents can trade with each other,
     and services that support LLM-based agents in performing various actions and making decisions.
     The main implemented methods in this class include:
-        - .reset(self): reset the environment to the initial state.
-        - .get_observations(self, agent_id): get the observation for the given agent id.
-        - .step(self, all_actions_dic): execute one step of the environment with the given actions from agents.
+
+    - ``.reset(self)``: reset the environment to the initial state.
+    - ``.get_observations(self, agent_id)``: get the observation for the given agent id.
+    - ``.step(self, all_actions_dic)``: execute one step of the environment with the given actions from agents.
     """
 
     def __init__(
@@ -638,41 +639,39 @@ class Environment(Generic[ObsT]):
 
         Note:
             This method processes the action dictionary of a single agent by
+
             - checking the validity of each part of the action,
             - executing the valid part of the action
 
-            action_dic example:
-            {
-                "move": tuple[int, ...] | str,
-                # destination coordinates or destination name. Optional, default None
-                "consumptions": [
-                    {"item_name": str, "item_amount": float | int},
-                    ...
-                ], # Optional, default []
-                "orders": [
-                    {"counterparty_id": int, "counterparty_name": str, "item_name": str, "item_amount": float | int, "ttl": int},
-                    ...
-                ] , # Optional, default []
-                "proposals": [
-                    {"responder_agent_id": int, "responder_agent_name": str, "give_item_name": str, "give_item_amount": float | int, "get_item_name": str, "get_item_amount": float | int, "ttl": int},
-                    ...
-                ], # Optional, default []
-                "reactions": [
-                    {"kind": "order", "id": int, "accept_amount": float | int},
-                    {"kind": "proposal", "id": int, "accept": bool},
-                    ...
-                ], # Optional, default []
-                "set_prices": [
-                    {"item_name": str, "price": float},
-                    ...
-                ], # Optional, default []
-                "tweet": str, # Optional, default None
-                "follow": int, # agent_id to follow. Optional, default None
-                "unfollow": int, # agent_id to unfollow. Optional, default None
-            }
-            See also:
-            econsimulacra.llm_services.constant.DEFAULT_ACTION_JSON_SCHEMA for the expected format
-            of the action dictionary, which is used for validating the generated actions from LLM-based agents.
+            action_dic example::
+
+                {
+                    "move": tuple[int, ...] | str,
+                    "consumptions": [
+                        {"item_name": str, "item_amount": float | int}, ...
+                    ],
+                    "orders": [
+                        {"counterparty_id": int, "counterparty_name": str,
+                         "item_name": str, "item_amount": float | int, "ttl": int}, ...
+                    ],
+                    "proposals": [
+                        {"responder_agent_id": int, "responder_agent_name": str,
+                         "give_item_name": str, "give_item_amount": float | int,
+                         "get_item_name": str, "get_item_amount": float | int, "ttl": int}, ...
+                    ],
+                    "reactions": [
+                        {"kind": "order", "id": int, "accept_amount": float | int},
+                        {"kind": "proposal", "id": int, "accept": bool}, ...
+                    ],
+                    "set_prices": [{"item_name": str, "price": float}, ...],
+                    "tweet": str,
+                    "follow": int,
+                    "unfollow": int,
+                }
+
+            See also: ``econsimulacra.llm_services.constant.DEFAULT_ACTION_JSON_SCHEMA``
+            for the expected format of the action dictionary used to validate
+            generated actions from LLM-based agents.
         """
         where_to_move: Optional[tuple[int, ...] | str] = action_dic.get("move", None)
         move_allowed: bool = self._check_move(where_to_move=where_to_move)
@@ -1730,10 +1729,12 @@ class Environment(Generic[ObsT]):
         Note:
             The observations are provided by the registered observation providers based on the agent's request.
             There are three types of observations:
+
             1. General observations provided to all agents, such as time and self position.
-            2. Additional observations provided only to agents who are allowed to have rich information
-                (i.e., agents with is_rich_info_allowed=True), such as item_name2price.
-            3. Additional observations provided only to agents who are co-located with other agents in the same grid cell, such as others_inventory.
+            2. Additional observations provided only to agents with ``is_rich_info_allowed=True``,
+               such as ``item_name2price``.
+            3. Additional observations provided only to co-located agents, such as ``others_inventory``.
+
             The agent can request the observations by specifying the keys of the desired observations.
             If the agent requests "all", all available observations will be provided.
         """
