@@ -1,6 +1,6 @@
 {
     "simulation": {
-        "numSteps": 182,
+        "numSteps": 183,
         "parallelBatchSize": 64,
         "events": ["constantSalary", "constantSupply", "consumptionTax"]
     },
@@ -179,7 +179,7 @@
     },
     "timeTranslator": {
         "type": "TimeTranslator",
-        "numSteps": 184,
+        "numSteps": 183,
         "startDatetime": "2025-03-01 09:00:00",
         "endDatetime": "2025-05-31 21:00:00"
     },
