@@ -17,6 +17,7 @@ from .records import (
     UnfollowRecord,
     StateEvaluationRecord
 )
+from .store import RecordStore
 
 __all__ = [
     'BaseRecord',
@@ -35,5 +36,6 @@ __all__ = [
     'TweetRecord',
     'FollowRecord',
     'UnfollowRecord',
-    'StateEvaluationRecord'
+    'StateEvaluationRecord',
+    'RecordStore'
 ]
