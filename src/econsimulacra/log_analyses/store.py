@@ -33,6 +33,9 @@ class RecordStore:
         
         Args:
             record_type (str): The type of records to retrieve. Example: "move", "order", etc.
+        
+        Returns:
+            list[BaseRecord]: A list of records matching the specified type.
         """
         return self.by_type.get(record_type, [])
 
@@ -41,6 +44,9 @@ class RecordStore:
         
         Args:
             agent_id (int): The ID of the agent whose records to retrieve.
+        
+        Returns:
+            list[BaseRecord]: A list of records associated with the specified agent ID.
         """
         return self.by_agent.get(agent_id, [])
 
@@ -49,5 +55,8 @@ class RecordStore:
 
         Args:
             cls (type[T]): The class of records to retrieve. Example: `MoveRecord`, `OrderRecord`, etc.
+        
+        Returns:
+            list[T]: A list of records matching the specified class.
         """
         return [e for e in self.records if isinstance(e, cls)]
