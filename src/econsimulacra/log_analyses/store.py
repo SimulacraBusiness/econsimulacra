@@ -8,12 +8,17 @@ T = TypeVar("T", bound=BaseRecord)
 
 class RecordStore:
     """A record store that organizes records
-    by type and agent ID for efficient retrieval.
+    by type and agent ID for efficient retrieval. Basic usage:
+
+    >>> records = load_from_file("path/to/log.txt")
+    >>> store = RecordStore(records)
+    >>> move_records = store.get_by_type("move")
+    >>> agent_1_records = store.get_by_agent(1)
     """
-    
+
     def __init__(self, records: list[BaseRecord]) -> None:
         """Initialization.
-        
+
         Args:
             records (list[BaseRecord]): A list of records to store.
         """
@@ -30,10 +35,10 @@ class RecordStore:
 
     def get_by_type(self, record_type: str) -> list[BaseRecord]:
         """Get records by type.
-        
+
         Args:
             record_type (str): The type of records to retrieve. Example: "move", "order", etc.
-        
+
         Returns:
             list[BaseRecord]: A list of records matching the specified type.
         """
@@ -41,10 +46,10 @@ class RecordStore:
 
     def get_by_agent(self, agent_id: int) -> list[BaseRecord]:
         """Get records by agent ID.
-        
+
         Args:
             agent_id (int): The ID of the agent whose records to retrieve.
-        
+
         Returns:
             list[BaseRecord]: A list of records associated with the specified agent ID.
         """
@@ -55,7 +60,7 @@ class RecordStore:
 
         Args:
             cls (type[T]): The class of records to retrieve. Example: `MoveRecord`, `OrderRecord`, etc.
-        
+
         Returns:
             list[T]: A list of records matching the specified class.
         """
