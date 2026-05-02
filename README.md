@@ -32,7 +32,7 @@ By combining agent-based modeling with LLM reasoning, EconSimulacra allows resea
 
 # Documentations & User Guides
 
-Documentations are available on [GitHub Pages](https://simulacrabusiness.github.io/econsimulacra/index.html#).
+Documentations are available on [GitHub Pages](https://simulacrabusiness.github.io/econsimulacra/).
 
 # Install
 

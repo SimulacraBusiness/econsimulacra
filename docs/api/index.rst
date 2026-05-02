@@ -13,3 +13,4 @@ API Reference
    memory
    social_networks
    llm_services
+   log_analyses

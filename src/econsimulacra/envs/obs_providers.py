@@ -364,16 +364,27 @@ class NumFollowersProvider(ObsProvider):
 class NumFollowsProvider(ObsProvider):
     """Number of Follows Provider class."""
 
-    def get_obs(self, agent_id: int) -> int:
+    def get_obs(self, agent_id: int) -> str:
         """Get the number of follows of the agent.
 
         Args:
             agent_id (int): The ID of the agent for which to get the observation.
 
         Returns:
-            int: The number of follows of the agent.
+            str: The number of follows of the agent.
         """
-        return self.env.social_network.get_num_follows(agent_id=agent_id)
+        num_follows: int = self.env.social_network.get_num_follows(agent_id=agent_id)
+        follow_cap: Optional[int] = self.env.social_network.follow_cap
+        if follow_cap is not None:
+            warning_message: str = ""
+            if follow_cap == num_follows:
+                warning_message = (
+                    f"You have reached the follow cap of {follow_cap}. "
+                    + "To newly follow others, you need to unfollow some of your current follows first."
+                )
+            return f"{num_follows}/{follow_cap} follows. {warning_message}"
+        else:
+            return str(num_follows)
 
 
 class VisibleTLProvider(ObsProvider):

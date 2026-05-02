@@ -12,6 +12,7 @@ readme = "README.md"
 packages = [{ include = "econsimulacra", from = "src" }]
 include = ["src/econsimulacra/py.typed"]
 repository = "https://github.com/SimulacraBusiness/econsimulacra"
+documentation = "https://simulacrabusiness.github.io/econsimulacra/"
 classifiers = [
   "Development Status :: 4 - Beta",
   "Intended Audience :: Science/Research",
@@ -41,6 +42,7 @@ statsmodels = "^0.14.6"
 sentencepiece = "^0.2.1"
 protobuf = "^7.34.0"
 types-tqdm = "^4.67.3.20260205"
+matplotlib = "^3.10.9"
 
 # ---------------------------------------------------------
 # Development tools
