@@ -536,7 +536,7 @@ class TestEnvironment:
             assert "num_followers" in obs
             assert obs["num_followers"] == 0
             assert "num_follows" in obs
-            assert obs["num_follows"] == 0
+            assert obs["num_follows"] == "0/2 follows. "
             assert "self_tweet" in obs
             assert obs["self_tweet"] == ""
             assert "visible_tl" in obs
