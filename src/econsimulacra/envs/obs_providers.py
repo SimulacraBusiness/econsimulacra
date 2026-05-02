@@ -379,8 +379,8 @@ class NumFollowsProvider(ObsProvider):
             warning_message: str = ""
             if follow_cap == num_follows:
                 warning_message = (
-                    f"You have reached the follow cap of {follow_cap}. " + 
-                    "To newly follow others, you need to unfollow some of your current follows first."
+                    f"You have reached the follow cap of {follow_cap}. "
+                    + "To newly follow others, you need to unfollow some of your current follows first."
                 )
             return f"{num_follows}/{follow_cap} follows. {warning_message}"
         else:

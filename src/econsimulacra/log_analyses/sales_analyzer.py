@@ -17,7 +17,7 @@ from .store import RecordStore
 
 class SalesAnalyzer(AnalyzerBase[dict[str, dict[datetime | int, float]]]):
     """Sales analyzer.
-    
+
     SalesAnalyzer analyzes sales data for each firm
     based on OrderReactionRecord and ProposalReactionRecord.
     """
@@ -29,7 +29,7 @@ class SalesAnalyzer(AnalyzerBase[dict[str, dict[datetime | int, float]]]):
 
         Args:
             store (RecordStore): The record store containing the records to analyze.
-        
+
         Returns:
             A dictionary where keys are firm IDs and
             values are dictionaries mapping timestamps to total sales amounts.

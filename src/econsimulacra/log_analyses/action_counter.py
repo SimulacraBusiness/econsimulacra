@@ -21,7 +21,7 @@ class ActionCounter(AnalyzerBase[dict[str, int]]):
 
         Args:
             store (RecordStore): The record store containing the records to analyze.
-        
+
         Returns:
             counts (dict[str, int]): A dictionary mapping action types to counts.
                 Action types are

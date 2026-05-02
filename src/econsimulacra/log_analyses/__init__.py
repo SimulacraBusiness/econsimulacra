@@ -1,5 +1,5 @@
 from .action_counter import ActionCounter
-from .base import AnalyzerBase, AnalysisManager
+from .base import AnalysisManager, AnalyzerBase
 from .follower_counter import FollowerCounter
 from .log_parser import load_from_file
 from .records import (

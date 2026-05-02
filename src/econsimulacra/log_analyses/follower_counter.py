@@ -12,10 +12,10 @@ from .store import RecordStore
 
 class FollowerCounter(AnalyzerBase[dict[str, dict[datetime | int, int]]]):
     """Follower counter analyzer.
-    
+
     FollowerCounter counts the number of followers for each agent over time.
     """
-    
+
     name = "follower_count"
 
     def analyze(self, store: RecordStore) -> dict[str, dict[datetime | int, int]]:
@@ -23,7 +23,7 @@ class FollowerCounter(AnalyzerBase[dict[str, dict[datetime | int, int]]]):
 
         Args:
             store (RecordStore): The record store containing the records to analyze.
-        
+
         Returns:
             A dictionary mapping agent names to
             a dictionary of timestamps and follower counts.

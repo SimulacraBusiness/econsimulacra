@@ -5,22 +5,22 @@ from datetime import datetime
 from typing import Any
 
 from .records import (
-    BaseRecord,
     AgentGenerationRecord,
-    SpaceAssignRecord,
-    MoveRecord,
-    ConsumptionRecord,
-    OrderRecord,
-    ProposalRecord,
-    OrderReactionRecord,
-    OrderExpirationRecord,
-    ProposalReactionRecord,
-    ProposalExpirationRecord,
+    BaseRecord,
     ChangePriceRecord,
-    TweetRecord,
+    ConsumptionRecord,
     FollowRecord,
-    UnfollowRecord,
+    MoveRecord,
+    OrderExpirationRecord,
+    OrderReactionRecord,
+    OrderRecord,
+    ProposalExpirationRecord,
+    ProposalReactionRecord,
+    ProposalRecord,
+    SpaceAssignRecord,
     StateEvaluationRecord,
+    TweetRecord,
+    UnfollowRecord,
 )
 
 
