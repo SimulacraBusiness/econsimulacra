@@ -86,7 +86,6 @@ class FigureSaver:
         """
         mpl.rcParams.update(
             {
-                "font.family": "Hiragino Sans",
                 "font.size": self.font_size,
                 "axes.titlesize": self.font_size,
                 "axes.labelsize": self.font_size,
