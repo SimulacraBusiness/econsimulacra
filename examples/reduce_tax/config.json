@@ -72,24 +72,24 @@
         "numAgents": 1,
         "inventory": {
             "Yen": 0,
-            "Rice": 80,
-            "Eggs": 80,
-            "Milk": 80,
-            "Bread": 80,
-            "Cooking oil": 80,
-            "Tomatoes": 40,
-            "Cheese": 40,
-            "Chicken": 40,
-            "Beef": 40,
-            "Instant noodles": 30,
-            "Potato chips": 30,
-            "Chocolate": 30,
-            "Premium coffee": 20,
-            "Beer": 20,
-            "Laptop": 5,
-            "Tablet": 5,
-            "Headphones": 5,
-            "Smartwatch": 5
+            "Rice": 400,
+            "Eggs": 400,
+            "Milk": 400,
+            "Bread": 400,
+            "Cooking oil": 400,
+            "Tomatoes": 200,
+            "Cheese": 200,
+            "Chicken": 200,
+            "Beef": 200,
+            "Instant noodles": 150,
+            "Potato chips": 150,
+            "Chocolate": 150,
+            "Premium coffee": 100,
+            "Beer": 100,
+            "Laptop": 25,
+            "Tablet": 25,
+            "Headphones": 25,
+            "Smartwatch": 25
         },
         "provideInfo4CoLocatedAgents": ["inventory"],
         "provideInfo4AllAgents": ["self_pos"]
@@ -103,9 +103,9 @@
         "numAgents": 1,
         "inventory": {
             "Yen": 0,
-            "Ramen": 40,
-            "Curry rice": 40,
-            "Bento": 40
+            "Ramen": 200,
+            "Curry rice": 200,
+            "Bento": 200
         },
         "provideInfo4CoLocatedAgents": ["inventory"],
         "provideInfo4AllAgents": ["self_pos"]
@@ -119,8 +119,8 @@
         "numAgents": 1,
         "inventory": {
             "Yen": 0,
-            "Pasta": 30,
-            "Casual dinner set": 30
+            "Pasta": 150,
+            "Casual dinner set": 150
         },
         "provideInfo4CoLocatedAgents": ["inventory"],
         "provideInfo4AllAgents": ["self_pos"]
@@ -134,10 +134,10 @@
         "numAgents": 1,
         "inventory": {
             "Yen": 0,
-            "Sushi": 20,
-            "Course meals": 20,
-            "Wagyu beef steak": 20,
-            "Wine": 20
+            "Sushi": 100,
+            "Course meals": 100,
+            "Wagyu beef steak": 100,
+            "Wine": 100
         },
         "provideInfo4CoLocatedAgents": ["inventory"],
         "provideInfo4AllAgents": ["self_pos"]

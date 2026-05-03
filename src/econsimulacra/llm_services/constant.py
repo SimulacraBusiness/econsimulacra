@@ -213,5 +213,7 @@ DEFAULT_ACTION_DESCRIPTION: dict[str, str] = {
     + "Refer to the num_follows field in the observation to see how many agents you are currently following. "
     + "Refer to the visible_tl field in the observation to see the tweets from agents you are currently following. "
     + "Do not follow an agent that you are already following.",
-    "unfollow": "The unfollow action is an integer representing the id of the agent that you want to unfollow.",
+    "unfollow": "The unfollow action is an integer representing the id of the agent that you want to unfollow. "
+    + "You cannot unfollow an agent that you are not currently following."
+    + "You must unfollow an agent if you want to follow a new agent but have already reached the follow_cap limit.",
 }
