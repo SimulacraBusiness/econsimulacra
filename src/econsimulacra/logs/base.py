@@ -1,5 +1,5 @@
 from typing import Any, Callable, Optional
-
+# TODO: movelogにinitial_posを追加
 
 class Log:
     """Base class for simulation event logs.
@@ -115,6 +115,7 @@ class MoveLog(Log):
         agent_id: int,
         old_pos: tuple[int, ...],
         new_pos: tuple[int, ...],
+        init_pos: tuple[int, ...],
     ) -> None:
         """Initialization.
 
@@ -131,6 +132,7 @@ class MoveLog(Log):
         self.agent_id: int = agent_id
         self.old_pos: tuple[int, ...] = old_pos
         self.new_pos: tuple[int, ...] = new_pos
+        self.init_pos: tuple[int, ...] = init_pos
 
 
 class ConsumptionLog(Log):

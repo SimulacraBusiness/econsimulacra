@@ -25,7 +25,10 @@ class TestDictLogger:
             inventory_dic={"Cash": 100},
             persona_dic={"trait1": "value1"},
         )
-        log2 = MoveLog(time=1, time_step=1, agent_id=1, old_pos=(0, 0), new_pos=(1, 1))
+        log2 = MoveLog(
+            time=1, time_step=1, agent_id=1,
+            old_pos=(0, 0), new_pos=(1, 1), init_pos=(0, 0)
+        )
         log1.read_and_write(logger)
         log2.read_and_write(logger)
         logger.process_logs()
@@ -48,6 +51,7 @@ class TestDictLogger:
                 "agent_id": 1,
                 "old_pos": (0, 0),
                 "new_pos": (1, 1),
+                "init_pos": (0, 0),
             },
         ]
         logger = DummyLogger()
@@ -73,6 +77,7 @@ class TestDictLogger:
                 "agent_id": 1,
                 "old_pos": (0, 0),
                 "new_pos": (1, 1),
+                "init_pos": (0, 0),
                 "tag": "movement",
             },
         ]
