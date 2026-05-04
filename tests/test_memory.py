@@ -1,4 +1,9 @@
-from econsimulacra.logs import AgentGenerationLog, ConsumptionLog
+from econsimulacra.logs import (
+    AgentGenerationLog,
+    ConsumptionLog,
+    MoveLog,
+    SpaceAssignLog,
+)
 from econsimulacra.memory import MemoryHandler, StressAwareSummarizer, StressCalculator
 
 
@@ -10,11 +15,15 @@ class TestMemoryHandler:
             "type": "StressAwareSummarizer",
             "stressCalculator": {
                 "type": "StressCalculator",
+                "stressTypes": ["consumption_history", "move_history"],
                 "item2Weight": {"Yen": 0.0, "Rice": 10.0, "Apple": 1.0},
                 "maxMagnitude": 100,
                 "targetConsumptionQuantity": 15,
                 "windowSizeForConsumption": 20,
                 "timeDecayForConsumption": 0.9,
+                "targetMoveDistance": 10.0,
+                "windowSizeForMove": 20,
+                "timeDecayForMove": 0.9,
                 "toleranceThresholdForStress": 20,
             },
         },
@@ -32,6 +41,9 @@ class TestMemoryHandler:
         assert stress_calculator.window_size_for_consumption == 20
         assert stress_calculator.time_decay_for_consumption == 0.9
         assert stress_calculator.tolerance_threshold_for_stress == 20
+        assert stress_calculator.target_move_distance == 10.0
+        assert stress_calculator.window_size_for_move == 20
+        assert stress_calculator.time_decay_for_move == 0.9
 
     def test_summarize_memory(self):
         memory_handler = MemoryHandler(self.config)
@@ -51,7 +63,12 @@ class TestMemoryHandler:
             },
             persona_dic={"trait1": "value1"},
         )
+        log00 = SpaceAssignLog(
+            agent_id=1,
+            pos=(0, 0),
+        )
         memory_handler.update(log=log0)
+        memory_handler.update(log=log00)
         assert memory_handler.current_time == 0
         assert memory_handler.current_time_step == 0
         assert summarizer.current_time == 0
@@ -76,9 +93,43 @@ class TestMemoryHandler:
         )
         assert score == int((15 - (10 * 1 * 0.9 + 1 * 5)) / 15 * 100)
         d = memory_handler.get_memory(agent_id=1)
-        assert d["move_history"] == "You have no movement history."
+        assert (
+            d["move_history"]
+            == "You have moved to (0, 0). Your stress level from this move is 0 out of 100. "
+        )
         assert d["consumption_history"] == (
             "You have consumed Rice x 1 at time 1, Apple x 5 at time 2. "
             "Your stress level from this consumption is 6 out of 100. "
             "Acceptable consumption level."
+        )
+        log3 = MoveLog(
+            time=3,
+            time_step=3,
+            agent_id=1,
+            old_pos=(0, 0),
+            new_pos=(0, 1),
+            init_pos=(0, 0),
+        )
+        memory_handler.update(log=log3)
+        d = memory_handler.get_memory(agent_id=1)
+        assert d["move_history"] == (
+            "You have moved to (0, 0) -> (0, 1). "
+            "Your stress level from this move is 90 out of 100. "
+            "You have not moved enough. (distance: 1.0, target: 10.0)"
+        )
+        log4 = MoveLog(
+            time=4,
+            time_step=4,
+            agent_id=1,
+            old_pos=(0, 1),
+            new_pos=(0, 0),
+            init_pos=(0, 0),
+        )
+        memory_handler.update(log=log4)
+        d = memory_handler.get_memory(agent_id=1)
+        assert d["move_history"] == (
+            "You have moved to (0, 0) -> (0, 1) -> (0, 0). "
+            "Your stress level from this move is 64 out of 100. "
+            "You have not moved enough. (distance: 1.9, target: 10.0) "
+            "However, being at home makes you feel somewhat comfortable."
         )
