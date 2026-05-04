@@ -15,6 +15,10 @@ from .stress_aware_summarizer import (
     StressAwareSummarizer,
     StressCalculator,
 )
+from .stress_utils import (
+    calc_stress_from_consumption_history,
+    calc_stress_from_move_history,
+)
 
 __all__ = [
     "ConsumptionHistoryItem",
@@ -30,4 +34,6 @@ __all__ = [
     "MemoryHandler",
     "StressAwareSummarizer",
     "StressCalculator",
+    "calc_stress_from_consumption_history",
+    "calc_stress_from_move_history",
 ]
