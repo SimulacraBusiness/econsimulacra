@@ -819,6 +819,7 @@ class Environment(Generic[ObsT]):
             agent_id=agent_id,
             old_pos=current_pos,
             new_pos=next_pos,
+            init_pos=self.agent_id2initial_coords[agent_id],
         )
         self.remember_log(log)
         self.event_manager.trigger_events_after_log(log=log, env=self)
