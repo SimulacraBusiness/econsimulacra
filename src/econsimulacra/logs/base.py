@@ -1,5 +1,5 @@
 from typing import Any, Callable, Optional
-# TODO: movelogにinitial_posを追加
+
 
 class Log:
     """Base class for simulation event logs.
