@@ -15,7 +15,10 @@ from .base import (
     SocialHistoryItem,
     StateEvaluationItem,
 )
-from .stress_utils import calc_stress_from_consumption_history
+from .stress_utils import (
+    calc_stress_from_consumption_history,
+    calc_stress_from_move_history,
+)
 
 
 class StressCalculator:
@@ -36,6 +39,7 @@ class StressCalculator:
         Args:
             config (dict[str, Any]): the configuration for the StressCalculator. It must contain:
                 type: the type of the stress calculator.
+                stress_types: the list of stress types to calculate. Each stress type corresponds to a history field name, such as "consumption_history" or "move_history".
                 item2Weight: a dictionary mapping item names to their corresponding weights for stress calculation from consumption history.
                 and may contain:
                 maxMagnitude: the maximum magnitude of the stress level.
@@ -43,6 +47,10 @@ class StressCalculator:
                 targetConsumptionQuantity: the target quantity to consume for stress calculation.
                 windowSizeForConsumption: the size of the time window in time steps to consider for stress calculation.
                 timeDecayForConsumption: the decay factor for the stress contribution of past consumption events.
+                targetMoveDistance: the target distance to move for stress calculation.
+                windowSizeForMove: the size of the time window in time steps to consider for stress calculation from move history.
+                timeDecayForMove: the decay factor for the stress contribution of past move events.
+                homeComfortWeight: the weight for home comfort in stress calculation from move history.
                 toleranceThresholdForStress: the tolerance threshold for stress.
 
             prng (Optional[random.Random]): the pseudo-random number generator to use.
@@ -55,6 +63,7 @@ class StressCalculator:
             )
         else:
             self.item_name2weight: dict[str, float] = config["item2Weight"]
+        self.stress_types: list[str] = config.get("stressTypes", [])
         self.max_magnitude: int = config.get("maxMagnitude", 100)
         self.target_consumption_quantity: int = config.get(
             "targetConsumptionQuantity", 10
@@ -68,6 +77,10 @@ class StressCalculator:
         self.tolerance_threshold_for_stress: float = config.get(
             "toleranceThresholdForStress", 0.1
         )
+        self.target_move_distance: float = config.get("targetMoveDistance", 5.0)
+        self.window_size_for_move: int = config.get("windowSizeForMove", 10)
+        self.time_decay_for_move: float = config.get("timeDecayForMove", 0.8)
+        self.home_comfort_weight: float = config.get("homeComfortWeight", 0.2)
         self._stress_dispatch: dict[
             str,
             Callable[
@@ -234,23 +247,38 @@ class StressCalculator:
         history: Deque[ConsumptionHistoryItem],
     ) -> tuple[Optional[int], str]:
         """Calculate the stress level from the consumption history."""
-        return calc_stress_from_consumption_history(
-            consumption_history=history,
-            current_time_step=self.current_time_step,
-            max_stress=self.max_magnitude,
-            target_quantity=self.target_consumption_quantity,
-            window_size=self.window_size_for_consumption,
-            time_decay=self.time_decay_for_consumption,
-            tolerance_threshold=self.tolerance_threshold_for_stress,
-            item2weight=self.item_name2weight,
-        )
+        if "consumption_history" in self.stress_types:
+            return calc_stress_from_consumption_history(
+                consumption_history=history,
+                current_time_step=self.current_time_step,
+                max_stress=self.max_magnitude,
+                target_quantity=self.target_consumption_quantity,
+                window_size=self.window_size_for_consumption,
+                time_decay=self.time_decay_for_consumption,
+                tolerance_threshold=self.tolerance_threshold_for_stress,
+                item2weight=self.item_name2weight,
+            )
+        else:
+            return None, ""
 
     def _calc_stress_from_move_history(
         self,
         history: Deque[MoveHistoryItem],
     ) -> tuple[Optional[int], str]:
         """Calculate the stress level from the move history."""
-        return None, ""
+        if "move_history" in self.stress_types:
+            return calc_stress_from_move_history(
+                move_history=history,
+                current_time_step=self.current_time_step,
+                max_stress=self.max_magnitude,
+                target_distance=self.target_move_distance,
+                window_size=self.window_size_for_move,
+                time_decay=self.time_decay_for_move,
+                tolerance_threshold=self.tolerance_threshold_for_stress,
+                home_comfort=self.home_comfort_weight,
+            )
+        else:
+            return None, ""
 
     def _calc_stress_from_purchase_history(
         self,
