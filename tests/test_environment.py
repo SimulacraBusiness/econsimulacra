@@ -162,10 +162,12 @@ class TestEnvironment:
         "Yen": {
             "type": "Item",
             "initialPrice": 1.0,
+            "weightInBasket": 0,
         },
         "Rice": {
             "type": "Item",
             "initialPrice": 1000.0,
+            "weightInBasket": 1,
         },
         "timeTranslator": {
             "type": "TimeTranslator",
@@ -236,8 +238,10 @@ class TestEnvironment:
             assert isinstance(item, Item)
             if item_name == "Yen":
                 assert item.get_price() == 1.0
+                assert item.weight_in_basket == 0
             elif item_name == "Rice":
                 assert item.get_price() == 1000.0
+                assert item.weight_in_basket == 1
         for agent_id in env.agent_ids:
             assert agent_id in env.grid_space.agent_id2pos
             assert isinstance(env.grid_space.get_pos(agent_id), tuple)
