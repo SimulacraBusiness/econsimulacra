@@ -54,6 +54,7 @@ class MoveHistoryItem:
 
     Attributes:
         pos (tuple[int, ...]): the position of the agent after the movement.
+        init_pos (tuple[int, ...]): the initial position of the agent assigned by the environment.
         time (int | str, optional): the time of the movement.
             It can be None for the initial position assigned by the environment, which is based on the SpaceAssignLog.
 
@@ -65,6 +66,7 @@ class MoveHistoryItem:
     """
 
     pos: tuple[int, ...]
+    init_pos: tuple[int, ...]
     time: Optional[int | str]
     time_step: int
 
@@ -657,7 +659,7 @@ class MemoryHandler:
             raise ValueError(
                 f"Agent with id {agent_id} already has a position assigned in memory."
             )
-        move_history.append(MoveHistoryItem(pos=log.pos, time=None, time_step=-1))
+        move_history.append(MoveHistoryItem(pos=log.pos, init_pos=log.pos, time=None, time_step=-1))
 
     def _process_move_log(self, log: MoveLog) -> None:
         """Process the MoveLog to update the position of the agent in memory.
@@ -683,7 +685,7 @@ class MemoryHandler:
                 f"Agent with id {agent_id} has a different position in memory ({old_pos}) and in log ({old_pos_in_log})."
             )
         move_history.append(
-            MoveHistoryItem(pos=log.new_pos, time=log.time, time_step=log.time_step)
+            MoveHistoryItem(pos=log.new_pos, init_pos=log.init_pos, time=log.time, time_step=log.time_step)
         )
 
     def _process_consumption_log(self, log: ConsumptionLog) -> None:
