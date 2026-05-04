@@ -25,6 +25,8 @@ from ..logs import (
 )
 from ..sim_utils import find_class
 
+# TODO: 値段を「見た」記憶を入れたい．前回訪れた時より安い，など
+
 
 @dataclass
 class ConsumptionHistoryItem:
@@ -204,6 +206,10 @@ class StateEvaluationItem:
 
     Attributes:
         wealth (float): the wealth of the agent at the time of evaluation.
+        relative_wealth (float, optional): The relative wealth of the agent at the time of evaluation.
+            Only household agents have this value; for other agent types, it is None.
+        buying_power (float, optional): The buying power of the agent at the time of evaluation.
+            Only household agents have this value; for other agent types, it is None.
         inventory_dic (dict[str, int | float]): the inventory of the agent at the time of evaluation.
         persona_dic (dict[str, Any], optional): the persona of the agent at the time of evaluation.
         time (int | str): the time of the state evaluation.
@@ -215,6 +221,8 @@ class StateEvaluationItem:
     """
 
     wealth: float
+    relative_wealth: Optional[float]
+    buying_power: Optional[float]
     inventory_dic: dict[str, int | float]
     persona_dic: Optional[dict[str, Any]]
     time: int | str
@@ -629,6 +637,8 @@ class MemoryHandler:
             agent_memory.state_evaluation_history.append(
                 StateEvaluationItem(
                     wealth=log.wealth,
+                    relative_wealth=None,
+                    buying_power=None,
                     inventory_dic=log.inventory_dic,
                     persona_dic=log.persona_dic,
                     time=log.time,
@@ -1085,6 +1095,8 @@ class MemoryHandler:
         state_evaluation_history.append(
             StateEvaluationItem(
                 wealth=log.wealth,
+                relative_wealth=log.relative_wealth,
+                buying_power=log.buying_power,
                 inventory_dic=log.inventory_dic,
                 persona_dic=log.persona_dic,
                 time=log.time,
