@@ -468,7 +468,10 @@ def calc_stress_from_state_evaluation_history(
     ]
     active_reasons.sort(key=lambda x: x[1], reverse=True)
     if len(active_reasons) == 0:
-        return stress_level, "You feel economic stress, but no dominant cause was identified."
+        return (
+            stress_level,
+            "You feel economic stress, but no dominant cause was identified.",
+        )
     reason_parts: list[str] = []
     for reason, score in active_reasons:
         reason_parts.append(reason)

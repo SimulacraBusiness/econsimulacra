@@ -3,7 +3,7 @@ from econsimulacra.logs import (
     ConsumptionLog,
     MoveLog,
     SpaceAssignLog,
-    StateEvaluationLog
+    StateEvaluationLog,
 )
 from econsimulacra.memory import MemoryHandler, StressAwareSummarizer, StressCalculator
 
@@ -16,7 +16,11 @@ class TestMemoryHandler:
             "type": "StressAwareSummarizer",
             "stressCalculator": {
                 "type": "StressCalculator",
-                "stressTypes": ["consumption_history", "move_history", "state_evaluation_history"],
+                "stressTypes": [
+                    "consumption_history",
+                    "move_history",
+                    "state_evaluation_history",
+                ],
                 "item2Weight": {"Yen": 0.0, "Rice": 10.0, "Apple": 1.0},
                 "maxMagnitude": 100,
                 "targetConsumptionQuantity": 15,

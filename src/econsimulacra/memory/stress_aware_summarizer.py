@@ -18,7 +18,7 @@ from .base import (
 from .stress_utils import (
     calc_stress_from_consumption_history,
     calc_stress_from_move_history,
-    calc_stress_from_state_evaluation_history
+    calc_stress_from_state_evaluation_history,
 )
 
 
@@ -91,20 +91,14 @@ class StressCalculator:
         self.time_decay_for_move: float = config.get("timeDecayForMove", 0.8)
         self.home_comfort_weight: float = config.get("homeComfortWeight", 0.2)
         self.target_buying_power: float = config.get("targetBuyingPower", 100.0)
-        self.target_relative_wealth: float = config.get(
-            "targetRelativeWealth", -0.1
-        )
+        self.target_relative_wealth: float = config.get("targetRelativeWealth", -0.1)
         self.target_wealth_growth: float = config.get("targetWealthGrowth", 0.0)
         self.window_size_for_state_evaluation: int = config.get(
             "windowSizeForStateEvaluation", 10
         )
         self.buying_power_weight: float = config.get("buyingPowerWeight", 1.0)
-        self.relative_wealth_weight: float = config.get(
-            "relativeWealthWeight", 0.6
-        )
-        self.wealth_drawdown_weight: float = config.get(
-            "wealthDrawdownWeight", 0.2
-        )
+        self.relative_wealth_weight: float = config.get("relativeWealthWeight", 0.6)
+        self.wealth_drawdown_weight: float = config.get("wealthDrawdownWeight", 0.2)
         self._stress_dispatch: dict[
             str,
             Callable[

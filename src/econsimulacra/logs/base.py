@@ -55,7 +55,7 @@ class AgentGenerationLog(Log):
                 The keys are item names, and the values are the amounts.
             persona_dic (Optional[dict[str, Any]]): The persona details of the generated agent.
                 The keys are persona attributes, and the values are the attribute values.
-        
+
         Note:
             ```wealth``` is a value that represents the agent's total assets
             at the time of generation.
@@ -516,7 +516,7 @@ class StateEvaluationLog(Log):
                 The keys are item names, and the values are the amounts.
             persona_dic (Optional[dict[str, Any]]): The persona details of the agent at the time of evaluation.
                 The keys are persona attributes, and the values are the attribute values.
-        
+
         Note:
             ```relative_wealth``` is a value that represents the agent's wealth
             relative to others in the environment.

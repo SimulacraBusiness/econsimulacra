@@ -9,10 +9,6 @@ if TYPE_CHECKING:
     from ..memory import MemoryHandler
     from .base import Environment
 
-# TODO: generate_logを追加
-# env.get_observations内部でlogをloggerに追加
-# get_others_inventotyにpriceを追加
-# >> summarizer側で値段が変わったitemをsummarizeして伝える
 
 class ObsProvider(ABC):
     """Observation provider class (abstract class).

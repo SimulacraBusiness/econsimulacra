@@ -1,8 +1,9 @@
-import numpy as np
-from numpy.typing import NDArray
 import random
 from random import Random
 from typing import Any, Generic, Literal, Optional, Type, TypeVar
+
+import numpy as np
+from numpy.typing import NDArray
 
 from ..agents import Agent
 from ..events import EventManager
@@ -501,7 +502,9 @@ class Environment(Generic[ObsT]):
                 agent_name: str = agent_instance.get_self_name()
                 inventory_dic: dict[str, int | float] = agent_instance.get_inventory()
                 self.agent_id2initial_inventory[current_agent_id] = inventory_dic
-                wealth: float | int = self._calculate_wealth(inventory_dic=inventory_dic)
+                wealth: float | int = self._calculate_wealth(
+                    inventory_dic=inventory_dic
+                )
                 self.agent_id2wealth[current_agent_id] = wealth
                 log: AgentGenerationLog = AgentGenerationLog(
                     agent_id=current_agent_id,
@@ -1725,7 +1728,7 @@ class Environment(Generic[ObsT]):
                 item: Item = self.item_name2item[item_name]
                 wealth += item_amount * item.get_price()
         return wealth
-    
+
     def calculate_relative_wealth(self, agent_id: int) -> Optional[float]:
         """Calculate the relative wealth of the agent compared to other agents.
 
@@ -1743,9 +1746,11 @@ class Environment(Generic[ObsT]):
             return None
         household_wealth_arr: NDArray[np.float64] = np.array(
             [
-                self.agent_id2wealth.get(agent_id, 0.) for agent_id in self.agent_ids
+                self.agent_id2wealth.get(agent_id, 0.0)
+                for agent_id in self.agent_ids
                 if agent_id in self.household_ids
-            ], dtype=np.float64,
+            ],
+            dtype=np.float64,
         )
         if len(household_wealth_arr) == 0:
             raise ValueError(
@@ -1755,8 +1760,8 @@ class Environment(Generic[ObsT]):
         avg_wealth: float = float(np.mean(household_wealth_arr))
         std_wealth: float = float(np.std(household_wealth_arr))
         agent_wealth: float = self.agent_id2wealth[agent_id]
-        return (agent_wealth - avg_wealth) / std_wealth if std_wealth > 0 else 0.
-    
+        return (agent_wealth - avg_wealth) / std_wealth if std_wealth > 0 else 0.0
+
     def calculate_buying_power(self, agent_id: int) -> float:
         """Calculate the buying power of the agent based on its inventory and the item prices.
 
@@ -1772,14 +1777,16 @@ class Environment(Generic[ObsT]):
         weighted_price: float = self._calc_weighted_price()
         buying_power: float = cash_amount / weighted_price if weighted_price > 0 else 0
         return buying_power
-    
+
     def _calc_weighted_price(self) -> float:
         total_weight: float = sum(
             item.weight_in_basket for item in self.item_name2item.values()
         )
         weighted_price: float = 0
         for item in self.item_name2item.values():
-            weight: float = item.weight_in_basket / total_weight if total_weight > 0 else 0
+            weight: float = (
+                item.weight_in_basket / total_weight if total_weight > 0 else 0
+            )
             price: float = item.get_price()
             weighted_price += weight * price
         return weighted_price

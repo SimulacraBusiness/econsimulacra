@@ -21,7 +21,8 @@ class Item:
             item_name (str): The name of the item.
             config (dict[str, Any], optional): Optional config. It may contain
                 "initialPrice": The initial price of the item. Defaults to 0.
-                "weightInBascket": The weight of the item in the consumer price index (CPI) calculation. Defaults to 1. 
+                "weightInBascket": The weight of the item in the consumer price index (CPI) calculation. Defaults to 1.
+                    See also: econsimulacra.memory.stress_utils.calc_stress_from_state_evaluation_history
         """
         self.item_id: int = item_id
         self.item_name: str = item_name
