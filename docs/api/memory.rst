@@ -26,3 +26,7 @@ Stress Calculation
 .. automodule:: econsimulacra.memory.stress_utils.calc_stress_from_move_history
    :members:
    :show-inheritance:
+
+.. automodule:: econsimulacra.memory.stress_utils.calc_stress_from_state_evaluation_history
+   :members:
+   :show-inheritance:
