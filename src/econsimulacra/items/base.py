@@ -19,7 +19,10 @@ class Item:
         Args:
             item_id (int): The unique id for the item.
             item_name (str): The name of the item.
-            config (dict[str, Any], optional): Optional config. If it contains "initialPrice", it is used as the initial price. Defaults to None.
+            config (dict[str, Any], optional): Optional config. It may contain
+                "initialPrice": The initial price of the item. Defaults to 0.
+                "weightInBascket": The weight of the item in the consumer price index (CPI) calculation. Defaults to 1.
+                    See also: econsimulacra.memory.stress_utils.calc_stress_from_state_evaluation_history
         """
         self.item_id: int = item_id
         self.item_name: str = item_name
@@ -29,6 +32,10 @@ class Item:
             self.price = self.config["initialPrice"]
         else:
             self.price = 0.0
+        if "weightInBasket" in self.config:
+            self.weight_in_basket = self.config["weightInBasket"]
+        else:
+            self.weight_in_basket = 1.0
         self.price_set_by: Optional[int] = None
 
     def get_price(self) -> float:

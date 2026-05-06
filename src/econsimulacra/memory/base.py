@@ -25,6 +25,8 @@ from ..logs import (
 )
 from ..sim_utils import find_class
 
+# TODO: 値段を「見た」記憶を入れたい．前回訪れた時より安い，など
+
 
 @dataclass
 class ConsumptionHistoryItem:
@@ -54,6 +56,7 @@ class MoveHistoryItem:
 
     Attributes:
         pos (tuple[int, ...]): the position of the agent after the movement.
+        init_pos (tuple[int, ...]): the initial position of the agent assigned by the environment.
         time (int | str, optional): the time of the movement.
             It can be None for the initial position assigned by the environment, which is based on the SpaceAssignLog.
 
@@ -65,6 +68,7 @@ class MoveHistoryItem:
     """
 
     pos: tuple[int, ...]
+    init_pos: tuple[int, ...]
     time: Optional[int | str]
     time_step: int
 
@@ -202,6 +206,10 @@ class StateEvaluationItem:
 
     Attributes:
         wealth (float): the wealth of the agent at the time of evaluation.
+        relative_wealth (float, optional): The relative wealth of the agent at the time of evaluation.
+            Only household agents have this value; for other agent types, it is None.
+        buying_power (float, optional): The buying power of the agent at the time of evaluation.
+            Only household agents have this value; for other agent types, it is None.
         inventory_dic (dict[str, int | float]): the inventory of the agent at the time of evaluation.
         persona_dic (dict[str, Any], optional): the persona of the agent at the time of evaluation.
         time (int | str): the time of the state evaluation.
@@ -213,6 +221,8 @@ class StateEvaluationItem:
     """
 
     wealth: float
+    relative_wealth: Optional[float]
+    buying_power: Optional[float]
     inventory_dic: dict[str, int | float]
     persona_dic: Optional[dict[str, Any]]
     time: int | str
@@ -627,6 +637,8 @@ class MemoryHandler:
             agent_memory.state_evaluation_history.append(
                 StateEvaluationItem(
                     wealth=log.wealth,
+                    relative_wealth=None,
+                    buying_power=None,
                     inventory_dic=log.inventory_dic,
                     persona_dic=log.persona_dic,
                     time=log.time,
@@ -657,7 +669,9 @@ class MemoryHandler:
             raise ValueError(
                 f"Agent with id {agent_id} already has a position assigned in memory."
             )
-        move_history.append(MoveHistoryItem(pos=log.pos, time=None, time_step=-1))
+        move_history.append(
+            MoveHistoryItem(pos=log.pos, init_pos=log.pos, time=None, time_step=-1)
+        )
 
     def _process_move_log(self, log: MoveLog) -> None:
         """Process the MoveLog to update the position of the agent in memory.
@@ -683,7 +697,12 @@ class MemoryHandler:
                 f"Agent with id {agent_id} has a different position in memory ({old_pos}) and in log ({old_pos_in_log})."
             )
         move_history.append(
-            MoveHistoryItem(pos=log.new_pos, time=log.time, time_step=log.time_step)
+            MoveHistoryItem(
+                pos=log.new_pos,
+                init_pos=log.init_pos,
+                time=log.time,
+                time_step=log.time_step,
+            )
         )
 
     def _process_consumption_log(self, log: ConsumptionLog) -> None:
@@ -1076,6 +1095,8 @@ class MemoryHandler:
         state_evaluation_history.append(
             StateEvaluationItem(
                 wealth=log.wealth,
+                relative_wealth=log.relative_wealth,
+                buying_power=log.buying_power,
                 inventory_dic=log.inventory_dic,
                 persona_dic=log.persona_dic,
                 time=log.time,

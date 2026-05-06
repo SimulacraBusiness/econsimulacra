@@ -422,7 +422,7 @@ class VisibleTLProvider(ObsProvider):
 
 
 class RecommendedFollowsProvider(ObsProvider):
-    """Recommended Follows Provider class."""  # TODO: Also provide the tweets of the recommended follows.
+    """Recommended Follows Provider class."""
 
     def get_obs(self, agent_id: int) -> list[int]:
         """Get the recommended follows for the agent.

@@ -55,6 +55,24 @@ class AgentGenerationLog(Log):
                 The keys are item names, and the values are the amounts.
             persona_dic (Optional[dict[str, Any]]): The persona details of the generated agent.
                 The keys are persona attributes, and the values are the attribute values.
+
+        Note:
+            ```wealth``` is a value that represents the agent's total assets
+            at the time of generation.
+
+            It is defined as:
+
+            .. math::
+
+                w_i = c_i + \\sum_{j \\in \\mathcal{I}} p_j q_j
+
+            where:
+
+            - :math:`w_i` is the total wealth of agent :math:`i`
+            - :math:`c_i` is the initial cash of agent :math:`i`
+            - :math:`p_j` is the price of item :math:`j`
+            - :math:`q_j` is the quantity of item :math:`j` in the agent's inventory
+            - :math:`\\mathcal{I}` is the set of items
         """
         self.type: str = "agent_generation"
         self.time: int | str = time
@@ -115,6 +133,7 @@ class MoveLog(Log):
         agent_id: int,
         old_pos: tuple[int, ...],
         new_pos: tuple[int, ...],
+        init_pos: tuple[int, ...],
     ) -> None:
         """Initialization.
 
@@ -131,6 +150,7 @@ class MoveLog(Log):
         self.agent_id: int = agent_id
         self.old_pos: tuple[int, ...] = old_pos
         self.new_pos: tuple[int, ...] = new_pos
+        self.init_pos: tuple[int, ...] = init_pos
 
 
 class ConsumptionLog(Log):
@@ -430,7 +450,6 @@ class FollowLog(Log):
             target_agent_id (int): The unique id of the agent being followed.
             num_follows (int): The number of agents the follower agent follows at the time of following.
             num_followers (int): The number of agents following the target agent at the time of
-
         """
         self.type: str = "follow"
         self.time: int | str = time
@@ -477,6 +496,8 @@ class StateEvaluationLog(Log):
         time_step: int,
         agent_id: int,
         wealth: float,
+        relative_wealth: Optional[float],
+        buying_power: Optional[float],
         inventory_dic: dict[str, float | int],
         persona_dic: Optional[dict[str, Any]],
     ) -> None:
@@ -487,16 +508,57 @@ class StateEvaluationLog(Log):
             time_step (int): Current integer step index of the environment when the state evaluation occurs.
             agent_id (int): The unique id of the agent being evaluated.
             wealth (float): The wealth of the agent at the time of evaluation.
+            relative_wealth (float, optional): The relative wealth of the agent at the time of evaluation.
+                Only household agents have this value; for other agent types, it is None.
+            buying_power (float, optional): The buying power of the agent at the time of evaluation.
+                Only household agents have this value; for other agent types, it is None.
             inventory_dic (dict[str, float | int]): The inventory of the agent at the time of evaluation.
                 The keys are item names, and the values are the amounts.
             persona_dic (Optional[dict[str, Any]]): The persona details of the agent at the time of evaluation.
                 The keys are persona attributes, and the values are the attribute values.
+
+        Note:
+            ```relative_wealth``` is a value that represents the agent's wealth
+            relative to others in the environment.
+
+            It is defined as:
+
+            .. math::
+
+                \\text{relative\\_wealth}
+                = \\frac{w_i - \\mu_w}{\\sigma_w}
+
+            where:
+
+            - :math:`w_i` is the wealth of agent :math:`i`
+            - :math:`\\mu_w` is the average wealth of all agents
+            - :math:`\\sigma_w` is the standard deviation of wealth across agents
+
+            ```buying_power``` represents the agent's effective purchasing power in the
+            simulation environment.
+
+            It is defined as the weighted sum of the quantities of items that the
+            agent can afford with its cash:
+
+            .. math::
+
+                B_i = \\sum_{j \\in \\mathcal{I}} \\alpha_j \\frac{c_i}{p_j}
+
+            where:
+
+            - :math:`B_i` is the buying power of agent :math:`i`
+            - :math:`c_i` is the cash held by agent :math:`i`
+            - :math:`p_j` is the price of item :math:`j`
+            - :math:`\\alpha_j` is the weight of item :math:`j`
+            - :math:`\\mathcal{I}` is the set of items
         """
         self.type: str = "state_evaluation"
         self.time: int | str = time
         self.time_step: int = time_step
         self.agent_id: int = agent_id
         self.wealth: float = wealth
+        self.relative_wealth: Optional[float] = relative_wealth
+        self.buying_power: Optional[float] = buying_power
         self.inventory_dic: dict[str, float | int] = inventory_dic.copy()
         self.persona_dic: Optional[dict[str, Any]] = (
             persona_dic.copy() if persona_dic is not None else None

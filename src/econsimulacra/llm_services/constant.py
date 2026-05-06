@@ -123,7 +123,11 @@ DEFAULT_OBS_DESCRIPTION: dict[str, str] = {
     "self_agent_id": "Your unique identifier.",
     "self_name": "Your name.",
     "self_is_household": "A boolean indicating whether you are a household agent. If True, you are a household; if False, you are a firm agent (e.g., retailer or restaurant).",
-    "memory": "A dictionary representing your memory, where the keys are memory keys and the values are the corresponding memory values.",
+    "memory": "A dictionary representing your memory, where the keys are memory keys and the values are the corresponding memory values."
+    + 'Some memory entries may include an associated "stress" value. '
+    + "A high stress value indicates that your needs or desires are not being satisfied and you are in a negative state."
+    + "You should take these stress signals into account when deciding your behavior. "
+    + "Use stress as an internal signal of dissatisfaction when interpreting your situation and deciding what to do.",
     "self_pos": "Your current coordinates in the grid space, represented as a list of integers [x, y].",
     "self_init_pos": "Your home in the grid space, represented as a list of integers [x, y].",
     "self_is_moving": "A boolean indicating whether you are currently moving. "
@@ -205,7 +209,9 @@ DEFAULT_ACTION_DESCRIPTION: dict[str, str] = {
     + "Do not specify any item_name that you don't have in your inventory. "
     + "The specified price must be a positive value.",
     "tweet": "The tweet action is a string representing what you want to tweet. "
-    + "Feel free to share your thoughts, feelings, or any information you want to share with others.",
+    + "You are not required to tweet at every step. "
+    + 'If you do not have a strong opinion, emotional reaction, or relevant information, return an empty string "". '
+    + "Only tweet when you genuinely feel it is worth sharing.",
     "follow": "The follow action is an integer representing the id of the agent that you want to follow. "
     + "You may refer to the recommended_follows field in the observation for agents that you are not currently following "
     + "but may consider following to connect. "

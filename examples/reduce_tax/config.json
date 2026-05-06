@@ -208,6 +208,7 @@
             "type": "StressAwareSummarizer",
             "stressCalculator": {
                 "type": "StressCalculator",
+                "stressTypes": ["consumption_history", "move_history"],
                 "item2Weight": {
                     "Yen": 0.0,
                     "Rice": 10.0,

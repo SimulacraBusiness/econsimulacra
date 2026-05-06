@@ -2,6 +2,9 @@ import random
 from random import Random
 from typing import Any, Generic, Literal, Optional, Type, TypeVar
 
+import numpy as np
+from numpy.typing import NDArray
+
 from ..agents import Agent
 from ..events import EventManager
 from ..items import Item
@@ -474,11 +477,12 @@ class Environment(Generic[ObsT]):
         self.others_ids: list[int] = []
         self.agent_id2agent: dict[int, Agent] = {}
         self.agent_id2agent_name: dict[int, str] = {}
-        self.agent_id2initial_inventory: dict[int, dict[str, int | float]] = {}
         self.agent_name2agent_id: dict[str, int] = {}
         self.agent_id2initial_coords: dict[int, tuple[int, ...]] = {}
         self.agent_id2is_moving: dict[int, bool] = {}
         self.agent_id2destination: dict[int, Optional[tuple[int, ...]]] = {}
+        self.agent_id2initial_inventory: dict[int, dict[str, int | float]] = {}
+        self.agent_id2wealth: dict[int, float | int] = {}
         for agent_key in agent_keys:
             agent_config: dict[str, Any] = self.config.get(agent_key, {})
             instance_type: str = agent_config.get("type", agent_key)
@@ -497,13 +501,18 @@ class Environment(Generic[ObsT]):
                 )
                 agent_name: str = agent_instance.get_self_name()
                 inventory_dic: dict[str, int | float] = agent_instance.get_inventory()
+                self.agent_id2initial_inventory[current_agent_id] = inventory_dic
+                wealth: float | int = self._calculate_wealth(
+                    inventory_dic=inventory_dic
+                )
+                self.agent_id2wealth[current_agent_id] = wealth
                 log: AgentGenerationLog = AgentGenerationLog(
                     agent_id=current_agent_id,
                     time=self.get_time(),
                     time_step=self.get_time_step(),
                     agent_type=agent_instance.agent_type,
                     agent_name=agent_name,
-                    wealth=self._calculate_wealth(inventory_dic=inventory_dic),
+                    wealth=wealth,
                     inventory_dic=inventory_dic,
                     persona_dic=self.get_persona(agent_id=current_agent_id),
                 )
@@ -523,7 +532,6 @@ class Environment(Generic[ObsT]):
                 else:
                     self.others_ids.append(current_agent_id)
                 self.agent_id2agent[current_agent_id] = agent_instance
-                self.agent_id2initial_inventory[current_agent_id] = inventory_dic.copy()
                 self._assign_agent_to_space(
                     agent_id=current_agent_id,
                     coords=agent_config.get("initialCoords", None),
@@ -819,6 +827,7 @@ class Environment(Generic[ObsT]):
             agent_id=agent_id,
             old_pos=current_pos,
             new_pos=next_pos,
+            init_pos=self.agent_id2initial_coords[agent_id],
         )
         self.remember_log(log)
         self.event_manager.trigger_events_after_log(log=log, env=self)
@@ -1687,11 +1696,14 @@ class Environment(Generic[ObsT]):
         """
         agent: Agent = self.agent_id2agent[agent_id]
         wealth: float = self._calculate_wealth(agent.get_inventory())
+        self.agent_id2wealth[agent_id] = wealth
         log: StateEvaluationLog = StateEvaluationLog(
             time=self.get_time(),
             time_step=self.get_time_step(),
             agent_id=agent_id,
             wealth=wealth,
+            relative_wealth=self.calculate_relative_wealth(agent_id=agent_id),
+            buying_power=self.calculate_buying_power(agent_id=agent_id),
             inventory_dic=agent.get_inventory(),
             persona_dic=self.get_persona(agent_id=agent_id),
         )
@@ -1716,6 +1728,68 @@ class Environment(Generic[ObsT]):
                 item: Item = self.item_name2item[item_name]
                 wealth += item_amount * item.get_price()
         return wealth
+
+    def calculate_relative_wealth(self, agent_id: int) -> Optional[float]:
+        """Calculate the relative wealth of the agent compared to other agents.
+
+        Args:
+            agent_id (int): agent id of the agent to calculate the relative wealth.
+
+        Returns:
+            relative_wealth (float, optional): the calculated relative wealth.
+                Returns None if the agent is not a household agent.
+
+        Note:
+            See also: econsimulacra.logs.StateEvaluationLog
+        """
+        if agent_id not in self.household_ids:
+            return None
+        household_wealth_arr: NDArray[np.float64] = np.array(
+            [
+                self.agent_id2wealth.get(agent_id, 0.0)
+                for agent_id in self.agent_ids
+                if agent_id in self.household_ids
+            ],
+            dtype=np.float64,
+        )
+        if len(household_wealth_arr) == 0:
+            raise ValueError(
+                "No household agents found in agent_id2wealth, "
+                f"even though {agent_id} is in household_ids."
+            )
+        avg_wealth: float = float(np.mean(household_wealth_arr))
+        std_wealth: float = float(np.std(household_wealth_arr))
+        agent_wealth: float = self.agent_id2wealth[agent_id]
+        return (agent_wealth - avg_wealth) / std_wealth if std_wealth > 0 else 0.0
+
+    def calculate_buying_power(self, agent_id: int) -> float:
+        """Calculate the buying power of the agent based on its inventory and the item prices.
+
+        Args:
+            agent_id (int): agent id of the agent to calculate the buying power.
+
+        Returns:
+            buying_power (float): the calculated buying power.
+        """
+        agent: Agent = self.agent_id2agent[agent_id]
+        inventory_dic: dict[str, float | int] = agent.get_inventory()
+        cash_amount: float | int = inventory_dic.get(self.cash_name, 0)
+        weighted_price: float = self._calc_weighted_price()
+        buying_power: float = cash_amount / weighted_price if weighted_price > 0 else 0
+        return buying_power
+
+    def _calc_weighted_price(self) -> float:
+        total_weight: float = sum(
+            item.weight_in_basket for item in self.item_name2item.values()
+        )
+        weighted_price: float = 0
+        for item in self.item_name2item.values():
+            weight: float = (
+                item.weight_in_basket / total_weight if total_weight > 0 else 0
+            )
+            price: float = item.get_price()
+            weighted_price += weight * price
+        return weighted_price
 
     def get_observations(self, agent_id: int) -> ObsT:
         """Get the observations for the agent with the given agent_id.
