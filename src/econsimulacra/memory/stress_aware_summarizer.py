@@ -18,6 +18,7 @@ from .base import (
 from .stress_utils import (
     calc_stress_from_consumption_history,
     calc_stress_from_move_history,
+    calc_stress_from_state_evaluation_history
 )
 
 
@@ -39,7 +40,8 @@ class StressCalculator:
         Args:
             config (dict[str, Any]): the configuration for the StressCalculator. It must contain:
                 type: the type of the stress calculator.
-                stress_types: the list of stress types to calculate. Each stress type corresponds to a history field name, such as "consumption_history" or "move_history".
+                stressTypes: the list of stress types to calculate. Each stress type corresponds to a history field name,
+                    such as "consumption_history", "move_history" , or "state_evaluation_history".
                 item2Weight: a dictionary mapping item names to their corresponding weights for stress calculation from consumption history.
                 and may contain:
                 maxMagnitude: the maximum magnitude of the stress level.
@@ -52,6 +54,13 @@ class StressCalculator:
                 timeDecayForMove: the decay factor for the stress contribution of past move events.
                 homeComfortWeight: the weight for home comfort in stress calculation from move history.
                 toleranceThresholdForStress: the tolerance threshold for stress.
+                targetBuyingPower: the target buying power for stress calculation from state evaluation history.
+                targetRelativeWealth: the target relative wealth for stress calculation from state evaluation history.
+                targetWealthGrowth: the target wealth growth for stress calculation from state evaluation history.
+                windowSizeForStateEvaluation: the size of the time window in time steps to consider for stress calculation from state evaluation history.
+                buyingPowerWeight: the weight for buying power in stress calculation from state evaluation history.
+                relativeWealthWeight: the weight for relative wealth in stress calculation from state evaluation history.
+                wealthDrawdownWeight: the weight for wealth drawdown in stress calculation from state evaluation history.
 
             prng (Optional[random.Random]): the pseudo-random number generator to use.
                 If None, a new random.Random instance will be created.
@@ -81,6 +90,21 @@ class StressCalculator:
         self.window_size_for_move: int = config.get("windowSizeForMove", 10)
         self.time_decay_for_move: float = config.get("timeDecayForMove", 0.8)
         self.home_comfort_weight: float = config.get("homeComfortWeight", 0.2)
+        self.target_buying_power: float = config.get("targetBuyingPower", 100.0)
+        self.target_relative_wealth: float = config.get(
+            "targetRelativeWealth", -0.1
+        )
+        self.target_wealth_growth: float = config.get("targetWealthGrowth", 0.0)
+        self.window_size_for_state_evaluation: int = config.get(
+            "windowSizeForStateEvaluation", 10
+        )
+        self.buying_power_weight: float = config.get("buyingPowerWeight", 1.0)
+        self.relative_wealth_weight: float = config.get(
+            "relativeWealthWeight", 0.6
+        )
+        self.wealth_drawdown_weight: float = config.get(
+            "wealthDrawdownWeight", 0.2
+        )
         self._stress_dispatch: dict[
             str,
             Callable[
@@ -320,7 +344,22 @@ class StressCalculator:
         history: Deque[StateEvaluationItem],
     ) -> tuple[Optional[int], str]:
         """Calculate the stress level from the state evaluation history."""
-        return None, ""
+        if "state_evaluation_history" in self.stress_types:
+            return calc_stress_from_state_evaluation_history(
+                state_evaluation_history=history,
+                current_time_step=self.current_time_step,
+                max_stress=self.max_magnitude,
+                target_buying_power=self.target_buying_power,
+                target_relative_wealth=self.target_relative_wealth,
+                target_wealth_growth=self.target_wealth_growth,
+                window_size=self.window_size_for_state_evaluation,
+                buying_power_weight=self.buying_power_weight,
+                relative_wealth_weight=self.relative_wealth_weight,
+                wealth_drawdown_weight=self.wealth_drawdown_weight,
+                tolerance_threshold=self.tolerance_threshold_for_stress,
+            )
+        else:
+            return None, ""
 
 
 class StressAwareSummarizer(MemorySummarizer):
