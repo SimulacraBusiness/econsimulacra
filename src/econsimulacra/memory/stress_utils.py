@@ -32,8 +32,11 @@ def calc_stress_from_consumption_history(
             to their corresponding weights for stress calculation.
 
     Returns:
-        stress_level (int): The calculated stress level.
-        stress_reason (str): The reason for the stress level.
+        tuple[int, str]:
+            A tuple containing:
+
+            - stress_level: The calculated stress level.
+            - stress_reason: The reason for the stress level.
 
     Note:
         The stress level is calculated based on the quantity of items consumed
@@ -71,9 +74,9 @@ def calc_stress_from_consumption_history(
         Corner cases:
 
         - If ``consumption_history`` is empty and
-        :math:`t \\geq W`, then :math:`s(t) = s_{\\max}`.
+          :math:`t \\geq W`, then :math:`s(t) = s_{\\max}`.
         - If ``consumption_history`` is empty and
-        :math:`t < W`, then :math:`s(t) = 0`.
+          :math:`t < W`, then :math:`s(t) = 0`.
     """
     assert 0 <= tolerance_threshold <= max_stress, (
         "tolerance_threshold must be between 0 and max_stress."
@@ -145,8 +148,11 @@ def calc_stress_from_move_history(
         home_comfort (float): The comfort level of being at home.
 
     Returns:
-        stress_level (int): The calculated stress level.
-        stress_reason (str): The reason for the stress level.
+        tuple[int, str]:
+            A tuple containing:
+
+            - stress_level: The calculated stress level.
+            - stress_reason: The reason for the stress level.
 
     Note:
         The stress level is calculated based on the distance moved during the time steps
@@ -180,11 +186,10 @@ def calc_stress_from_move_history(
         where :math:`D^*` is the target distance and :math:`h` is the home comfort level.
 
         Corner cases:
-
         - If ``move_history`` is empty and
-        :math:`t \\geq W`, then :math:`s(t) = s_{\\max}`.
+          :math:`t \\geq W`, then :math:`s(t) = s_{\\max}`.
         - If ``move_history`` is empty and
-        :math:`t < W`, then :math:`s(t) = 0`.
+          :math:`t < W`, then :math:`s(t) = 0`.
     """
     assert 0 <= tolerance_threshold <= max_stress, (
         "tolerance_threshold must be between 0 and max_stress."
@@ -275,8 +280,11 @@ def calc_stress_from_state_evaluation_history(
         wealth_drawdown_weight (float): Weight for wealth-drawdown stress.
 
     Returns:
-        stress_level (int): The calculated stress level.
-        stress_reason (str): The reason for the stress level.
+        tuple[int, str]:
+            A tuple containing:
+
+            - stress_level: The calculated stress level.
+            - stress_reason: The reason for the stress level.
 
     Note:
         The stress is computed from three economic factors:
