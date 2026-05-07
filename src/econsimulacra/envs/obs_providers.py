@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, Generic, Optional, TypeVar
+
+from econsimulacra.logs.base import ObsLog
 
 from ..agents import Agent
 
@@ -9,8 +11,10 @@ if TYPE_CHECKING:
     from ..memory import MemoryHandler
     from .base import Environment
 
+TObs = TypeVar("TObs")
 
-class ObsProvider(ABC):
+
+class ObsProvider(ABC, Generic[TObs]):
     """Observation provider class (abstract class).
 
     Each ObsProvider class must implement the get_obs method,
@@ -48,19 +52,19 @@ class ObsProvider(ABC):
         self.env: Environment = env
 
     @abstractmethod
-    def get_obs(self, agent_id: int) -> Any:
+    def get_obs(self, agent_id: int) -> TObs:
         """Get the observation for the given agent_id.
 
         Args:
             agent_id (int): The ID of the agent for which to get the observation.
 
         Returns:
-            Any: The observation for the given agent_id.
+            TObs: The observation for the given agent_id.
         """
         raise NotImplementedError
 
 
-class ObsProviderFromCoLocatedAgents(ABC):
+class ObsProviderFromCoLocatedAgents(ABC, Generic[TObs]):
     """Observation provider class from co-located agents (abstract class).
 
     This class is for fetching the information provided by co-located agents in the same grid cell.
@@ -68,7 +72,9 @@ class ObsProviderFromCoLocatedAgents(ABC):
     which returns the observation for a given agent_id.
     """
 
-    def __init__(self, env: Environment, co_located_agents: set[int]) -> None:
+    def __init__(
+        self, env: Environment, co_located_agents: set[int]
+    ) -> None:
         """Initialization.
 
         Args:
@@ -86,19 +92,19 @@ class ObsProviderFromCoLocatedAgents(ABC):
         self.co_located_agents: set[int] = co_located_agents
 
     @abstractmethod
-    def get_obs(self, agent_id: int) -> Any:
+    def get_obs(self, agent_id: int) -> TObs:
         """Get the observation for the given agent_id.
 
         Args:
             agent_id (int): The ID of the agent for which to get the observation.
 
         Returns:
-            Any: The observation for the given agent_id.
+            TObs: The observation for the given agent_id.
         """
         raise NotImplementedError
 
 
-class TimeProvider(ObsProvider):
+class TimeProvider(ObsProvider[int | str]):
     """Time Provider class."""
 
     def get_obs(self, agent_id: int) -> int | str:
@@ -113,7 +119,7 @@ class TimeProvider(ObsProvider):
         return self.env.get_time()
 
 
-class TimeDeltaProvider(ObsProvider):
+class TimeDeltaProvider(ObsProvider[int | str]):
     """Time Delta Provider class."""
 
     def get_obs(self, agent_id: int) -> int | str:
@@ -128,7 +134,7 @@ class TimeDeltaProvider(ObsProvider):
         return self.env.get_timedelta()
 
 
-class SelfIDProvider(ObsProvider):
+class SelfIDProvider(ObsProvider[int]):
     """Self ID Provider class."""
 
     def get_obs(self, agent_id: int) -> int:
@@ -143,7 +149,7 @@ class SelfIDProvider(ObsProvider):
         return agent_id
 
 
-class SelfNameProvider(ObsProvider):
+class SelfNameProvider(ObsProvider[str]):
     """Self Name Provider class."""
 
     def get_obs(self, agent_id: int) -> str:
@@ -158,7 +164,7 @@ class SelfNameProvider(ObsProvider):
         return self.env.agent_id2agent[agent_id].get_self_name()
 
 
-class SelfIsHouseholdProvider(ObsProvider):
+class SelfIsHouseholdProvider(ObsProvider[bool]):
     """Self Is Household Provider class."""
 
     def get_obs(self, agent_id: int) -> bool:
@@ -173,7 +179,7 @@ class SelfIsHouseholdProvider(ObsProvider):
         return agent_id in self.env.household_ids
 
 
-class SelfPosProvider(ObsProvider):
+class SelfPosProvider(ObsProvider[tuple[int, ...]]):
     """Self Position Provider class."""
 
     def get_obs(self, agent_id: int) -> tuple[int, ...]:
@@ -188,7 +194,7 @@ class SelfPosProvider(ObsProvider):
         return self.env.grid_space.get_pos(agent_id)
 
 
-class SelfInitPosProvider(ObsProvider):
+class SelfInitPosProvider(ObsProvider[tuple[int, ...]]):
     """Self Initial Position Provider class."""
 
     def get_obs(self, agent_id: int) -> tuple[int, ...]:
@@ -203,7 +209,7 @@ class SelfInitPosProvider(ObsProvider):
         return self.env.agent_id2initial_coords[agent_id]
 
 
-class SelfIsMovingProvider(ObsProvider):
+class SelfIsMovingProvider(ObsProvider[bool]):
     """Self Is Moving Provider class."""
 
     def get_obs(self, agent_id: int) -> bool:
@@ -219,7 +225,7 @@ class SelfIsMovingProvider(ObsProvider):
         return self.env.agent_id2is_moving[agent_id]
 
 
-class SelfDestinationProvider(ObsProvider):
+class SelfDestinationProvider(ObsProvider[Optional[tuple[int, ...]]]):
     """Self Destination Provider class."""
 
     def get_obs(self, agent_id: int) -> Optional[tuple[int, ...]]:
@@ -238,7 +244,7 @@ class SelfDestinationProvider(ObsProvider):
         return self.env.agent_id2destination[agent_id]
 
 
-class OthersPosProvider(ObsProvider):
+class OthersPosProvider(ObsProvider[list[dict[str, Any]]]):
     """Others' Position Provider class."""
 
     def get_obs(self, agent_id: int) -> list[dict[str, Any]]:
@@ -271,7 +277,7 @@ class OthersPosProvider(ObsProvider):
         return others_pos_infos
 
 
-class SelfInventoryProvider(ObsProvider):
+class SelfInventoryProvider(ObsProvider[dict[str, float | int]]):
     """Self Inventory Provider class."""
 
     def get_obs(self, agent_id: int) -> dict[str, float | int]:
@@ -295,7 +301,7 @@ class SelfInventoryProvider(ObsProvider):
         return inventory_dic
 
 
-class SelfSalaryProvider(ObsProvider):
+class SelfSalaryProvider(ObsProvider[float | int]):
     """Salary Provider class."""
 
     def get_obs(self, agent_id: int) -> float | int:
@@ -316,7 +322,7 @@ class SelfSalaryProvider(ObsProvider):
         )
 
 
-class SelfTweetProvider(ObsProvider):
+class SelfTweetProvider(ObsProvider[Optional[str]]):
     """Self Tweet Provider class."""
 
     def get_obs(self, agent_id: int) -> Optional[str]:
@@ -331,7 +337,7 @@ class SelfTweetProvider(ObsProvider):
         return self.env.social_network.get_tweet(agent_id=agent_id)
 
 
-class FollowCapProvider(ObsProvider):
+class FollowCapProvider(ObsProvider[Optional[int]]):
     """Follow Cap Provider class."""
 
     def get_obs(self, agent_id: int) -> Optional[int]:
@@ -346,7 +352,7 @@ class FollowCapProvider(ObsProvider):
         return self.env.social_network.follow_cap
 
 
-class NumFollowersProvider(ObsProvider):
+class NumFollowersProvider(ObsProvider[int]):
     """Number of Followers Provider class."""
 
     def get_obs(self, agent_id: int) -> int:
@@ -361,7 +367,7 @@ class NumFollowersProvider(ObsProvider):
         return self.env.social_network.get_num_followers(agent_id=agent_id)
 
 
-class NumFollowsProvider(ObsProvider):
+class NumFollowsProvider(ObsProvider[str]):
     """Number of Follows Provider class."""
 
     def get_obs(self, agent_id: int) -> str:
@@ -387,7 +393,7 @@ class NumFollowsProvider(ObsProvider):
             return str(num_follows)
 
 
-class VisibleTLProvider(ObsProvider):
+class VisibleTLProvider(ObsProvider[list[dict[str, Any]]]):
     """Visible Timeline Provider class."""
 
     def get_obs(self, agent_id: int) -> list[dict[str, Any]]:
@@ -421,7 +427,7 @@ class VisibleTLProvider(ObsProvider):
         return visible_tl
 
 
-class RecommendedFollowsProvider(ObsProvider):
+class RecommendedFollowsProvider(ObsProvider[list[int]]):
     """Recommended Follows Provider class."""
 
     def get_obs(self, agent_id: int) -> list[int]:
@@ -439,7 +445,7 @@ class RecommendedFollowsProvider(ObsProvider):
         return recommended_follows
 
 
-class IncomingOrdersProvider(ObsProvider):
+class IncomingOrdersProvider(ObsProvider[list[dict[str, Any]]]):
     """Incoming Orders Provider class."""
 
     def get_obs(self, agent_id: int) -> list[dict[str, Any]]:
@@ -478,7 +484,7 @@ class IncomingOrdersProvider(ObsProvider):
         return incoming_orders
 
 
-class IncomingSwapProposalsProvider(ObsProvider):
+class IncomingSwapProposalsProvider(ObsProvider[list[dict[str, Any]]]):
     """Incoming Swap Proposals Provider class."""
 
     def get_obs(self, agent_id: int) -> list[dict[str, Any]]:
@@ -522,7 +528,7 @@ class IncomingSwapProposalsProvider(ObsProvider):
         return incoming_proposals
 
 
-class ItemName2PriceProvider(ObsProvider):
+class ItemName2PriceProvider(ObsProvider[list[dict[str, Any]]]):
     """Item Name to Price Provider class."""
 
     def get_obs(self, agent_id: int) -> list[dict[str, Any]]:
@@ -553,7 +559,7 @@ class ItemName2PriceProvider(ObsProvider):
         return item_name2prices
 
 
-class OthersInventoriesProvider(ObsProviderFromCoLocatedAgents):
+class OthersInventoriesProvider(ObsProviderFromCoLocatedAgents[list[dict[str, Any]]]):
     """Others' Inventories Provider class from co-located agents."""
 
     def get_obs(self, agent_id: int, mask_amount: bool = False) -> list[dict[str, Any]]:
@@ -612,7 +618,7 @@ class OthersInventoriesProvider(ObsProviderFromCoLocatedAgents):
         return inventory_infos
 
 
-class MemoryProvider(ObsProvider):
+class MemoryProvider(ObsProvider[Optional[dict[str, Any]]]):
     """Memory Provider class."""
 
     def get_obs(self, agent_id: int) -> Optional[dict[str, Any]]:
