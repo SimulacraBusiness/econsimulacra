@@ -17,6 +17,7 @@ from ..logs import (
     Log,
     Logger,
     MoveLog,
+    ObsLog,
     OrderExpirationLog,
     OrderLog,
     OrderReactionLog,
@@ -1843,7 +1844,18 @@ class Environment(Generic[ObsT]):
             if key not in obs_providers:
                 raise ValueError(f"Unknown observation key requested: {key}.")
             provider: ObsProvider | ObsProviderFromCoLocatedAgents = obs_providers[key]
-            observation[key] = provider.get_obs(agent_id=agent_id)
+            obs = provider.get_obs(agent_id=agent_id)
+            observation[key] = obs
+            log: ObsLog = ObsLog(
+                time=self.get_time(),
+                time_step=self.get_time_step(),
+                agent_id=agent_id,
+                obs_type=key,
+                obs=obs,
+            )
+            self.remember_log(log)
+            if self.logger is not None:
+                log.read_and_write(logger=self.logger)
         return observation  # type: ignore
 
     def _build_observation_registry(self) -> dict[str, ObsProvider]:
@@ -1901,7 +1913,5 @@ class Environment(Generic[ObsT]):
             dict[str, ObsProviderFromCoLocatedAgents]: Dispatch table for additional observation providers for co-located agents.
         """
         return {
-            "others_inventory": OthersInventoriesProvider(
-                env=self, co_located_agents=co_located_agents
-            ),
+            "others_inventory": OthersInventoriesProvider(env=self, co_located_agents=co_located_agents),
         }
