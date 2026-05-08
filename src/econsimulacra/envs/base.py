@@ -1913,5 +1913,7 @@ class Environment(Generic[ObsT]):
             dict[str, ObsProviderFromCoLocatedAgents]: Dispatch table for additional observation providers for co-located agents.
         """
         return {
-            "others_inventory": OthersInventoriesProvider(env=self, co_located_agents=co_located_agents),
+            "others_inventory": OthersInventoriesProvider(
+                env=self, co_located_agents=co_located_agents
+            ),
         }
