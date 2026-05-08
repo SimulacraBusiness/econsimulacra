@@ -72,24 +72,24 @@
         "numAgents": 1,
         "inventory": {
             "Yen": 0,
-            "Rice": 400,
-            "Eggs": 400,
-            "Milk": 400,
-            "Bread": 400,
-            "Cooking oil": 400,
-            "Tomatoes": 200,
-            "Cheese": 200,
-            "Chicken": 200,
-            "Beef": 200,
-            "Instant noodles": 150,
-            "Potato chips": 150,
-            "Chocolate": 150,
-            "Premium coffee": 100,
-            "Beer": 100,
-            "Laptop": 25,
-            "Tablet": 25,
-            "Headphones": 25,
-            "Smartwatch": 25
+            "Rice": 800,
+            "Eggs": 800,
+            "Milk": 800,
+            "Bread": 800,
+            "Cooking oil": 800,
+            "Tomatoes": 400,
+            "Cheese": 400,
+            "Chicken": 400,
+            "Beef": 400,
+            "Instant noodles": 300,
+            "Potato chips": 300,
+            "Chocolate": 300,
+            "Premium coffee": 200,
+            "Beer": 200,
+            "Laptop": 50,
+            "Tablet": 50,
+            "Headphones": 50,
+            "Smartwatch": 50
         },
         "provideInfo4CoLocatedAgents": ["inventory"],
         "provideInfo4AllAgents": ["self_pos"]
@@ -103,9 +103,9 @@
         "numAgents": 1,
         "inventory": {
             "Yen": 0,
-            "Ramen": 200,
-            "Curry rice": 200,
-            "Bento": 200
+            "Ramen": 400,
+            "Curry rice": 400,
+            "Bento": 400
         },
         "provideInfo4CoLocatedAgents": ["inventory"],
         "provideInfo4AllAgents": ["self_pos"]
@@ -119,8 +119,8 @@
         "numAgents": 1,
         "inventory": {
             "Yen": 0,
-            "Pasta": 150,
-            "Casual dinner set": 150
+            "Pasta": 300,
+            "Casual dinner set": 300
         },
         "provideInfo4CoLocatedAgents": ["inventory"],
         "provideInfo4AllAgents": ["self_pos"]
@@ -253,8 +253,8 @@
                 "windowSizeForMove": 20,
                 "timeDecayForMove": 0.9,
                 "homeComfortWeight": 0.2,
-                "targetBuyingPower": 80.0,
-                "targetRelativeWealth": -0.1,
+                "targetBuyingPower": 10.0,
+                "targetRelativeWealth": -1,
                 "targetWealthGrowth": 0.0,
                 "windowSizeForStateEvaluation": 5,
                 "buyingPowerWeight": 1.5,
