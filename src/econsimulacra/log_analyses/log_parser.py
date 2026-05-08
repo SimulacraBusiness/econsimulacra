@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from datetime import datetime
-from typing import Any
+from typing import Any, Optional
 
 from .records import (
     AgentGenerationRecord,
@@ -60,7 +60,7 @@ def to_persona(value: dict[str, Any]) -> dict[str, float]:
     return extract_prefixed_values(value, "persona")
 
 
-def parse_record(record: dict[str, Any]) -> BaseRecord:
+def parse_record(record: dict[str, Any]) -> Optional[BaseRecord]:
     record_type = record["type"]
 
     if record_type == "agent_generation":
@@ -229,8 +229,8 @@ def parse_record(record: dict[str, Any]) -> BaseRecord:
             inventory=to_inventory(record),
             persona=to_persona(record),
         )
-
-    raise ValueError(f"Unknown Record type: {record_type}")
+    
+    return None
 
 
 def load_from_file(file_path: str) -> list[BaseRecord]:
@@ -249,5 +249,7 @@ def load_from_file(file_path: str) -> list[BaseRecord]:
     with open(file_path, encoding="utf-8") as f:
         for line in f:
             record: dict[str, Any] = json.loads(line)
-            records.append(parse_record(record))
+            parsed_record: Optional[BaseRecord] = parse_record(record)
+            if parsed_record is not None:
+                records.append(parsed_record)
     return records
