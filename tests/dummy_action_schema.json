@@ -87,6 +87,7 @@
                 "required": ["item_name", "price"]
             }
         },
+        "inner_thought": {"type": "string"},
         "tweet": {"anyOf": [{"type": "string"}, {"type": "null"}]},
         "follow": {
             "anyOf": [
@@ -108,6 +109,7 @@
         "proposals",
         "reactions",
         "set_prices",
+        "inner_thought",
         "tweet",
         "follow",
         "unfollow"

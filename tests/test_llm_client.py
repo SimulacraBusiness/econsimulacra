@@ -100,6 +100,7 @@ MODIFIED_ACTION_JSON_SCHEMA = {
                 "required": ["item_name", "price"],
             },
         },
+        "inner_thought": {"type": "string"},
         "tweet": {"anyOf": [{"type": "string"}, {"type": "null"}]},
         "follow": {
             "anyOf": [
@@ -121,6 +122,7 @@ MODIFIED_ACTION_JSON_SCHEMA = {
         "proposals",
         "reactions",
         "set_prices",
+        "inner_thought",
         "tweet",
         "follow",
         "unfollow",
