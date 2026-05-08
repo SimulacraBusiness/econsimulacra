@@ -186,7 +186,7 @@ def parse_record(record: dict[str, Any]) -> Optional[BaseRecord]:
             old_price=float(record["old_price"]),
             new_price=float(record["new_price"]),
         )
-    
+
     if record_type == "inner_thought":
         return InnerThoughtRecord(
             type=record_type,
@@ -239,7 +239,7 @@ def parse_record(record: dict[str, Any]) -> Optional[BaseRecord]:
             inventory=to_inventory(record),
             persona=to_persona(record),
         )
-    
+
     return None
 
 

@@ -219,7 +219,7 @@ class MemoryHandler:
                 inner_thought_history=deque(maxlen=self.memory_length),
                 social_history=deque(maxlen=self.memory_length),
                 state_evaluation_history=deque(maxlen=self.memory_length),
-                obs_history=deque(maxlen=self.memory_length*self.num_obs),
+                obs_history=deque(maxlen=self.memory_length * self.num_obs),
             )
             agent_memory.state_evaluation_history.append(
                 StateEvaluationHistoryItem(
@@ -610,7 +610,9 @@ class MemoryHandler:
         if agent_id not in self.agent_id2memory:
             raise ValueError(f"Agent with id {agent_id} does not exist in memory.")
         agent_memory: AgentMemory = self.agent_id2memory[agent_id]
-        inner_thought_history: Deque[InnerThoughtHistoryItem] = agent_memory.inner_thought_history
+        inner_thought_history: Deque[InnerThoughtHistoryItem] = (
+            agent_memory.inner_thought_history
+        )
         inner_thought_history.append(
             InnerThoughtHistoryItem(
                 inner_thought=log.inner_thought,

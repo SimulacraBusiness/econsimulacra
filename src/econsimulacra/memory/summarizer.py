@@ -221,7 +221,7 @@ class MemorySummarizer:
             )
             + "."
         )
-    
+
     def _summarize_inner_thought_history(
         self, inner_thought_history: Deque[InnerThoughtHistoryItem]
     ) -> str:

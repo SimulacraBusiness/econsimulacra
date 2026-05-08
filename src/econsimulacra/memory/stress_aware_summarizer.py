@@ -253,7 +253,7 @@ class StressCalculator:
         return self._calc_stress_from_set_price_history(
             cast(Deque[SetPriceHistoryItem], history)
         )
-    
+
     def _calc_stress_from_inner_thought_history_dispatch(
         self,
         history: Deque[Any],
@@ -349,7 +349,7 @@ class StressCalculator:
     ) -> tuple[Optional[int], str]:
         """Calculate the stress level from the set price history."""
         return None, ""
-    
+
     def _calc_stress_from_inner_thought_history(
         self,
         history: Deque[InnerThoughtHistoryItem],
