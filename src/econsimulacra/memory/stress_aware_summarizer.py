@@ -4,22 +4,25 @@ import random
 from typing import Any, Callable, Deque, Optional, Type, cast
 
 from ..sim_utils import find_class
-from .base import (
+from .memory_items import (
     ConsumptionHistoryItem,
     ExchangeHistoryItem,
-    MemorySummarizer,
     MoveHistoryItem,
+    ObsHistoryItem,
     PurchaseHistoryItem,
     SaleHistoryItem,
     SetPriceHistoryItem,
     SocialHistoryItem,
-    StateEvaluationItem,
+    StateEvaluationHistoryItem,
 )
 from .stress_utils import (
     calc_stress_from_consumption_history,
     calc_stress_from_move_history,
     calc_stress_from_state_evaluation_history,
 )
+from .summarizer import MemorySummarizer
+
+ObsSummarizer = Callable[[list[ObsHistoryItem]], str]
 
 
 class StressCalculator:
@@ -111,7 +114,8 @@ class StressCalculator:
                         | ExchangeHistoryItem
                         | SetPriceHistoryItem
                         | SocialHistoryItem
-                        | StateEvaluationItem
+                        | StateEvaluationHistoryItem
+                        | ObsHistoryItem
                     ]
                 ],
                 tuple[Optional[int], str],
@@ -127,6 +131,7 @@ class StressCalculator:
             "state_evaluation_history": (
                 self._calc_stress_from_state_evaluation_history_dispatch
             ),
+            "obs_history": self._calc_stress_from_obs_history_dispatch,
         }
         self.current_time: int | str = -1
         self.current_time_step: int = -1
@@ -147,7 +152,8 @@ class StressCalculator:
             | ExchangeHistoryItem
             | SetPriceHistoryItem
             | SocialHistoryItem
-            | StateEvaluationItem
+            | StateEvaluationHistoryItem
+            | ObsHistoryItem
         ],
     ) -> str:
         """Summarize the stress level based on the history.
@@ -252,12 +258,18 @@ class StressCalculator:
             cast(Deque[SocialHistoryItem], history)
         )
 
+    def _calc_stress_from_obs_history_dispatch(
+        self,
+        history: Deque[Any],
+    ) -> tuple[Optional[int], str]:
+        return self._calc_stress_from_obs_history(cast(Deque[ObsHistoryItem], history))
+
     def _calc_stress_from_state_evaluation_history_dispatch(
         self,
         history: Deque[Any],
     ) -> tuple[Optional[int], str]:
         return self._calc_stress_from_state_evaluation_history(
-            cast(Deque[StateEvaluationItem], history)
+            cast(Deque[StateEvaluationHistoryItem], history)
         )
 
     def _calc_stress_from_consumption_history(
@@ -335,7 +347,7 @@ class StressCalculator:
 
     def _calc_stress_from_state_evaluation_history(
         self,
-        history: Deque[StateEvaluationItem],
+        history: Deque[StateEvaluationHistoryItem],
     ) -> tuple[Optional[int], str]:
         """Calculate the stress level from the state evaluation history."""
         if "state_evaluation_history" in self.stress_types:
@@ -354,6 +366,13 @@ class StressCalculator:
             )
         else:
             return None, ""
+
+    def _calc_stress_from_obs_history(
+        self,
+        history: Deque[ObsHistoryItem],
+    ) -> tuple[Optional[int], str]:
+        """Calculate the stress level from the obs history."""
+        return None, ""
 
 
 class StressAwareSummarizer(MemorySummarizer):
@@ -374,9 +393,10 @@ class StressAwareSummarizer(MemorySummarizer):
 
         Args:
             config (dict[str, Any]): the configuration for the StressAwareSummarizer. It must contain:
-                stressCalculator: a dictionary with the following keys:
-                    type: the type of the stress calculator.
-            prng (Optional[random.Random]): the pseudo-random number generator to use.
+                "type": the type of the summarizer.
+                "stressCalculator": a dictionary with the following keys:
+                    "type": the type of the stress calculator.
+            prng (random.Random, optional): the pseudo-random number generator to use.
                 If None, a new random.Random instance will be created.
             registred_classes (list[Type]): the list of registered classes.
 
@@ -417,7 +437,8 @@ class StressAwareSummarizer(MemorySummarizer):
             | ExchangeHistoryItem
             | SetPriceHistoryItem
             | SocialHistoryItem
-            | StateEvaluationItem
+            | StateEvaluationHistoryItem
+            | ObsHistoryItem
         ],
         base_summary: str,
     ) -> str:
