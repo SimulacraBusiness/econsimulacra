@@ -247,7 +247,7 @@ class MemorySummarizer:
     def _summarize_obs_history(self, obs_history: Deque[ObsHistoryItem]) -> str:
         if not obs_history:
             return "You have no observation history."
-        if not hasattr(self, "_obs_providers"):
+        if not hasattr(self, "obs_summarizer_registry"):
             self.obs_summarizer_registry: dict[str, ObsSummarizer] = (
                 self._build_obs_summarizer_registry()
             )
