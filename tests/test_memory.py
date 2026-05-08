@@ -2,6 +2,7 @@ from econsimulacra.logs import (
     AgentGenerationLog,
     ConsumptionLog,
     MoveLog,
+    ObsLog,
     SpaceAssignLog,
     StateEvaluationLog,
 )
@@ -14,6 +15,7 @@ class TestMemoryHandler:
         "memoryLength": 10,
         "memorySummarizer": {
             "type": "StressAwareSummarizer",
+            "relativeThresholdForPriceChange": 0.02,
             "stressCalculator": {
                 "type": "StressCalculator",
                 "stressTypes": [
@@ -47,6 +49,7 @@ class TestMemoryHandler:
         assert memory_handler.memory_length == 10
         assert isinstance(memory_handler.memory_summarizer, StressAwareSummarizer)
         summarizer = memory_handler.memory_summarizer
+        assert summarizer.relative_threshold_for_price_change == 0.02
         stress_calculator = summarizer.stress_calculator
         assert isinstance(summarizer.stress_calculator, StressCalculator)
         assert stress_calculator.max_magnitude == 100
@@ -89,8 +92,25 @@ class TestMemoryHandler:
             agent_id=1,
             pos=(0, 0),
         )
+        log000 = ObsLog(
+            obs_type="others_inventory",
+            time=0,
+            time_step=0,
+            agent_id=1,
+            obs=[
+                {
+                    "agent_id": 2,
+                    "agent_name": "Agent 2",
+                    "Rice": {"price": 100.0, "quantity": 5},
+                    "Apple": {"price": 10.0, "quantity": 10},
+                },
+            ],
+        )
+        log0000 = ObsLog(obs_type="num_follows", time=0, time_step=0, agent_id=1, obs=0)
         memory_handler.update(log=log0)
         memory_handler.update(log=log00)
+        memory_handler.update(log=log000)
+        memory_handler.update(log=log0000)
         assert memory_handler.current_time == 0
         assert memory_handler.current_time_step == 0
         assert summarizer.current_time == 0
@@ -177,4 +197,53 @@ class TestMemoryHandler:
             "You cannot buy enough goods. (buying power: 70.00, target: 80.00) "
             "You have less wealth than others. (relative wealth: -0.30, target: -0.20) "
             "Your wealth has recently decreased. (wealth change: -1000.00)"
+        )
+        log6 = ObsLog(
+            obs_type="others_inventory",
+            time=6,
+            time_step=6,
+            agent_id=1,
+            obs=[
+                {
+                    "agent_id": 2,
+                    "agent_name": "Agent 2",
+                    "Rice": {"price": 110.0, "quantity": 5},
+                    "Apple": {"price": 10.0, "quantity": 10},
+                },
+            ],
+        )
+        memory_handler.update(log=log6)
+        d = memory_handler.get_memory(agent_id=1)
+        assert d["obs_history"] == (
+            "Your observations history are: The price of Rice increased from 100.0 to 110.0. "
+            "From time 0 to 0, you have not changed the number of people you follow at 0."
+        )
+        log7 = ObsLog(
+            obs_type="others_inventory",
+            time=6,
+            time_step=6,
+            agent_id=1,
+            obs=[
+                {
+                    "agent_id": 2,
+                    "agent_name": "Agent 2",
+                    "Rice": {"price": 110.0, "quantity": 5},
+                    "Apple": {"price": 9.0, "quantity": 10},
+                },
+            ],
+        )
+        memory_handler.update(log=log7)
+        d = memory_handler.get_memory(agent_id=1)
+        assert d["obs_history"] == (
+            "Your observations history are: The price of Rice increased from 100.0 to 110.0; "
+            "The price of Apple decreased from 10.0 to 9.0. "
+            "From time 0 to 0, you have not changed the number of people you follow at 0."
+        )
+        log8 = ObsLog(obs_type="num_follows", time=7, time_step=7, agent_id=1, obs=5)
+        memory_handler.update(log=log8)
+        d = memory_handler.get_memory(agent_id=1)
+        assert d["obs_history"] == (
+            "Your observations history are: The price of Rice increased from 100.0 to 110.0; "
+            "The price of Apple decreased from 10.0 to 9.0. "
+            "From time 0 to 7, you have increased the number of people you follow from 0 to 5 (+5)."
         )
