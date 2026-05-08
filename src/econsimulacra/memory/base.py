@@ -9,6 +9,7 @@ from ..logs import (
     ChangePriceLog,
     ConsumptionLog,
     FollowLog,
+    InnerThoughtLog,
     Log,
     MoveLog,
     ObsLog,
@@ -28,6 +29,7 @@ from .memory_items import (
     AgentMemory,
     ConsumptionHistoryItem,
     ExchangeHistoryItem,
+    InnerThoughtHistoryItem,
     MoveHistoryItem,
     ObsHistoryItem,
     PurchaseHistoryItem,
@@ -165,6 +167,7 @@ class MemoryHandler:
             OrderReactionLog: self._process_order_reaction_log,
             ProposalReactionLog: self._process_proposal_reaction_log,
             ChangePriceLog: self._process_change_price_log,
+            InnerThoughtLog: self._process_inner_thought_log,
             TweetLog: self._process_tweet_log,
             FollowLog: self._process_follow_log,
             UnfollowLog: self._process_unfollow_log,
@@ -213,6 +216,7 @@ class MemoryHandler:
                 sale_history=deque(maxlen=self.memory_length),
                 exchange_history=deque(maxlen=self.memory_length),
                 set_price_history=deque(maxlen=self.memory_length),
+                inner_thought_history=deque(maxlen=self.memory_length),
                 social_history=deque(maxlen=self.memory_length),
                 state_evaluation_history=deque(maxlen=self.memory_length),
                 obs_history=deque(maxlen=self.memory_length*self.num_obs),
@@ -591,6 +595,25 @@ class MemoryHandler:
                 item_name=log.item_name,
                 old_price=log.old_price,
                 new_price=log.new_price,
+                time=log.time,
+                time_step=log.time_step,
+            )
+        )
+
+    def _process_inner_thought_log(self, log: InnerThoughtLog) -> None:
+        """Process the InnerThoughtLog to update the inner thought history of the agent in memory.
+
+        Args:
+            log (InnerThoughtLog): the log of inner thought.
+        """
+        agent_id: int = log.agent_id
+        if agent_id not in self.agent_id2memory:
+            raise ValueError(f"Agent with id {agent_id} does not exist in memory.")
+        agent_memory: AgentMemory = self.agent_id2memory[agent_id]
+        inner_thought_history: Deque[InnerThoughtHistoryItem] = agent_memory.inner_thought_history
+        inner_thought_history.append(
+            InnerThoughtHistoryItem(
+                inner_thought=log.inner_thought,
                 time=log.time,
                 time_step=log.time_step,
             )

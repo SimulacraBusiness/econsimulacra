@@ -76,6 +76,27 @@ class PurchaseHistoryItem:
 
 
 @dataclass
+class InnerThoughtHistoryItem:
+    """A class representing an inner thought history item in the agent's memory.
+
+    Attributes:
+        inner_thought (str): the content of the inner thought.
+        time (int | str): the time of the inner thought.
+        time_step (int): the time step of the inner thought.
+        agent_id (int): the id of the agent generating the inner thought.
+
+    Note:
+        This history item is generated based on the InnerThoughtLog.
+        See also: econsimulacra.logs.base.InnerThoughtLog,
+        econsimulacra.envs.base.Environment._process_inner_thought(agent_id, inner_thought)
+    """
+
+    inner_thought: str
+    time: int | str
+    time_step: int
+
+
+@dataclass
 class SaleHistoryItem:
     """A class representing a sale history item in the agent's memory.
 
@@ -237,9 +258,10 @@ class AgentMemory:
         sale_history (Deque[SaleHistoryItem]): the history of the agent's sale.
         exchange_history (Deque[ExchangeHistoryItem]): the history of the agent's exchange.
         set_price_history (Deque[SetPriceHistoryItem]): the history of the agent's price change.
+        inner_thought_history (Deque[InnerThoughtHistoryItem]): the history of the agent's inner thoughts.
         social_history (Deque[SocialHistoryItem]): the history of the agent's social actions.
-        state_evaluation_history (Deque[StateEvaluationItem]): the history of the agent's state evaluations.
-        obs_history (Deque[ObsItem]): the history of the agent's observations.
+        state_evaluation_history (Deque[StateEvaluationHistoryItem]): the history of the agent's state evaluations.
+        obs_history (Deque[ObsHistoryItem]): the history of the agent's observations.
 
     Note:
         The history is stored in a deque with a maximum length of memory_length, which is defined in the MemoryHandler.
@@ -252,6 +274,7 @@ class AgentMemory:
     sale_history: Deque[SaleHistoryItem]
     exchange_history: Deque[ExchangeHistoryItem]
     set_price_history: Deque[SetPriceHistoryItem]
+    inner_thought_history: Deque[InnerThoughtHistoryItem]
     social_history: Deque[SocialHistoryItem]
     state_evaluation_history: Deque[StateEvaluationHistoryItem]
     obs_history: Deque[ObsHistoryItem]

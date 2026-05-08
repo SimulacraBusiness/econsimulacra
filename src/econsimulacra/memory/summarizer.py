@@ -8,6 +8,7 @@ from .memory_items import (
     AgentMemory,
     ConsumptionHistoryItem,
     ExchangeHistoryItem,
+    InnerThoughtHistoryItem,
     MoveHistoryItem,
     ObsHistoryItem,
     PurchaseHistoryItem,
@@ -92,6 +93,10 @@ class MemorySummarizer:
                 agent_memory.set_price_history,
                 self._summarize_set_price_history,
             ),
+            "inner_thought_history": (
+                agent_memory.inner_thought_history,
+                self._summarize_inner_thought_history,
+            ),
             "social_history": (
                 agent_memory.social_history,
                 self._summarize_social_history,
@@ -129,6 +134,7 @@ class MemorySummarizer:
             | SocialHistoryItem
             | StateEvaluationHistoryItem
             | ObsHistoryItem
+            | InnerThoughtHistoryItem
         ],
         base_summary: str,
     ) -> str:
@@ -214,6 +220,20 @@ class MemorySummarizer:
                 for item in set_price_history
             )
             + "."
+        )
+    
+    def _summarize_inner_thought_history(
+        self, inner_thought_history: Deque[InnerThoughtHistoryItem]
+    ) -> str:
+        if not inner_thought_history:
+            return "You have no inner thought history."
+        sorted_items: list[InnerThoughtHistoryItem] = sorted(
+            inner_thought_history, key=lambda item: item.time_step
+        )
+        latest_item: InnerThoughtHistoryItem = sorted_items[-1]
+        return (
+            "Your latest inner thought is: "
+            + f"'{latest_item.inner_thought}' at time {latest_item.time}"
         )
 
     def _summarize_social_history(

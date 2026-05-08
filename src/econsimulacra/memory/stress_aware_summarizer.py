@@ -7,6 +7,7 @@ from ..sim_utils import find_class
 from .memory_items import (
     ConsumptionHistoryItem,
     ExchangeHistoryItem,
+    InnerThoughtHistoryItem,
     MoveHistoryItem,
     ObsHistoryItem,
     PurchaseHistoryItem,
@@ -113,6 +114,7 @@ class StressCalculator:
                         | SaleHistoryItem
                         | ExchangeHistoryItem
                         | SetPriceHistoryItem
+                        | InnerThoughtHistoryItem
                         | SocialHistoryItem
                         | StateEvaluationHistoryItem
                         | ObsHistoryItem
@@ -126,6 +128,7 @@ class StressCalculator:
             "purchase_history": self._calc_stress_from_purchase_history_dispatch,
             "sale_history": self._calc_stress_from_sale_history_dispatch,
             "exchange_history": self._calc_stress_from_exchange_history_dispatch,
+            "inner_thought_history": self._calc_stress_from_inner_thought_history_dispatch,
             "set_price_history": self._calc_stress_from_set_price_history_dispatch,
             "social_history": self._calc_stress_from_social_history_dispatch,
             "state_evaluation_history": (
@@ -151,6 +154,7 @@ class StressCalculator:
             | SaleHistoryItem
             | ExchangeHistoryItem
             | SetPriceHistoryItem
+            | InnerThoughtHistoryItem
             | SocialHistoryItem
             | StateEvaluationHistoryItem
             | ObsHistoryItem
@@ -249,6 +253,14 @@ class StressCalculator:
         return self._calc_stress_from_set_price_history(
             cast(Deque[SetPriceHistoryItem], history)
         )
+    
+    def _calc_stress_from_inner_thought_history_dispatch(
+        self,
+        history: Deque[Any],
+    ) -> tuple[Optional[int], str]:
+        return self._calc_stress_from_inner_thought_history(
+            cast(Deque[InnerThoughtHistoryItem], history)
+        )
 
     def _calc_stress_from_social_history_dispatch(
         self,
@@ -336,6 +348,13 @@ class StressCalculator:
         history: Deque[SetPriceHistoryItem],
     ) -> tuple[Optional[int], str]:
         """Calculate the stress level from the set price history."""
+        return None, ""
+    
+    def _calc_stress_from_inner_thought_history(
+        self,
+        history: Deque[InnerThoughtHistoryItem],
+    ) -> tuple[Optional[int], str]:
+        """Calculate the stress level from the inner thought history."""
         return None, ""
 
     def _calc_stress_from_social_history(
@@ -436,6 +455,7 @@ class StressAwareSummarizer(MemorySummarizer):
             | SaleHistoryItem
             | ExchangeHistoryItem
             | SetPriceHistoryItem
+            | InnerThoughtHistoryItem
             | SocialHistoryItem
             | StateEvaluationHistoryItem
             | ObsHistoryItem
