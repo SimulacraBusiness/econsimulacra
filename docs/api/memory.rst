@@ -1,12 +1,35 @@
 Memory
 ======
 
-Memory Handler Base Class
+History Items
+-------------------------
+
+.. automodule:: econsimulacra.memory.memory_items
+   :members:
+   :show-inheritance:
+
+Memory Handler
 -------------------------
 
 .. automodule:: econsimulacra.memory.base
    :members:
    :show-inheritance:
+
+Summarizers
+-------------------------
+
+.. automodule:: econsimulacra.memory.summarizer
+   :members:
+   :show-inheritance:
+
+Observation Summarization Utilities
+-------------------------
+
+.. autofunction:: econsimulacra.memory.obs_summarization_utils.summarize_observed_price_changes
+
+.. autofunction:: econsimulacra.memory.obs_summarization_utils.summarize_num_changes
+
+.. autofunction:: econsimulacra.memory.obs_summarization_utils.summarize_self_tweet_frequency
 
 Stress-Aware Summarizer
 -----------------------

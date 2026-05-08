@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Deque, Optional
 
-from .base import ConsumptionHistoryItem, MoveHistoryItem, StateEvaluationItem
+from .base import ConsumptionHistoryItem, MoveHistoryItem, StateEvaluationHistoryItem
 
 
 def calc_stress_from_consumption_history(
@@ -251,7 +251,7 @@ def calc_stress_from_move_history(
 
 
 def calc_stress_from_state_evaluation_history(
-    state_evaluation_history: Deque[StateEvaluationItem],
+    state_evaluation_history: Deque[StateEvaluationHistoryItem],
     current_time_step: int,
     max_stress: int,
     target_buying_power: float,
@@ -266,8 +266,8 @@ def calc_stress_from_state_evaluation_history(
     """Calculate economic stress based on state evaluation history.
 
     Args:
-        state_evaluation_history (Deque[StateEvaluationItem]):
-            A deque of StateEvaluationItem representing the agent's economic state history.
+        state_evaluation_history (Deque[StateEvaluationHistoryItem]):
+            A deque of StateEvaluationHistoryItem representing the agent's economic state history.
         current_time_step (int): The current time step in the simulation.
         max_stress (int): The maximum stress level.
         target_buying_power (float): The target buying power level.
@@ -365,7 +365,7 @@ def calc_stress_from_state_evaluation_history(
         if current_time_step >= window_size:
             return max_stress, "Economic state not found."
         return 0, ""
-    recent_items: list[StateEvaluationItem] = [
+    recent_items: list[StateEvaluationHistoryItem] = [
         item
         for item in state_evaluation_history
         if current_time_step - window_size <= item.time_step <= current_time_step
@@ -374,7 +374,7 @@ def calc_stress_from_state_evaluation_history(
         if current_time_step >= window_size:
             return max_stress, "No recent economic state is available."
         return 0, ""
-    latest_item: StateEvaluationItem = recent_items[-1]
+    latest_item: StateEvaluationHistoryItem = recent_items[-1]
 
     # ------------------------------------------------------------------
     # 1. Buying-power stress
@@ -417,7 +417,7 @@ def calc_stress_from_state_evaluation_history(
     # ------------------------------------------------------------------
     wealth_drawdown_stress: float = 0.0
     wealth_drawdown_reason: Optional[str] = None
-    first_item: StateEvaluationItem = recent_items[0]
+    first_item: StateEvaluationHistoryItem = recent_items[0]
     wealth_growth: float = latest_item.wealth - first_item.wealth
     wealth_drawdown_stress = max(
         0.0,
