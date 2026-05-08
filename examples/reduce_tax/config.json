@@ -150,11 +150,11 @@
     "llmClient": {
         "type": "VLLMClient",
         "modelName": "Qwen/Qwen2.5-7B-Instruct",
-        "vllmPython": "/home/m2023rhashimoto/sbpm/.venv-vllm/bin/python",
+        "vllmPython": "/home/m2023rhashimoto/econsimulacra/.venv-vllm/bin/python",
         "maxConcurrentGenerations": 12,
         "useGpu": true,
 	    "isDataParallel": true,
-        "gpuIds": [0, 1],
+        "gpuIds": [0,1],
         "host": "127.0.0.1",
         "port": 8000,
         "timeOut": 600,
@@ -206,9 +206,14 @@
         "memoryLength": 5,
         "memorySummarizer": {
             "type": "StressAwareSummarizer",
+            "relativeThresholdForPriceChange": 0.01,
             "stressCalculator": {
                 "type": "StressCalculator",
-                "stressTypes": ["consumption_history", "move_history"],
+                "stressTypes": [
+                    "consumption_history",
+                    "move_history",
+                    "state_evaluation_history"
+                ],
                 "item2Weight": {
                     "Yen": 0.0,
                     "Rice": 10.0,
@@ -243,7 +248,18 @@
                 "targetConsumptionQuantity": 15,
                 "windowSizeForConsumption": 20,
                 "timeDecayForConsumption": 0.9,
-                "toleranceThresholdForStress": 20
+                "targetMoveDistance": 10.0,
+                "windowSizeForMove": 20,
+                "timeDecayForMove": 0.9,
+                "homeComfortWeight": 0.2,
+                "targetBuyingPower": 80.0,
+                "targetRelativeWealth": -0.1,
+                "targetWealthGrowth": 0.0,
+                "windowSizeForStateEvaluation": 5,
+                "buyingPowerWeight": 1.5,
+                "relativeWealthWeight": 0.9,
+                "wealthDrawdownWeight": 0.3,
+                "toleranceThresholdForStress": 50
             }
         }
     },
