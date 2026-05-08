@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from datetime import datetime
-from typing import Any
+from typing import Any, Optional
 
 from .records import (
     AgentGenerationRecord,
@@ -10,6 +10,7 @@ from .records import (
     ChangePriceRecord,
     ConsumptionRecord,
     FollowRecord,
+    InnerThoughtRecord,
     MoveRecord,
     OrderExpirationRecord,
     OrderReactionRecord,
@@ -60,7 +61,7 @@ def to_persona(value: dict[str, Any]) -> dict[str, float]:
     return extract_prefixed_values(value, "persona")
 
 
-def parse_record(record: dict[str, Any]) -> BaseRecord:
+def parse_record(record: dict[str, Any]) -> Optional[BaseRecord]:
     record_type = record["type"]
 
     if record_type == "agent_generation":
@@ -186,6 +187,15 @@ def parse_record(record: dict[str, Any]) -> BaseRecord:
             new_price=float(record["new_price"]),
         )
 
+    if record_type == "inner_thought":
+        return InnerThoughtRecord(
+            type=record_type,
+            time=parse_time(record["time"]),
+            time_step=int(record["time_step"]),
+            agent_id=int(record["agent_id"]),
+            inner_thought=str(record["inner_thought"]),
+        )
+
     if record_type == "tweet":
         return TweetRecord(
             type=record_type,
@@ -230,7 +240,7 @@ def parse_record(record: dict[str, Any]) -> BaseRecord:
             persona=to_persona(record),
         )
 
-    raise ValueError(f"Unknown Record type: {record_type}")
+    return None
 
 
 def load_from_file(file_path: str) -> list[BaseRecord]:
@@ -249,5 +259,7 @@ def load_from_file(file_path: str) -> list[BaseRecord]:
     with open(file_path, encoding="utf-8") as f:
         for line in f:
             record: dict[str, Any] = json.loads(line)
-            records.append(parse_record(record))
+            parsed_record: Optional[BaseRecord] = parse_record(record)
+            if parsed_record is not None:
+                records.append(parsed_record)
     return records

@@ -9,6 +9,7 @@ from ..logs import (
     ChangePriceLog,
     ConsumptionLog,
     FollowLog,
+    InnerThoughtLog,
     Log,
     MoveLog,
     ObsLog,
@@ -28,6 +29,7 @@ from .memory_items import (
     AgentMemory,
     ConsumptionHistoryItem,
     ExchangeHistoryItem,
+    InnerThoughtHistoryItem,
     MoveHistoryItem,
     ObsHistoryItem,
     PurchaseHistoryItem,
@@ -54,6 +56,9 @@ class MemoryHandler:
             config (dict[str, Any]): the configuration for the MemoryHandler. It must contain the key:
                 "memoryLength": defines the maximum length of the memory for each agent.
                 "memorySummarizer": defines the summarizer to use for each type of history.
+                and may contain:
+                "numObs": the number of most recent observations to keep in memory.
+                    Default to 1. Recommended to set numObs to be N * memoryLength, where N is the number of observation kinds.
             prng (random.Random, optional): the pseudo-random number generator to use.
 
         Note:
@@ -99,6 +104,7 @@ class MemoryHandler:
         self.memory_updaters: dict[type[Log], Callable[[Any], None]] = (
             self._build_memory_registry()
         )
+        self.num_obs: int = self.config.get("numObs", 1)
         self.current_time: int | str = -1
         self.current_time_step: int = -1
 
@@ -161,6 +167,7 @@ class MemoryHandler:
             OrderReactionLog: self._process_order_reaction_log,
             ProposalReactionLog: self._process_proposal_reaction_log,
             ChangePriceLog: self._process_change_price_log,
+            InnerThoughtLog: self._process_inner_thought_log,
             TweetLog: self._process_tweet_log,
             FollowLog: self._process_follow_log,
             UnfollowLog: self._process_unfollow_log,
@@ -209,9 +216,10 @@ class MemoryHandler:
                 sale_history=deque(maxlen=self.memory_length),
                 exchange_history=deque(maxlen=self.memory_length),
                 set_price_history=deque(maxlen=self.memory_length),
+                inner_thought_history=deque(maxlen=self.memory_length),
                 social_history=deque(maxlen=self.memory_length),
                 state_evaluation_history=deque(maxlen=self.memory_length),
-                obs_history=deque(maxlen=self.memory_length),
+                obs_history=deque(maxlen=self.memory_length * self.num_obs),
             )
             agent_memory.state_evaluation_history.append(
                 StateEvaluationHistoryItem(
@@ -587,6 +595,27 @@ class MemoryHandler:
                 item_name=log.item_name,
                 old_price=log.old_price,
                 new_price=log.new_price,
+                time=log.time,
+                time_step=log.time_step,
+            )
+        )
+
+    def _process_inner_thought_log(self, log: InnerThoughtLog) -> None:
+        """Process the InnerThoughtLog to update the inner thought history of the agent in memory.
+
+        Args:
+            log (InnerThoughtLog): the log of inner thought.
+        """
+        agent_id: int = log.agent_id
+        if agent_id not in self.agent_id2memory:
+            raise ValueError(f"Agent with id {agent_id} does not exist in memory.")
+        agent_memory: AgentMemory = self.agent_id2memory[agent_id]
+        inner_thought_history: Deque[InnerThoughtHistoryItem] = (
+            agent_memory.inner_thought_history
+        )
+        inner_thought_history.append(
+            InnerThoughtHistoryItem(
+                inner_thought=log.inner_thought,
                 time=log.time,
                 time_step=log.time_step,
             )

@@ -88,6 +88,7 @@ DEFAULT_ACTION_JSON_SCHEMA: dict[str, Any] = {
                 "required": ["item_name", "price"],
             },
         },
+        "inner_thought": {"type": "string"},
         "tweet": {"anyOf": [{"type": "string"}, {"type": "null"}]},
         "follow": {
             "anyOf": [
@@ -109,6 +110,7 @@ DEFAULT_ACTION_JSON_SCHEMA: dict[str, Any] = {
         "proposals",
         "reactions",
         "set_prices",
+        "inner_thought",
         "tweet",
         "follow",
         "unfollow",
@@ -208,7 +210,14 @@ DEFAULT_ACTION_DESCRIPTION: dict[str, str] = {
     + "and is used to set the posted price for items that other agents can purchase from the corporation. "
     + "Do not specify any item_name that you don't have in your inventory. "
     + "The specified price must be a positive value.",
+    "inner_thought": "A private internal thought that is never shown to other agents. "
+    + "This field represents what you are currently thinking or feeling internally, "
+    + "including your honest impressions and opinions about the people you follows. "
+    + "You may express thoughts that you would never say publicly. "
+    + "Unlike tweets, inner thoughts do not need to be polite, socially acceptable, or strategically filtered. "
+    + "Write naturally as an internal monologue rather than as a public statement.",
     "tweet": "The tweet action is a string representing what you want to tweet. "
+    + "Your tweet will be visible to agents that are following you and may also be visible to other agents. "
     + "You are not required to tweet at every step. "
     + 'If you do not have a strong opinion, emotional reaction, or relevant information, return an empty string "". '
     + "Only tweet when you genuinely feel it is worth sharing.",

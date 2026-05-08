@@ -431,6 +431,29 @@ class TweetLog(Log):
         self.num_followers: int = num_followers
 
 
+class InnerThoughtLog(Log):
+    def __init__(
+        self,
+        time: int | str,
+        time_step: int,
+        agent_id: int,
+        inner_thought: str,
+    ) -> None:
+        """Initialization.
+
+        Args:
+            time (int | str): Current time of the environment when the inner thought is generated.
+            time_step (int): Current integer step index of the environment when the inner thought is generated.
+            agent_id (int): The unique id of the agent generating the inner thought.
+            inner_thought (str): The content of the inner thought.
+        """
+        self.type: str = "inner_thought"
+        self.time: int | str = time
+        self.time_step: int = time_step
+        self.agent_id: int = agent_id
+        self.inner_thought: str = inner_thought
+
+
 class FollowLog(Log):
     def __init__(
         self,
@@ -686,6 +709,9 @@ class Logger:
         pass
 
     def _process_change_price_log(self, log: ChangePriceLog) -> None:
+        pass
+
+    def _process_inner_thought_log(self, log: InnerThoughtLog) -> None:
         pass
 
     def _process_tweet_log(self, log: TweetLog) -> None:
