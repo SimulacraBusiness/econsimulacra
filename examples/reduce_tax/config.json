@@ -204,6 +204,7 @@
     "memoryHandler": {
         "type": "MemoryHandler",
         "memoryLength": 5,
+        "numObs": 23,
         "memorySummarizer": {
             "type": "StressAwareSummarizer",
             "relativeThresholdForPriceChange": 0.01,

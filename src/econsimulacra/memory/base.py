@@ -54,6 +54,9 @@ class MemoryHandler:
             config (dict[str, Any]): the configuration for the MemoryHandler. It must contain the key:
                 "memoryLength": defines the maximum length of the memory for each agent.
                 "memorySummarizer": defines the summarizer to use for each type of history.
+                and may contain:
+                "numObs": the number of most recent observations to keep in memory.
+                    Default to 1. Recommended to set numObs to be N * memoryLength, where N is the number of observation kinds.
             prng (random.Random, optional): the pseudo-random number generator to use.
 
         Note:
@@ -99,6 +102,7 @@ class MemoryHandler:
         self.memory_updaters: dict[type[Log], Callable[[Any], None]] = (
             self._build_memory_registry()
         )
+        self.num_obs: int = self.config.get("numObs", 1)
         self.current_time: int | str = -1
         self.current_time_step: int = -1
 
@@ -211,7 +215,7 @@ class MemoryHandler:
                 set_price_history=deque(maxlen=self.memory_length),
                 social_history=deque(maxlen=self.memory_length),
                 state_evaluation_history=deque(maxlen=self.memory_length),
-                obs_history=deque(maxlen=self.memory_length),
+                obs_history=deque(maxlen=self.memory_length*self.num_obs),
             )
             agent_memory.state_evaluation_history.append(
                 StateEvaluationHistoryItem(
