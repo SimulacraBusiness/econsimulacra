@@ -3,8 +3,6 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any, Generic, Optional, TypeVar
 
-from econsimulacra.logs.base import ObsLog
-
 from ..agents import Agent
 
 if TYPE_CHECKING:
@@ -72,9 +70,7 @@ class ObsProviderFromCoLocatedAgents(ABC, Generic[TObs]):
     which returns the observation for a given agent_id.
     """
 
-    def __init__(
-        self, env: Environment, co_located_agents: set[int]
-    ) -> None:
+    def __init__(self, env: Environment, co_located_agents: set[int]) -> None:
         """Initialization.
 
         Args:
