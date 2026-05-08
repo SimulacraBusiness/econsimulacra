@@ -10,6 +10,7 @@ from .records import (
     ChangePriceRecord,
     ConsumptionRecord,
     FollowRecord,
+    InnerThoughtRecord,
     MoveRecord,
     OrderExpirationRecord,
     OrderReactionRecord,
@@ -184,6 +185,15 @@ def parse_record(record: dict[str, Any]) -> Optional[BaseRecord]:
             item_name=str(record["item_name"]),
             old_price=float(record["old_price"]),
             new_price=float(record["new_price"]),
+        )
+    
+    if record_type == "inner_thought":
+        return InnerThoughtRecord(
+            type=record_type,
+            time=parse_time(record["time"]),
+            time_step=int(record["time_step"]),
+            agent_id=int(record["agent_id"]),
+            inner_thought=str(record["inner_thought"]),
         )
 
     if record_type == "tweet":

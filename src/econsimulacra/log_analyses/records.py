@@ -300,6 +300,25 @@ class ChangePriceRecord(TimedRecord):
 
 
 @dataclass(frozen=True)
+class InnerThoughtRecord(TimedRecord):
+    """A record for inner thought events.
+
+    Corresponds to econsimulacra.logs.InnerThoughtLog.
+
+    Attributes:
+        type (str): must be "inner_thought".
+        time (int | datetime): The timestamp of the log entry,
+            as a datetime object or integer.
+        time_step (int): The time step of the log entry, as an integer.
+        agent_id (int): The ID of the agent that had the inner thought.
+        inner_thought (str): The content of the inner thought.
+    """
+
+    agent_id: int
+    inner_thought: str
+
+
+@dataclass(frozen=True)
 class TweetRecord(TimedRecord):
     """A record for tweet events.
 
