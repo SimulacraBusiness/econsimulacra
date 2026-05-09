@@ -63,6 +63,8 @@ class StoreSalesAnalyzer(AnalyzerBase[dict[str, dict[datetime | int, float]]]):
             if firm_id not in agent_id2name:
                 raise ValueError(f"Agent ID {firm_id} not found.")
             firm_name = agent_id2name[firm_id]
+            if "Household" in firm_name:
+                continue
             time = proposal_reaction.time
             if firm_name not in sales:
                 continue
