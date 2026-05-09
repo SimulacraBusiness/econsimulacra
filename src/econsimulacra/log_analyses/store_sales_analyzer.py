@@ -6,6 +6,9 @@ import matplotlib.dates as mdates
 import numpy as np
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
+from rich.console import RenderableType
+from rich.panel import Panel
+from rich.table import Table
 
 from .base import AnalyzerBase
 from .records import (
@@ -88,3 +91,44 @@ class StoreSalesAnalyzer(AnalyzerBase[dict[str, dict[datetime | int, float]]]):
         ax.set_ylabel("Sales Amount")
         ax.legend()
         return {"sales": fig}
+    
+    def build_summary(
+        self,
+        result: dict[str, dict[datetime | int, float]],
+    ) -> RenderableType:
+        """Build a rich summary table for total store sales."""
+
+        firm_name2total_sales: dict[str, float] = {
+            firm_name: sum(time_sales.values())
+            for firm_name, time_sales in result.items()
+            if "Household" not in firm_name
+        }
+
+        sorted_items: list[tuple[str, float]] = sorted(
+            firm_name2total_sales.items(),
+            key=lambda x: x[1],
+            reverse=True,
+        )
+
+        table = Table(
+            title="Store Sales Ranking",
+            show_header=True,
+            header_style="bold cyan",
+        )
+
+        table.add_column("Rank", justify="right")
+        table.add_column("Store")
+        table.add_column("Total Sales", justify="right")
+
+        for rank, (firm_name, total_sales) in enumerate(sorted_items, start=1):
+            table.add_row(
+                str(rank),
+                firm_name,
+                f"{total_sales:,.3f}",
+            )
+
+        return Panel(
+            table,
+            title=f"{self.name} Summary",
+            border_style="blue",
+        )

@@ -2,8 +2,13 @@ from __future__ import annotations
 
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
+from statistics import mean, median, stdev
+from rich.console import RenderableType
+from rich.panel import Panel
+from rich.table import Table
 
 from econsimulacra.log_analyses.records import (
+    BaseRecord,
     MoveRecord,
     OrderReactionRecord,
     TweetRecord,
@@ -44,29 +49,33 @@ class AgentBehaviorStatsAnalyzer(AnalyzerBase[dict[str, dict[int, float]]]):
             "total_move_distance": {},
             "total_word_counts": {},
         }
-        for react_record in store.typed(OrderReactionRecord):
-            agent_id = react_record.agent_id
-            if agent_id not in stats["total_purchase_price"]:
-                stats["total_purchase_price"][agent_id] = 0.0
-                stats["avg_unit_purchase_price"][agent_id] = 0.0
-            stats["total_purchase_price"][agent_id] += (
-                react_record.accept_amount * react_record.price
-            )
-            stats["avg_unit_purchase_price"][agent_id] += react_record.price
-        for move_record in store.typed(MoveRecord):
-            agent_id = move_record.agent_id
-            if agent_id not in stats["total_move_distance"]:
-                stats["total_move_distance"][agent_id] = 0.0
-            old_pos: tuple[int, ...] = move_record.old_pos
-            new_pos: tuple[int, ...] = move_record.new_pos
-            stats["total_move_distance"][agent_id] += (
-                sum((new - old) ** 2 for old, new in zip(old_pos, new_pos)) ** 0.5
-            )
-        for tweet_record in store.typed(TweetRecord):
-            agent_id = tweet_record.agent_id
-            if agent_id not in stats["total_word_counts"]:
-                stats["total_word_counts"][agent_id] = 0.0
-            stats["total_word_counts"][agent_id] += len(tweet_record.message.split())
+        agent_id2name: dict[int, str] = self.get_agent_id2name(store)
+        for agent_id in agent_id2name.keys():
+            records: list[BaseRecord] = store.get_by_agent(agent_id)
+            total_purchase_price: float = 0.0
+            total_unit_price: float = 0.0
+            purchase_count: int = 0
+            total_move_distance: float = 0.0
+            total_word_counts: int = 0
+            for record in records:
+                if isinstance(record, OrderReactionRecord):
+                    total_purchase_price += record.accept_amount * record.price
+                    total_unit_price += record.price
+                    purchase_count += 1
+                elif isinstance(record, MoveRecord):
+                    old_pos: tuple[int, ...] = record.old_pos
+                    new_pos: tuple[int, ...] = record.new_pos
+                    total_move_distance += (
+                        sum((new - old) ** 2 for old, new in zip(old_pos, new_pos)) ** 0.5
+                    )
+                elif isinstance(record, TweetRecord):
+                    total_word_counts += len(record.message.split())
+            stats["total_purchase_price"][agent_id] = total_purchase_price
+            stats["avg_unit_purchase_price"][agent_id] = (
+                total_unit_price / purchase_count
+            ) if purchase_count > 0 else 0.0
+            stats["total_move_distance"][agent_id] = total_move_distance
+            stats["total_word_counts"][agent_id] = total_word_counts
         return stats
 
     def draw_figs(
@@ -83,3 +92,39 @@ class AgentBehaviorStatsAnalyzer(AnalyzerBase[dict[str, dict[int, float]]]):
             ax.set_ylabel("Count")
             fig_dic[stat_name] = fig
         return fig_dic
+    
+    def build_summary(
+        self,
+        result: dict[str, dict[int, float]],
+    ) -> RenderableType:
+        """Build a rich summary table for agent behavior stats."""
+        table = Table(
+            title="Agent Behavior Stats",
+            show_header=True,
+            header_style="bold cyan",
+        )
+        table.add_column("Stat")
+        table.add_column("Mean", justify="right")
+        table.add_column("Median", justify="right")
+        table.add_column("Std", justify="right")
+        table.add_column("N", justify="right")
+        for stat_name, agent_id2stat in result.items():
+            values: list[float] = list(agent_id2stat.values())
+            if not values:
+                table.add_row(stat_name, "-", "-", "-", "0")
+                continue
+            avg: float = mean(values)
+            med: float = median(values)
+            std: float = stdev(values) if len(values) >= 2 else 0.0
+            table.add_row(
+                stat_name,
+                f"{avg:.3f}",
+                f"{med:.3f}",
+                f"{std:.3f}",
+                f"{len(values):,}",
+            )
+        return Panel(
+            table,
+            title=f"{self.name} Summary",
+            border_style="blue",
+        )

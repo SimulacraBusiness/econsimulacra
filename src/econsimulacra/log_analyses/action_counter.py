@@ -2,6 +2,9 @@ from __future__ import annotations
 
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
+from rich.console import RenderableType
+from rich.panel import Panel
+from rich.table import Table
 
 from .base import AnalyzerBase
 from .store import RecordStore
@@ -62,3 +65,28 @@ class ActionCounter(AnalyzerBase[dict[str, int]]):
             rotation_mode="anchor",
         )
         return {"action_count": fig}
+    
+    def build_summary(
+        self,
+        result: dict[str, int],
+    ) -> RenderableType:
+        """Build a rich summary table for action counts."""
+        table = Table(
+            title="Action Counts",
+            show_header=True,
+            header_style="bold cyan",
+        )
+        table.add_column("Action Type", style="green")
+        table.add_column("Count", justify="right", style="magenta")
+        total_count: int = 0
+        for action_name, count in result.items():
+            table.add_row(
+                action_name,
+                f"{count:,}",
+            )
+            total_count += count
+        return Panel(
+            table,
+            title=f"{self.name} Summary",
+            border_style="blue",
+        )
