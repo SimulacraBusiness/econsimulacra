@@ -1,4 +1,5 @@
 from .action_counter import ActionCounter
+from .agent_behavior_stats_analyzer import AgentBehaviorStatsAnalyzer
 from .base import AnalysisManager, AnalyzerBase
 from .follower_counter import FollowerCounter
 from .log_parser import load_from_file
@@ -22,11 +23,12 @@ from .records import (
     TweetRecord,
     UnfollowRecord,
 )
-from .store_sales_analyzer import StoreSalesAnalyzer
 from .store import RecordStore
+from .store_sales_analyzer import StoreSalesAnalyzer
 
 __all__ = [
     "ActionCounter",
+    "AgentBehaviorStatsAnalyzer",
     "AnalyzerBase",
     "AnalysisManager",
     "FollowerCounter",
