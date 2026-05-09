@@ -63,8 +63,6 @@ class StoreSalesAnalyzer(AnalyzerBase[dict[str, dict[datetime | int, float]]]):
             if firm_id not in agent_id2name:
                 raise ValueError(f"Agent ID {firm_id} not found.")
             firm_name = agent_id2name[firm_id]
-            if "Household" in firm_name:
-                continue
             time = proposal_reaction.time
             if firm_name not in sales:
                 continue
@@ -80,6 +78,8 @@ class StoreSalesAnalyzer(AnalyzerBase[dict[str, dict[datetime | int, float]]]):
         fig: Figure = Figure(figsize=(10, 6))
         ax: Axes = fig.add_subplot(1, 1, 1)
         for firm_name, time_sales in result.items():
+            if "Household" in firm_name:
+                continue
             times = sorted(list(time_sales.keys()))
             sales = [time_sales[time] for time in times]
             ax.plot(np.array(times), sales, label=firm_name)
