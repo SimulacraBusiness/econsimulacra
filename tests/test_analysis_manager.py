@@ -5,7 +5,7 @@ from econsimulacra.log_analyses import (
     AnalysisManager,
     FollowerCounter,
     RecordStore,
-    SalesAnalyzer,
+    StoreSalesAnalyzer,
     load_from_file,
 )
 
@@ -22,7 +22,7 @@ class TestAnalysisManager:
             analyzers=[
                 ActionCounter(),
                 FollowerCounter(),
-                SalesAnalyzer(),
+                StoreSalesAnalyzer(),
             ]
         )
         stores = RecordStore(load_from_file(self.file_path))

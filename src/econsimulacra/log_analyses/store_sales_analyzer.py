@@ -15,10 +15,10 @@ from .records import (
 from .store import RecordStore
 
 
-class SalesAnalyzer(AnalyzerBase[dict[str, dict[datetime | int, float]]]):
+class StoreSalesAnalyzer(AnalyzerBase[dict[str, dict[datetime | int, float]]]):
     """Sales analyzer.
 
-    SalesAnalyzer analyzes sales data for each firm
+    StoreSalesAnalyzer analyzes sales data for each firm
     based on OrderReactionRecord and ProposalReactionRecord.
     """
 

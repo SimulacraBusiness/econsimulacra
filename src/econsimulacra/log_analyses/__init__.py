@@ -22,7 +22,7 @@ from .records import (
     TweetRecord,
     UnfollowRecord,
 )
-from .sales_analyzer import SalesAnalyzer
+from .store_sales_analyzer import StoreSalesAnalyzer
 from .store import RecordStore
 
 __all__ = [
@@ -30,7 +30,7 @@ __all__ = [
     "AnalyzerBase",
     "AnalysisManager",
     "FollowerCounter",
-    "SalesAnalyzer",
+    "StoreSalesAnalyzer",
     "load_from_file",
     "InnerThoughtRecord",
     "BaseRecord",
