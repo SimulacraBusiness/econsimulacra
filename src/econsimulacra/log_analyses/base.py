@@ -149,17 +149,17 @@ class AnalysisManager:
         self,
         store: RecordStore,
         figs_save_path: Optional[str] = None,
-    ) -> dict[str, dict[str | int, Any]]:
+    ) -> dict[str, Any]:
         """Run all analyzers and save their figures.
 
         Args:
             store (RecordStore): The record store to analyze.
             figs_save_path (str, optional): The directory path to save figures.
         """
-        results: dict[str, dict[str | int, Any]] = {}
+        results: dict[str, Any] = {}
         saver: FigureSaver = FigureSaver()
         for analyzer in self.analyzers:
-            result: dict[str | int, Any] = analyzer.analyze(store)
+            result: Any = analyzer.analyze(store)
             results[analyzer.name] = result
             if figs_save_path is not None:
                 figs: dict[str, Figure] = analyzer.draw_figs(result)
