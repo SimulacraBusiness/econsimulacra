@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import cast
 
-import matplotlib.dates as mdates
 import numpy as np
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
@@ -25,7 +25,7 @@ class StoreSalesAnalyzer(AnalyzerBase[dict[str, dict[datetime | int, float]]]):
     based on OrderReactionRecord and ProposalReactionRecord.
     """
 
-    name = "sales"
+    name = "store_sales"
 
     def analyze(self, store: RecordStore) -> dict[str, dict[datetime | int, float]]:
         """Analyzes sales data for each firm.
@@ -34,8 +34,8 @@ class StoreSalesAnalyzer(AnalyzerBase[dict[str, dict[datetime | int, float]]]):
             store (RecordStore): The record store containing the records to analyze.
 
         Returns:
-            A dictionary where keys are firm IDs and
-            values are dictionaries mapping timestamps to total sales amounts.
+            dict[str, dict[datetime | int, float]]: A dictionary where keys are firm IDs and
+                values are dictionaries mapping timestamps to total sales amounts.
         """
         agent_id2name: dict[int, str] = self.get_agent_id2name(store)
         sales: dict[str, dict[datetime | int, float]] = {}
@@ -78,20 +78,40 @@ class StoreSalesAnalyzer(AnalyzerBase[dict[str, dict[datetime | int, float]]]):
         self,
         result: dict[str, dict[datetime | int, float]],
     ) -> dict[str, Figure]:
-        fig: Figure = Figure(figsize=(10, 6))
-        ax: Axes = fig.add_subplot(1, 1, 1)
+        fig_dic: dict[str, Figure] = {}
         for firm_name, time_sales in result.items():
-            if "Household" in firm_name:
-                continue
-            times = sorted(list(time_sales.keys()))
-            sales = [time_sales[time] for time in times]
-            ax.plot(np.array(times), sales, label=firm_name)
-        ax.xaxis.set_major_locator(mdates.DayLocator(interval=10))  # type: ignore
-        ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m-%d"))  # type: ignore
-        ax.set_ylabel("Sales Amount")
-        ax.legend()
-        return {"sales": fig}
-    
+            fig: Figure = Figure(figsize=(10, 6))
+            ax: Axes = fig.add_subplot(1, 1, 1)
+            times: list[datetime | int] = sorted(time_sales.keys())
+            sales: list[float] = [time_sales[time] for time in times]
+            x = np.arange(len(times))
+            ax.bar(x, sales)
+            ax.set_xticks(x)
+            num_ticks: int = min(10, len(times))
+            step: int = max(1, len(times) // num_ticks)
+            tick_positions = x[::step]
+            tick_times = times[::step]
+            ax.set_xticks(tick_positions)
+            if tick_times and isinstance(tick_times[0], datetime):
+                datetime_tick_times = cast(list[datetime], tick_times)
+                ax.set_xticklabels(
+                    [time.strftime("%Y-%m-%d") for time in datetime_tick_times],
+                    rotation=45,
+                    ha="right",
+                    rotation_mode="anchor",
+                )
+            else:
+                ax.set_xticklabels(
+                    [str(time) for time in tick_times],
+                    rotation=45,
+                    ha="right",
+                    rotation_mode="anchor",
+                )
+            ax.set_xlabel("Time")
+            ax.set_ylabel("Sales Amount")
+            fig_dic[f"store_sales_{firm_name}"] = fig
+        return fig_dic
+
     def build_summary(
         self,
         result: dict[str, dict[datetime | int, float]],
