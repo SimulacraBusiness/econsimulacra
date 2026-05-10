@@ -47,3 +47,8 @@ Analyzers
    :members:
    :undoc-members:
    :show-inheritance:
+
+.. automodule:: econsimulacra.log_analyses.agent_behavior_stats_analyzer
+   :members:
+   :undoc-members:
+   :show-inheritance:
