@@ -189,7 +189,9 @@ DEFAULT_ACTION_DESCRIPTION: dict[str, str] = {
     + "You must have sufficient cash in your inventory to execute an order. "
     + "The total cost of the order (posted price * item_amount) must not exceed your available cash balance. "
     + "For the available items and their posted prices, refer to the others_inventory field in the observation. "
-    + "Do not place an order for any item that does not exist in this world (i.e., any item not listed in self_inventory).",
+    + "Do not place an order for any item that does not exist in this world (i.e., any item not listed in self_inventory) "
+    + "The item_amount must represent the quantity you actually want to buy. "
+    + "Do not buy more than you can reasonably consume, store, or use.",
     "proposals": "The proposals action represents a bilateral trade proposal made to another individual agent. "
     + "When you propose a trade, you explicitly specify both what you give and what you request in return. "
     + "This action is used for person-to-person negotiation and may include money as one of the exchanged items. "
@@ -229,6 +231,7 @@ DEFAULT_ACTION_DESCRIPTION: dict[str, str] = {
     + "Refer to the visible_tl field in the observation to see the tweets from agents you are currently following. "
     + "Do not follow an agent that you are already following.",
     "unfollow": "The unfollow action is an integer representing the id of the agent that you want to unfollow. "
-    + "You cannot unfollow an agent that you are not currently following."
-    + "You must unfollow an agent if you want to follow a new agent but have already reached the follow_cap limit.",
+    + "You cannot unfollow an agent that you are not currently following. "
+    + "You must unfollow an agent if you want to follow a new agent but have already reached the follow_cap limit. "
+    + "According to your inner thought, you may want to unfollow agents that you have negative feelings toward or that you think are not worth following.",
 }
