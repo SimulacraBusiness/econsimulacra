@@ -5,7 +5,7 @@ from econsimulacra.log_analyses import (
     AnalysisManager,
     FollowerCounter,
     RecordStore,
-    SalesAnalyzer,
+    StoreSalesAnalyzer,
     load_from_file,
 )
 
@@ -22,7 +22,7 @@ class TestAnalysisManager:
             analyzers=[
                 ActionCounter(),
                 FollowerCounter(),
-                SalesAnalyzer(),
+                StoreSalesAnalyzer(),
             ]
         )
         stores = RecordStore(load_from_file(self.file_path))
@@ -48,6 +48,6 @@ class TestAnalysisManager:
                 parse_time("2025-03-01 20:56:05"): 0,
             },
         }
-        assert results["sales"] == {
+        assert results["store_sales"] == {
             "PrimeDiner4": {parse_time("2025-03-05 08:28:41"): 15001.0}
         }

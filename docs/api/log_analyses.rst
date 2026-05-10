@@ -38,7 +38,17 @@ Analyzers
    :undoc-members:
    :show-inheritance:
 
-.. automodule:: econsimulacra.log_analyses.sales_analyzer
+.. automodule:: econsimulacra.log_analyses.store_sales_analyzer
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: econsimulacra.log_analyses.item_sales_analyzer
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: econsimulacra.log_analyses.agent_behavior_stats_analyzer
    :members:
    :undoc-members:
    :show-inheritance:

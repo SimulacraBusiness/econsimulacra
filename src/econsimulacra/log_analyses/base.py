@@ -8,6 +8,8 @@ from typing import Any, Generic, Optional, TypeVar
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
+from rich.console import Console, RenderableType
+from rich.panel import Panel
 
 from .records import AgentGenerationRecord
 from .store import RecordStore
@@ -51,6 +53,26 @@ class AnalyzerBase(ABC, Generic[T]):
         for record in store.typed(AgentGenerationRecord):
             agent_id2name[record.agent_id] = record.agent_name
         return agent_id2name
+
+    def build_summary(self, result: T) -> RenderableType:
+        """Build a rich-renderable summary of the analysis result.
+
+        Subclasses can override this method.
+        """
+        return Panel.fit(
+            f"No summary is implemented for [bold]{self.name}[/bold].",
+            title="Analysis Summary",
+            border_style="yellow",
+        )
+
+    def summarize_results(
+        self,
+        result: T,
+        console: Optional[Console] = None,
+    ) -> None:
+        """Print the analysis summary using rich."""
+        console = console or Console()
+        console.print(self.build_summary(result))
 
 
 class FigureSaver:
@@ -148,18 +170,22 @@ class AnalysisManager:
     def run_all(
         self,
         store: RecordStore,
+        render_summary: bool = False,
         figs_save_path: Optional[str] = None,
-    ) -> dict[str, dict[str | int, Any]]:
+    ) -> dict[str, Any]:
         """Run all analyzers and save their figures.
 
         Args:
             store (RecordStore): The record store to analyze.
+            render_summary (bool): Whether to render a summary of the analysis results.
             figs_save_path (str, optional): The directory path to save figures.
         """
-        results: dict[str, dict[str | int, Any]] = {}
+        results: dict[str, Any] = {}
         saver: FigureSaver = FigureSaver()
         for analyzer in self.analyzers:
-            result: dict[str | int, Any] = analyzer.analyze(store)
+            result: Any = analyzer.analyze(store)
+            if render_summary:
+                analyzer.summarize_results(result)
             results[analyzer.name] = result
             if figs_save_path is not None:
                 figs: dict[str, Figure] = analyzer.draw_figs(result)

@@ -4,6 +4,9 @@ from datetime import datetime
 
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
+from rich.console import Group, RenderableType
+from rich.panel import Panel
+from rich.table import Table
 
 from .base import AnalyzerBase
 from .records import FollowRecord, TweetRecord, UnfollowRecord
@@ -81,3 +84,43 @@ class FollowerCounter(AnalyzerBase[dict[str, dict[datetime | int, int]]]):
         ax.set_xlabel("Agent Name")
         ax.set_ylabel("Max Number of Followers")
         return {"follower_count": fig}
+
+    def build_summary(
+        self,
+        result: dict[str, dict[datetime | int, int]],
+    ) -> RenderableType:
+        """Build a rich summary table for follower counts."""
+        agent_name2max_followers: dict[str, int] = {
+            agent_name: max(time_counts.values())
+            for agent_name, time_counts in result.items()
+            if time_counts
+        }
+        sorted_items: list[tuple[str, int]] = sorted(
+            agent_name2max_followers.items(),
+            key=lambda x: x[1],
+            reverse=True,
+        )
+        top_table = Table(title="Top 5 Agents by Max Followers")
+        top_table.add_column("Rank", justify="right")
+        top_table.add_column("Agent Name")
+        top_table.add_column("Max Followers", justify="right")
+        for rank, (agent_name, count) in enumerate(sorted_items[:5], start=1):
+            top_table.add_row(str(rank), agent_name, f"{count:,}")
+        counts: list[int] = list(agent_name2max_followers.values())
+        quantile_table = Table(title="Follower Count Quantiles")
+        quantile_table.add_column("Quantile", justify="right")
+        quantile_table.add_column("Max Followers", justify="right")
+        if counts:
+            sorted_counts: list[int] = sorted(counts)
+            n: int = len(sorted_counts)
+            for q in [0.01, 0.05, 0.25, 0.50, 0.75, 0.95, 0.99]:
+                index: int = round((n - 1) * q)
+                quantile_table.add_row(
+                    f"{int(q * 100)}%",
+                    f"{sorted_counts[index]:,}",
+                )
+        return Panel(
+            Group(top_table, quantile_table),
+            title=f"{self.name} Summary",
+            border_style="blue",
+        )
