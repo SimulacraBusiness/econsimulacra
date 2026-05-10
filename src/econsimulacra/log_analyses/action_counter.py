@@ -65,7 +65,7 @@ class ActionCounter(AnalyzerBase[dict[str, int]]):
             rotation_mode="anchor",
         )
         return {"action_count": fig}
-    
+
     def build_summary(
         self,
         result: dict[str, int],

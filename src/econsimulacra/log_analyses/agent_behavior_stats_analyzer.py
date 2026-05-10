@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+from statistics import mean, median, stdev
+
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
-from statistics import mean, median, stdev
 from rich.console import RenderableType
 from rich.panel import Panel
 from rich.table import Table
@@ -66,14 +67,15 @@ class AgentBehaviorStatsAnalyzer(AnalyzerBase[dict[str, dict[int, float]]]):
                     old_pos: tuple[int, ...] = record.old_pos
                     new_pos: tuple[int, ...] = record.new_pos
                     total_move_distance += (
-                        sum((new - old) ** 2 for old, new in zip(old_pos, new_pos)) ** 0.5
+                        sum((new - old) ** 2 for old, new in zip(old_pos, new_pos))
+                        ** 0.5
                     )
                 elif isinstance(record, TweetRecord):
                     total_word_counts += len(record.message.split())
             stats["total_purchase_price"][agent_id] = total_purchase_price
             stats["avg_unit_purchase_price"][agent_id] = (
-                total_unit_price / purchase_count
-            ) if purchase_count > 0 else 0.0
+                (total_unit_price / purchase_count) if purchase_count > 0 else 0.0
+            )
             stats["total_move_distance"][agent_id] = total_move_distance
             stats["total_word_counts"][agent_id] = total_word_counts
         return stats
@@ -92,7 +94,7 @@ class AgentBehaviorStatsAnalyzer(AnalyzerBase[dict[str, dict[int, float]]]):
             ax.set_ylabel("Count")
             fig_dic[stat_name] = fig
         return fig_dic
-    
+
     def build_summary(
         self,
         result: dict[str, dict[int, float]],

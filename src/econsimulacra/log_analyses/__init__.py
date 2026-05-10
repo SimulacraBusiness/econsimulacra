@@ -2,6 +2,7 @@ from .action_counter import ActionCounter
 from .agent_behavior_stats_analyzer import AgentBehaviorStatsAnalyzer
 from .base import AnalysisManager, AnalyzerBase
 from .follower_counter import FollowerCounter
+from .item_sales_analyzer import ItemSalesAnalyzer
 from .log_parser import load_from_file
 from .records import (
     AgentGenerationRecord,
@@ -32,6 +33,7 @@ __all__ = [
     "AnalyzerBase",
     "AnalysisManager",
     "FollowerCounter",
+    "ItemSalesAnalyzer",
     "StoreSalesAnalyzer",
     "load_from_file",
     "InnerThoughtRecord",

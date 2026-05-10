@@ -3,13 +3,13 @@ from __future__ import annotations
 import pathlib
 from abc import ABC, abstractmethod
 from pathlib import Path
-from rich.console import Console, RenderableType
-from rich.panel import Panel
 from typing import Any, Generic, Optional, TypeVar
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
+from rich.console import Console, RenderableType
+from rich.panel import Panel
 
 from .records import AgentGenerationRecord
 from .store import RecordStore
@@ -53,7 +53,7 @@ class AnalyzerBase(ABC, Generic[T]):
         for record in store.typed(AgentGenerationRecord):
             agent_id2name[record.agent_id] = record.agent_name
         return agent_id2name
-    
+
     def build_summary(self, result: T) -> RenderableType:
         """Build a rich-renderable summary of the analysis result.
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from rich.console import Group, RenderableType
@@ -83,7 +84,7 @@ class FollowerCounter(AnalyzerBase[dict[str, dict[datetime | int, int]]]):
         ax.set_xlabel("Agent Name")
         ax.set_ylabel("Max Number of Followers")
         return {"follower_count": fig}
-    
+
     def build_summary(
         self,
         result: dict[str, dict[datetime | int, int]],
@@ -112,9 +113,7 @@ class FollowerCounter(AnalyzerBase[dict[str, dict[datetime | int, int]]]):
         if counts:
             sorted_counts: list[int] = sorted(counts)
             n: int = len(sorted_counts)
-            for q in [
-                0.01, 0.05, 0.25, 0.50, 0.75, 0.95, 0.99
-            ]:
+            for q in [0.01, 0.05, 0.25, 0.50, 0.75, 0.95, 0.99]:
                 index: int = round((n - 1) * q)
                 quantile_table.add_row(
                     f"{int(q * 100)}%",
