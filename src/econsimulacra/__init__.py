@@ -5,6 +5,7 @@ from econsimulacra import (
     items as items,
     llm_services as llm_services,
     logs as logs,
+    log_analyses as log_analyses,
     memory as memory,
     social_networks as social_networks,
 )
@@ -21,6 +22,7 @@ __all__ = [
     "items",
     "llm_services",
     "logs",
+    "log_analyses",
     "memory",
     "social_networks",
     "Simulator",
