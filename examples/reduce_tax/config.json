@@ -273,7 +273,9 @@
             "with": ["AgentGenerationLog"],
             "every": 60
         },
-        "unpaidAgentNames": ["Retailer", "Restaurant", "Government"]
+        "unpaidAgentNames": [
+            "Daily Mart", "QuickBite", "TableHouse", "PrimeDiner", "Government"
+        ]
     },
     "constantSupply": {
         "type": "ConstantSupply",
