@@ -4,8 +4,8 @@ from econsimulacra import (
     events as events,
     items as items,
     llm_services as llm_services,
-    logs as logs,
     log_analyses as log_analyses,
+    logs as logs,
     memory as memory,
     social_networks as social_networks,
 )
