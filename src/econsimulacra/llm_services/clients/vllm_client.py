@@ -87,6 +87,8 @@ class VLLMClient(LLMClient):
                     Whether to allow execution of remote model code.
                 - servedModelName (str):
                     Name exposed via the API (useful when aliasing models).
+                - quantization (str):
+                    Quantization method for the model (e.g., "awq", "fp8").
                 # Low-level vLLM arguments
                 - vllmModule (str, default="vllm.entrypoints.openai.api_server"):
                     Python module used to launch the vLLM server.
@@ -118,6 +120,7 @@ class VLLMClient(LLMClient):
         )
         self.enforce_eager: bool = config.get("enforceEager", False)
         self.served_model_name: Optional[str] = config.get("servedModelName")
+        self.quantization: Optional[str] = config.get("quantization")
         self.vllm_python: str = config.get("vllmPython", sys.executable)
         self.server_log_path: Optional[str] = config.get("serverLogPath")
         if self.is_data_parallel:
@@ -183,6 +186,8 @@ class VLLMClient(LLMClient):
             cmd.append("--enforce-eager")
         if self.served_model_name is not None:
             cmd.extend(["--served-model-name", self.served_model_name])
+        if self.quantization is not None:
+            cmd.extend(["--quantization", self.quantization])
 
         cmd.extend(list(self.config.get("vllmArgs", [])))
         return cmd, env
