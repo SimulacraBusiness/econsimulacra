@@ -135,14 +135,8 @@ class TestMemoryHandler:
         )
         assert score == int((15 - (10 * 1 * 0.9 + 1 * 5)) / 15 * 100)
         d = memory_handler.get_memory(agent_id=1)
-        assert (
-            d["move_history"]
-            == "You have moved to (0, 0)."
-        )
-        assert (
-            d["move_history_stress"]
-            == 0
-        )
+        assert d["move_history"] == "You have moved to (0, 0)."
+        assert d["move_history_stress"] == 0
         assert (
             d["move_history_stress_reason"]
             == "Your stress level from this move is 0 out of 100. "
@@ -165,9 +159,7 @@ class TestMemoryHandler:
         )
         memory_handler.update(log=log3)
         d = memory_handler.get_memory(agent_id=1)
-        assert d["move_history"] == (
-            "You have moved to (0, 0) -> (0, 1)."
-        )
+        assert d["move_history"] == ("You have moved to (0, 0) -> (0, 1).")
         assert d["move_history_stress"] == 90
         assert (
             d["move_history_stress_reason"]
@@ -184,9 +176,7 @@ class TestMemoryHandler:
         )
         memory_handler.update(log=log4)
         d = memory_handler.get_memory(agent_id=1)
-        assert d["move_history"] == (
-            "You have moved to (0, 0) -> (0, 1) -> (0, 0)."
-        )
+        assert d["move_history"] == ("You have moved to (0, 0) -> (0, 1) -> (0, 0).")
         assert d["move_history_stress"] == 64
         assert (
             d["move_history_stress_reason"]
@@ -216,8 +206,7 @@ class TestMemoryHandler:
         assert d["state_evaluation_history_stress"] == 29
         assert (
             d["state_evaluation_history_stress_reason"]
-            ==
-            "Your stress level from this state evaluation is 29 out of 100. "
+            == "Your stress level from this state evaluation is 29 out of 100. "
             "You cannot buy enough goods. (buying power: 70.00, target: 80.00) "
             "You have less wealth than others. (relative wealth: -0.30, target: -0.20) "
             "Your wealth has recently decreased. (wealth change: -1000.00)"
