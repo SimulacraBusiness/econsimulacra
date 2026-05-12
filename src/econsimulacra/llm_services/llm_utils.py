@@ -29,10 +29,11 @@ def get_description(
             econsimulacra.llm_services.PersonaBuilder._get_persona_description()
     """
     desc: str
+    desc_path: Path
     if isinstance(default_description, dict):
         desc_dic: dict[str, str]
         if path_str is not None:
-            desc_path: Path = pathlib.Path(path_str).resolve()
+            desc_path = pathlib.Path(path_str).resolve()
             if not desc_path.exists():
                 raise FileNotFoundError(f"Description file not found at: {desc_path}")
             if not desc_path.suffix.lower() == ".json":
@@ -47,7 +48,7 @@ def get_description(
         desc = json.dumps(desc_dic, ensure_ascii=False)
     elif isinstance(default_description, str):
         if path_str is not None:
-            desc_path: Path = pathlib.Path(path_str).resolve()
+            desc_path = pathlib.Path(path_str).resolve()
             if not desc_path.exists():
                 raise FileNotFoundError(f"Description file not found at: {desc_path}")
             desc = desc_path.read_text(encoding="utf-8")
