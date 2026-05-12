@@ -159,7 +159,7 @@ class StressCalculator:
             | StateEvaluationHistoryItem
             | ObsHistoryItem
         ],
-    ) -> str:
+    ) -> tuple[Optional[int], str]:
         """Summarize the stress level based on the history.
 
         Args:
@@ -167,7 +167,7 @@ class StressCalculator:
             history (Deque[...]): the history corresponding to field_name.
 
         Returns:
-            str: the summarized stress text.
+            tuple[Optional[int], str]: the summarized stress level and description.
         """
         handler = self._stress_dispatch.get(field_name)
         if handler is None:
@@ -178,13 +178,10 @@ class StressCalculator:
         stress_description: str
         stress_level, stress_description = handler(history)
         if stress_level is None:
-            return ""
-
+            return None, ""
         clipped_stress_level: int = max(0, min(int(stress_level), self.max_magnitude))
-        return self._format_stress_text(
-            field_name=field_name,
-            stress_level=clipped_stress_level,
-            stress_description=stress_description,
+        return clipped_stress_level, self._format_stress_text(
+            field_name, clipped_stress_level, stress_description
         )
 
     def _format_stress_text(
@@ -461,12 +458,15 @@ class StressAwareSummarizer(MemorySummarizer):
             | ObsHistoryItem
         ],
         base_summary: str,
-    ) -> str:
+    ) -> dict[str, Any]:
         self.stress_calculator.sync_time(self.current_time, self.current_time_step)
-        stress_text: str = self.stress_calculator.summarize_stress(
+        stress_level, stress_reason = self.stress_calculator.summarize_stress(
             field_name=field_name,
             history=history,
         )
-        if not stress_text:
-            return base_summary
-        return f"{base_summary} {stress_text}"
+        if stress_level is None:
+            return {}
+        return {
+            f"{field_name}_stress": stress_level,
+            f"{field_name}_stress_reason": stress_reason,
+        }
