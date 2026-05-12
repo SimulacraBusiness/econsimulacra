@@ -135,14 +135,19 @@ class TestMemoryHandler:
         )
         assert score == int((15 - (10 * 1 * 0.9 + 1 * 5)) / 15 * 100)
         d = memory_handler.get_memory(agent_id=1)
+        assert d["move_history"] == "You have moved to (0, 0)."
+        assert d["move_history_stress"] == 0
         assert (
-            d["move_history"]
-            == "You have moved to (0, 0). Your stress level from this move is 0 out of 100. "
+            d["move_history_stress_reason"]
+            == "Your stress level from this move is 0 out of 100. "
         )
         assert d["consumption_history"] == (
-            "You have consumed Rice x 1 at time 1, Apple x 5 at time 2. "
-            "Your stress level from this consumption is 6 out of 100. "
-            "Acceptable consumption level."
+            "You have consumed Rice x 1 at time 1, Apple x 5 at time 2."
+        )
+        assert d["consumption_history_stress"] == 6
+        assert (
+            d["consumption_history_stress_reason"]
+            == "Your stress level from this consumption is 6 out of 100. Acceptable consumption level."
         )
         log3 = MoveLog(
             time=3,
@@ -154,9 +159,11 @@ class TestMemoryHandler:
         )
         memory_handler.update(log=log3)
         d = memory_handler.get_memory(agent_id=1)
-        assert d["move_history"] == (
-            "You have moved to (0, 0) -> (0, 1). "
-            "Your stress level from this move is 90 out of 100. "
+        assert d["move_history"] == ("You have moved to (0, 0) -> (0, 1).")
+        assert d["move_history_stress"] == 90
+        assert (
+            d["move_history_stress_reason"]
+            == "Your stress level from this move is 90 out of 100. "
             "You have not moved enough. (distance: 1.0, target: 10.0)"
         )
         log4 = MoveLog(
@@ -169,9 +176,11 @@ class TestMemoryHandler:
         )
         memory_handler.update(log=log4)
         d = memory_handler.get_memory(agent_id=1)
-        assert d["move_history"] == (
-            "You have moved to (0, 0) -> (0, 1) -> (0, 0). "
-            "Your stress level from this move is 64 out of 100. "
+        assert d["move_history"] == ("You have moved to (0, 0) -> (0, 1) -> (0, 0).")
+        assert d["move_history_stress"] == 64
+        assert (
+            d["move_history_stress_reason"]
+            == "Your stress level from this move is 64 out of 100. "
             "You have not moved enough. (distance: 1.9, target: 10.0) "
             "However, being at home makes you feel somewhat comfortable."
         )
@@ -192,8 +201,12 @@ class TestMemoryHandler:
         memory_handler.update(log=log5)
         d = memory_handler.get_memory(agent_id=1)
         assert d["state_evaluation_history"] == (
-            "Your state evaluations are Wealth: 10000 at time 0; Wealth: 9000 at time 5. "
-            "Your stress level from this state evaluation is 29 out of 100. "
+            "Your state evaluations are Wealth: 10000 at time 0; Wealth: 9000 at time 5."
+        )
+        assert d["state_evaluation_history_stress"] == 29
+        assert (
+            d["state_evaluation_history_stress_reason"]
+            == "Your stress level from this state evaluation is 29 out of 100. "
             "You cannot buy enough goods. (buying power: 70.00, target: 80.00) "
             "You have less wealth than others. (relative wealth: -0.30, target: -0.20) "
             "Your wealth has recently decreased. (wealth change: -1000.00)"

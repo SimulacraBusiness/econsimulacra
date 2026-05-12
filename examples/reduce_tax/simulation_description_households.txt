@@ -13,8 +13,6 @@ Inventory is replenished at the end of each month.
 This implies goods may become unavailable during the month.
 The government is a special agent with agent_id = 0.
 The government communicates policies through a social network account.
-You can follow the government by specifying {"follow": 0} to check their policy plan.
-In your tweet, you can freely represent your opinion towards the government and this society.
 
 'Yen' represents cash in this society.
 You can earn Yen as your income.

@@ -114,11 +114,13 @@ class MemorySummarizer:
         summarized_memory: dict[str, str] = {}
         for field_name, (history, summarize_func) in summary_specs.items():
             base_summary: str = summarize_func(history)
-            summarized_memory[field_name] = self._postprocess_summary(
+            summarized_memory[field_name] = base_summary
+            additional_info: dict[str, Any] = self._postprocess_summary(
                 field_name=field_name,
                 history=history,
                 base_summary=base_summary,
             )
+            summarized_memory.update(additional_info)
         return summarized_memory
 
     def _postprocess_summary(
@@ -137,9 +139,9 @@ class MemorySummarizer:
             | InnerThoughtHistoryItem
         ],
         base_summary: str,
-    ) -> str:
+    ) -> dict[str, Any]:
         """Hook for subclasses to append or transform each summary."""
-        return base_summary
+        return {}
 
     def _summarize_move_history(self, move_history: Deque[MoveHistoryItem]) -> str:
         if not move_history:
