@@ -23,12 +23,18 @@ class TestPromptBuilder:
         assert '"key1": "value1"' in prompt
         assert '"key2": 2' in prompt
         config: dict[str, str] = {
-            "obsDescriptionPath": "tests/dummy_obs_description.txt",
-            "actionDescriptionPath": "tests/dummy_action_description.txt",
+            "obsDescriptionPath": "tests/dummy_obs_description.json",
+            "actionDescriptionPath": "tests/dummy_action_description.json",
         }
         prompt_builder = PromptBuilder(config=config)
         prompt: str = prompt_builder.build_prompt(obs)
-        assert "Observation description: This is a dummy obs description." in prompt
-        assert "Action description: This is a dummy action description." in prompt
+        assert (
+            'Observation description: {"dummy": "This is a dummy obs description."}'
+            in prompt
+        )
+        assert (
+            'Action description: {"dummy": "This is a dummy action description."}'
+            in prompt
+        )
         assert '"key1": "value1"' in prompt
         assert '"key2": 2' in prompt

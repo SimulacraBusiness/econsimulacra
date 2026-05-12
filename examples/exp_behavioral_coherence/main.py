@@ -134,11 +134,11 @@ class PromptBuilderWithRetailer(PromptBuilder):
             return self.simulation_desc4retailers
 
 
-# export LOG_TXT_PATH="log.txt"
+# export LOG_TXT_PATH="log_baseline.txt"
 
 
 def conduct_simulation():
-    config_dic_path: Path = pathlib.Path(__file__).parent / "config.json"
+    config_dic_path: Path = pathlib.Path(__file__).parent / "config_baseline.json"
     logger: DictLogger = DictLogger()
     simulator: Simulator = Simulator(
         config=config_dic_path,

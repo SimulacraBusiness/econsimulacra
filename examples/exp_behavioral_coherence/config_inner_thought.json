@@ -1,14 +1,17 @@
 {
     "simulation": {
-        "numSteps": 183,
+        "numSteps": 169,
         "parallelBatchSize": 64,
-        "events": ["constantSalary", "constantSupply", "consumptionTax"]
+        "events": ["constantSalary", "constantSupply"]
     },
     "environment": {
         "space": "gridSpace",
         "socialNetwork": "socialNetwork",
         "cashName": "Yen",
-        "agents": ["Government", "Retailer", "lowRestaurant", "medRestaurant", "highRestaurant", "Household"],
+        "agents": [
+            "Retailer", "lowRestaurant", "medRestaurant", "highRestaurant",
+            "Household"
+        ],
         "items": [
             "Yen",
             "Rice", "Eggs", "Milk", "Bread", "Cooking oil",
@@ -20,7 +23,9 @@
             "Pasta", "Casual dinner set",
             "Sushi", "Course meals", "Wagyu beef steak", "Wine"
         ],
-        "service": ["promptBuilder", "llmClient", "timeTranslator", "personaBuilder", "memoryHandler"]
+        "service": [
+            "promptBuilder", "llmClient", "timeTranslator", "memoryHandler"
+        ]
     },
     "gridSpace": {
         "type": "GridSpace",
@@ -36,31 +41,12 @@
             "temperature": 0.4
         }
     },
-    "Government": {
-        "type": "Government",
-        "name": "Government",
-        "inventory": {
-            "Yen": 10000000000
-        },
-        "tweets": [
-            {
-                "start": "2025-03-01 00:00:00",
-                "end": "2025-04-30 23:59:59",
-                "tweet": "Currently, the consumption tax rate is 10%. We are pleased to announce that the consumption tax rate will be reduced to 5% for the month of March to support our citizens during these challenging times."
-            },
-            {
-                "start": "2025-05-01 00:00:00",
-                "end": "2025-05-31 23:59:59",
-                "tweet": "The consumption tax rate will remain at 5% as part of our ongoing efforts to stimulate economic growth and provide relief to our citizens."
-            }
-        ]
-    },
     "Household": {
         "type": "LLMAgent",
         "isHousehold": true,
-        "numAgents": 115,
+        "numAgents": 116,
         "inventory": {
-            "Yen": {"expon": [200000]}
+            "Yen": {"expon": [100000]}
         }
     },
     "Retailer": {
@@ -182,27 +168,10 @@
     },
     "timeTranslator": {
         "type": "TimeTranslator",
-        "numSteps": 183,
+        "numSteps": 169,
         "startDatetime": "2025-03-01 09:00:00",
-        "endDatetime": "2025-05-31 21:00:00"
-    },
-    "personaBuilder": {
-        "type": "ScoredPersonaBuilder",
-        "attributes": [
-            "Openness",
-            "Conscientiousness",
-            "Extraversion",
-            "Agreeableness",
-            "Neuroticism",
-            "Trust in Government",
-            "Interest in Politics",
-            "Interest in Economics",
-            "Interest in Health",
-            "Interest in Entertainment",
-            "Interest in Daily Life"
-        ],
-        "maxMagnitude": 3,
-        "personaDescriptionPath": "persona_description.txt"
+        "endDatetime": "2025-03-14 21:00:00",
+        "activeTimeRanges": [["09:00:00", "21:00:00"]]
     },
     "memoryHandler": {
         "type": "MemoryHandler",
@@ -256,7 +225,7 @@
                 "windowSizeForMove": 20,
                 "timeDecayForMove": 0.9,
                 "homeComfortWeight": 0.2,
-                "targetBuyingPower": 20.0,
+                "targetBuyingPower": 10.0,
                 "targetRelativeWealth": -1,
                 "targetWealthGrowth": 0.0,
                 "windowSizeForStateEvaluation": 5,
@@ -271,38 +240,17 @@
         "type": "ConstantSalary",
         "trigger": {
             "with": ["AgentGenerationLog"],
-            "every": 60
+            "every": 12
         },
-        "unpaidAgentNames": [
-            "Daily Mart", "QuickBite", "TableHouse", "PrimeDiner", "Government"
-        ]
+        "unpaidAgentNames": ["Daily Mart", "QuickBite", "TableHouse", "PrimeDiner"]
     },
     "constantSupply": {
         "type": "ConstantSupply",
         "trigger": {
             "with": ["AgentGenerationLog"],
-            "every": 60
+            "every": 12
         },
         "suppliedAgentNames": ["Daily Mart", "QuickBite", "TableHouse", "PrimeDiner"]
-    },
-    "consumptionTax": {
-        "type": "ConsumptionTax",
-        "governmentName": "Government",
-        "trigger": {
-            "with": ["OrderReactionLog"]
-        },
-        "taxRates": [
-            {
-                "start": "2025-03-01 00:00:00",
-                "end": "2025-04-30 23:59:59",
-                "rate": 0.1
-            },
-            {
-                "start": "2025-05-01 00:00:00",
-                "end": "2025-05-31 23:59:59",
-                "rate": 0.05
-            }
-        ]
     },
     "Yen": {
         "type": "Item",

@@ -19,9 +19,9 @@ if __name__ == "__main__":
             ItemSalesAnalyzer(),
         ]
     )
-    stores = RecordStore(load_from_file("log.txt"))
+    stores = RecordStore(load_from_file("log_qwen35B.txt"))
     results = manager.run_all(
         stores,
         render_summary=True,
-        figs_save_path="qwen_results",
+        figs_save_path="qwen35B_results",
     )
