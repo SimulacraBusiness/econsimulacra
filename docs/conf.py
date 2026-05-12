@@ -11,7 +11,7 @@ sys.path.insert(0, os.path.abspath("../src"))
 project = "EconSimulacra"
 copyright = "2026, Simulacra Inc"
 author = "Ryuji Hashimoto"
-release = "0.9.0"
+release = "0.11.4"
 
 # -- General configuration -----------------------------------------------------
 extensions = [
@@ -41,6 +41,7 @@ autodoc_mock_imports = [
     "rich",
     "accelerate",
     "datasets",
+    "matplotlib",
     "transformers",
     "statsmodels",
     "sentencepiece",
