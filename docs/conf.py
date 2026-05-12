@@ -11,7 +11,7 @@ sys.path.insert(0, os.path.abspath("../src"))
 project = "EconSimulacra"
 copyright = "2026, Simulacra Inc"
 author = "Ryuji Hashimoto"
-release = "0.11.4"
+release = "0.11.5"
 
 # -- General configuration -----------------------------------------------------
 extensions = [
