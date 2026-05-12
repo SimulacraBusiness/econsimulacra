@@ -19,7 +19,7 @@ def get_description(
         default_description (dict[str, str]): The default description to use if path_str is None.
         remove_keys (list[str], optional): A list of keys to remove from the description dictionary.
             If None, no keys will be removed.
-        
+
     Returns:
         str: The description obtained from the file or the default description.
 

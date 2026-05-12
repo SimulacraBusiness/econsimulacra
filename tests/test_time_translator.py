@@ -32,9 +32,7 @@ class TestTimeTranslator:
             "numSteps": 10,
             "startDatetime": "2025-01-01 00:00:00",
             "endDatetime": "2025-01-05 00:10:00",
-            "activeTimeRanges": [
-                ["00:00:00", "00:01:00"]
-            ]
+            "activeTimeRanges": [["00:00:00", "00:01:00"]],
         }
         time_translator_w_active_time_ranges = TimeTranslator(
             config=config_w_active_time_ranges
@@ -49,11 +47,12 @@ class TestTimeTranslator:
             "2025-01-03 00:01:00",
             "2025-01-04 00:00:30",
             "2025-01-04 00:01:00",
-            "2025-01-05 00:00:30"
+            "2025-01-05 00:00:30",
         ]
         for step in range(10):
             print(
-                step, time_translator_w_active_time_ranges.step_to_datetime(step),
+                step,
+                time_translator_w_active_time_ranges.step_to_datetime(step),
             )
         for step in range(10):
             assert (

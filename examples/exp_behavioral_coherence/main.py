@@ -42,7 +42,9 @@ class PromptBuilderWithRetailer(PromptBuilder):
                     If not provided, a default action description will be used.
             prng (Optional[random.Random]): The random number generator.
         """
-        super().__init__(config=config, prng=prng, registered_classes=registered_classes)
+        super().__init__(
+            config=config, prng=prng, registered_classes=registered_classes
+        )
         self.config: dict[str, Any] = config
         self.simulation_desc4retailers: str
         self.simulation_desc4households: str
