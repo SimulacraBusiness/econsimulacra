@@ -34,6 +34,7 @@ class LLMClient(ABC):
                 - modelName: model name or path to the model
                     (e.g., for OpenAI, "gpt-4"; for Transformers, a model name or path compatible with the Transformers library).
                 and may include:
+                - "disabledActions": a list of action types to disable. If not provided, no actions will be disabled.
                 - "jsonSchemaPath": path to a custom JSON schema file for structured generation (optional, if not provided, a default schema will be used).
                 - "modifySchema": whether to modify the default JSON schema based on config (optional, default is False).
                     See also: ._get_json_schema() and ._modify_json_schema()
@@ -46,6 +47,7 @@ class LLMClient(ABC):
 
         Note:
             The LLMClient class is used as an environment service, and used by the LLMAgent.
+            disabledActions in the LLMClient config must be aligned with that in the PromptBuilder config if the PromptBuilder is used in conjunction with the LLMClient to ensure consistency between the prompt and the expected response format.
             See also: econsimulacra.envs.base.Environment._generate_service_providers,
             econsimulacra.agents.llm_agent.LLMAgent
         """
@@ -53,6 +55,7 @@ class LLMClient(ABC):
         if "modelName" not in config:
             raise ValueError("'modelName' must be specified in the LLMClient config.")
         self.model_name: str = config["modelName"]
+        self.disabled_actions: list[str] = config.get("disabledActions", [])
         self.prng: random.Random = prng if prng is not None else random.Random()
         self.registered_classes: list[Type] = registered_classes
         self._lock = asyncio.Lock()
@@ -81,6 +84,9 @@ class LLMClient(ABC):
         modify_schema: bool = self.config.get("modifySchema", False)
         if modify_schema:
             json_schema = self._modify_json_schema(json_schema, self.config)
+        for action in self.disabled_actions:
+            if action in json_schema["properties"]:
+                del json_schema["properties"][action]
         json_schema_str: str = json.dumps(json_schema, ensure_ascii=False)
         return json_schema_str
 

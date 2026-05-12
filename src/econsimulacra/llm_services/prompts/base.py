@@ -35,10 +35,18 @@ class PromptBuilder:
                     If not provided, a default observation description will be used.
                 - "actionDescriptionPath": (optional) the file path to the action description text file.
                     If not provided, a default action description will be used.
+                - "maskedObses": (optional) a list of observation keys to mask (i.e., remove from the observation before generating the prompt).
+                - "disabledActions": (optional) a list of action types to disable. If not provided, no actions will be disabled.
             prng (Optional[random.Random]): The random number generator.
+
+        Note:
+            disabledActions must be alined with that provided in the LLMClient config if the PromptBuilder is used in conjunction with an LLMClient.
+            See also: econsimulacra.llm_services.clients.base.LLMClient
         """
         self.config: dict[str, Any] = config
         self.simulation_desc: str = self._get_simulation_description(config)
+        self.masked_obses: list[str] = config.get("maskedObses", [])
+        self.disabled_actions: list[str] = config.get("disabledActions", [])
         self.obs_desc, self.action_desc = self._get_obs_action_description(config)
         self.prng: random.Random = prng if prng is not None else random.Random()
         self.registered_classes: list[Type] = registered_classes
@@ -121,12 +129,12 @@ class PromptBuilder:
         """
         obs_desc: str = get_description(
             path_str=config.get("obsDescriptionPath"),
-            default_description=json.dumps(DEFAULT_OBS_DESCRIPTION, ensure_ascii=False),
+            default_description=DEFAULT_OBS_DESCRIPTION,
+            remove_keys=self.masked_obses,
         )
         action_desc: str = get_description(
             path_str=config.get("actionDescriptionPath"),
-            default_description=json.dumps(
-                DEFAULT_ACTION_DESCRIPTION, ensure_ascii=False
-            ),
+            default_description=DEFAULT_ACTION_DESCRIPTION,
+            remove_keys=self.disabled_actions,
         )
         return obs_desc, action_desc
