@@ -15,7 +15,6 @@ The tax is paid by the buyer, in addition to the listed price.
 Although the tax burden is borne by the consumer, you should take this into account when adjusting your prices, as it affects customers’ effective cost and demand behavior.
 The government is a special agent with agent_id = 0.
 The government communicates policies through a social network account.
-You can follow the government by specifying {"follow": 0} to check their policy plan.
 
 'Yen' represents cash in this society.
 You can earn Yen when your goods are sold.
