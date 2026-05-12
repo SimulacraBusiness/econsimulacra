@@ -42,16 +42,12 @@ class PromptBuilderWithRetailer(PromptBuilder):
                     If not provided, a default action description will be used.
             prng (Optional[random.Random]): The random number generator.
         """
+        super().__init__(config=config, prng=prng, registered_classes=registered_classes)
         self.config: dict[str, Any] = config
         self.simulation_desc4retailers: str
         self.simulation_desc4households: str
         self.simulation_desc4retailers, self.simulation_desc4households = (
             self._get_tupled_simulation_description(config)
-        )
-        self.obs_desc, self.action_desc = self._get_obs_action_description(config)
-        self.prng: random.Random = prng if prng is not None else random.Random()
-        self.registered_classes: list[Type] = (
-            registered_classes if registered_classes is not None else []
         )
 
     def _get_tupled_simulation_description(
