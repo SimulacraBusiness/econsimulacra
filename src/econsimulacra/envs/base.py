@@ -1302,7 +1302,7 @@ class Environment(Generic[ObsT]):
             - econsimulacra.social_networks.base.SocialNetwork.follow_agent
             - econsimulacra.social_networks.base.SocialNetwork.unfollow_agent
         """
-        if tweet is not None:
+        if tweet is not None and len(tweet) > 0:
             self.social_network.tweet(agent_id=agent_id, message=tweet)
             tweet_log: TweetLog = TweetLog(
                 time=self.get_time(),
@@ -1602,7 +1602,8 @@ class Environment(Generic[ObsT]):
             - The agent must have non-negative inventory of the item to set its price.
             - price in each set_price must be non-negative.
         """
-
+        if len(set_prices) == 0:
+            return True
         if agent_id in self.household_ids:
             return False
         agent: Agent = self.agent_id2agent[agent_id]
@@ -1613,7 +1614,7 @@ class Environment(Generic[ObsT]):
             price: float = set_price["price"]
             if item_name not in self.item_name2item:
                 return False
-            if agent.get_item_amount(item_name) < 0:
+            if agent.get_item_amount(item_name) <= 0:
                 return False
             if price < 0:
                 return False
