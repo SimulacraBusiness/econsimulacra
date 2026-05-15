@@ -695,54 +695,44 @@ class Environment(Generic[ObsT]):
                 where_to_move=where_to_move,
             )
         consumptions: list[dict[str, Any]] = action_dic.get("consumptions", [])
-        consumptions_allowed: bool = self._check_consumptions(
+        valid_consumptions: list[dict[str, Any]] = self._check_consumptions(
             agent_id=agent_id, consumptions=consumptions
         )
-        if not consumptions_allowed:
-            self.invalid_action_dic["consumptions"] += 1
-            consumptions = []
+        self.invalid_action_dic["consumptions"] += len(consumptions) - len(valid_consumptions)
         self._consume_items(
             agent_id=agent_id,
-            consumptions=consumptions,
+            consumptions=valid_consumptions,
         )
         orders: list[dict[str, Any]] = action_dic.get("orders", [])
-        orders_allowed: bool = self._check_orders(agent_id=agent_id, orders=orders)
-        if not orders_allowed:
-            self.invalid_action_dic["orders"] += 1
-            orders = []
+        valid_orders: list[dict[str, Any]] = self._check_orders(agent_id=agent_id, orders=orders)
+        self.invalid_action_dic["orders"] += len(orders) - len(valid_orders)
         proposals: list[dict[str, Any]] = action_dic.get("proposals", [])
-        proposals_allowed: bool = self._check_proposals(
+        valid_proposals: list[dict[str, Any]] = self._check_proposals(
             agent_id=agent_id, proposals=proposals
         )
-        if not proposals_allowed:
-            self.invalid_action_dic["proposals"] += 1
-            proposals = []
+        self.invalid_action_dic["proposals"] += len(proposals) - len(valid_proposals)
         self._add_new_orders_and_proposals(
             agent_id=agent_id,
             orders=orders,
             proposals=proposals,
         )
         reactions: list[dict[str, Any]] = action_dic.get("reactions", [])
-        reactions_allowed: bool = self._check_reactions(
+        valid_reactions: list[dict[str, Any]] = self._check_reactions(
             agent_id=agent_id, reactions=reactions
         )
-        if not reactions_allowed:
-            self.invalid_action_dic["reactions"] += 1
-            reactions = []
+        self.invalid_action_dic["reactions"] += len(reactions) - len(valid_reactions)
         self._process_reactions(
             agent_id=agent_id,
-            reactions=reactions,
+            reactions=valid_reactions,
         )
         set_prices: list[dict[str, Any]] = action_dic.get("set_prices", [])
-        set_prices_allowed: bool = self._check_set_prices(
+        valid_set_prices: list[dict[str, Any]] = self._check_set_prices(
             agent_id=agent_id, set_prices=set_prices
         )
-        if not set_prices_allowed:
-            self.invalid_action_dic["set_prices"] += 1
-            set_prices = []
+        self.invalid_action_dic["set_prices"] += len(set_prices) - len(valid_set_prices)
         self._set_prices(
             agent_id=agent_id,
-            set_prices=set_prices,
+            set_prices=valid_set_prices,
         )
         inner_thought: str = action_dic.get("inner_thought", "")
         self._process_inner_thought(
@@ -925,7 +915,7 @@ class Environment(Generic[ObsT]):
 
     def _check_consumptions(
         self, agent_id: int, consumptions: list[dict[str, Any]]
-    ) -> bool:
+    ) -> list[dict[str, Any]]:
         """Check whether the consumptions are valid.
 
         Args:
@@ -933,7 +923,7 @@ class Environment(Generic[ObsT]):
             consumptions (list[dict[str, Any]]): list of consumption dictionaries.
 
         Returns:
-            bool: whether the consumptions are valid.
+            list[dict[str, Any]]: a list of valid consumption dictionaries.
 
         Note:
             Checked conditions:
@@ -941,17 +931,19 @@ class Environment(Generic[ObsT]):
             - item_amount in each consumption must be positive and not exceed the agent's inventory.
         """
         agent: Agent = self.agent_id2agent[agent_id]
+        valid_consumptions: list[dict[str, Any]] = []
         for consumption in consumptions:
             item_name: str = consumption.get("item_name", "")
             item_amount: float | int = consumption.get("item_amount", 0)
             if item_name not in self.item_name2item:
-                return False
+                continue
             allowed_amount: float | int = agent.get_item_amount(item_name)
             if item_amount > allowed_amount:
-                return False
+                continue
             if item_amount <= 0:
-                return False
-        return True
+                continue
+            valid_consumptions.append(consumption)
+        return valid_consumptions
 
     def _consume_items(self, agent_id: int, consumptions: list[dict[str, Any]]) -> None:
         """Apply the consumption action to the environment by reducing the agent's inventory of the consumed items.
@@ -993,7 +985,7 @@ class Environment(Generic[ObsT]):
             if self.logger is not None:
                 log.read_and_write(logger=self.logger)
 
-    def _check_orders(self, agent_id: int, orders: list[dict[str, Any]]) -> bool:
+    def _check_orders(self, agent_id: int, orders: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """Check whether the orders are valid.
 
         Args:
@@ -1001,7 +993,7 @@ class Environment(Generic[ObsT]):
             orders (list[dict[str, Any]]): list of order dictionaries.
 
         Returns:
-            bool: whether the orders are valid.
+            list[dict[str, Any]]: a list of valid order dictionaries.
 
         Note:
             Checked conditions:
@@ -1012,38 +1004,41 @@ class Environment(Generic[ObsT]):
             - item_amount in each order must be positive
             - The agent must have enough cash to buy all of the items.
         """
+        valid_orders: list[dict[str, Any]] = []
+        agent: Agent = self.agent_id2agent[agent_id]
         total_cost: float | int = 0.0
+        cash_amount: float | int = agent.get_item_amount(self.cash_name)
         for order_dic in orders:
             counterparty_id: Optional[int] = order_dic.get("counterparty_id", None)
             counterparty_name: Optional[str] = order_dic.get("counterparty_name", None)
             if counterparty_id is None and counterparty_name is None:
-                return False
+                continue
             elif counterparty_id is None and counterparty_name is not None:
                 counterparty_id = self.agent_name2agent_id.get(counterparty_name, None)
             if counterparty_id not in self.agent_ids:
-                return False
+                continue
             if "item_name" not in order_dic:
-                return False
+                continue
             item_name: str = order_dic["item_name"]
             if item_name not in self.item_name2item:
-                return False
+                continue
             if item_name == self.cash_name:
-                return False
+                continue
             item_amount: float | int = order_dic.get("item_amount", 0)
             if item_amount <= 0:
-                return False
+                continue
             item: Item = self.item_name2item[item_name]
             expected_price: Optional[float] = item.get_price()
             if expected_price is not None:
                 expected_price *= item_amount
                 total_cost += expected_price
-        agent: Agent = self.agent_id2agent[agent_id]
-        cash_amount: float | int = agent.get_item_amount(self.cash_name)
-        if total_cost > cash_amount:
-            return False
-        return True
+            if total_cost > cash_amount:
+                break
+            else:
+                valid_orders.append(order_dic)
+        return valid_orders
 
-    def _check_proposals(self, agent_id: int, proposals: list[dict[str, Any]]) -> bool:
+    def _check_proposals(self, agent_id: int, proposals: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """Check whether the proposals are valid.
 
         Args:
@@ -1051,7 +1046,7 @@ class Environment(Generic[ObsT]):
             proposals (list[dict[str, Any]]): list of proposal dictionaries.
 
         Returns:
-            bool: whether the proposals are valid.
+            list[dict[str, Any]]: a list of valid proposal dictionaries.
 
         Note:
             Checked conditions:
@@ -1062,6 +1057,7 @@ class Environment(Generic[ObsT]):
             - The agent must have enough inventory of give_item to make the proposals.
         """
         agent: Agent = self.agent_id2agent[agent_id]
+        valid_proposals: list[dict[str, Any]] = []
         for proposal_dic in proposals:
             responder_agent_id: Optional[int] = proposal_dic.get(
                 "responder_agent_id", None
@@ -1070,34 +1066,35 @@ class Environment(Generic[ObsT]):
                 "responder_agent_name", None
             )
             if responder_agent_id is None and responder_agent_name is None:
-                return False
+                continue
             elif responder_agent_id is None and responder_agent_name is not None:
                 responder_agent_id = self.agent_name2agent_id.get(
                     responder_agent_name, None
                 )
             if responder_agent_id not in self.agent_ids:
-                return False
+                continue
             if (
                 "give_item_name" not in proposal_dic
                 or "give_item_amount" not in proposal_dic
                 or "get_item_name" not in proposal_dic
                 or "get_item_amount" not in proposal_dic
             ):
-                return False
+                continue
             give_item_name: str = proposal_dic["give_item_name"]
             give_item_amount: float | int = proposal_dic["give_item_amount"]
             get_item_name: str = proposal_dic["get_item_name"]
             get_item_amount: float | int = proposal_dic["get_item_amount"]
             if give_item_name not in self.item_name2item:
-                return False
+                continue
             if get_item_name not in self.item_name2item:
-                return False
+                continue
             if give_item_amount <= 0 or get_item_amount <= 0:
-                return False
+                continue
             allowed_give_amount: float | int = agent.get_item_amount(give_item_name)
             if give_item_amount > allowed_give_amount:
-                return False
-        return True
+                continue
+            valid_proposals.append(proposal_dic)
+        return valid_proposals
 
     def _add_new_orders_and_proposals(
         self,
@@ -1403,7 +1400,7 @@ class Environment(Generic[ObsT]):
                         give_item_amount=proposal.get_item_amount,
                     )
 
-    def _check_reactions(self, agent_id: int, reactions: list[dict[str, Any]]) -> bool:
+    def _check_reactions(self, agent_id: int, reactions: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """Check whether the reactions are valid.
 
         Args:
@@ -1411,7 +1408,7 @@ class Environment(Generic[ObsT]):
             reactions (list[dict[str, Any]]): list of reaction dictionaries.
 
         Returns:
-            bool: whether the reactions are valid.
+            list[dict[str, Any]]: list of valid reaction dictionaries.
 
         Note:
             Checked conditions:
@@ -1431,39 +1428,41 @@ class Environment(Generic[ObsT]):
         holding_amount: float | int
         reacted_order_ids: list[int] = []
         reacted_proposal_ids: list[int] = []
+        valid_reactions: list[dict[str, Any]] = []
         for reaction in reactions:
             if "kind" not in reaction:
-                return False
+                continue
             kind: str = reaction["kind"]
             if kind == "order":
                 if "id" not in reaction or "accept_amount" not in reaction:
-                    return False
+                    continue
                 order_id: int = reaction["id"]
                 accept_amount: float | int = reaction["accept_amount"]
                 if order_id in reacted_order_ids:
-                    return False
+                    continue
                 reacted_order_ids.append(order_id)
                 if accept_amount < 0:
-                    return False
+                    continue
                 find_corresponding_order: bool = False
                 order: Order
                 for order in self.pending_orders:
                     if order.order_id == order_id and order.counterparty_id == agent_id:
                         if accept_amount > order.item_amount:
-                            return False
+                            continue
                         holding_amount = agent.get_item_amount(order.item_name)
                         if accept_amount > holding_amount:
-                            return False
+                            continue
                         find_corresponding_order = True
                         break
                 if not find_corresponding_order:
-                    return False
+                    continue
+                valid_reactions.append(reaction)
             elif kind == "proposal":
                 if "id" not in reaction or "accept" not in reaction:
-                    return False
+                    continue
                 proposal_id: int = reaction["id"]
                 if proposal_id in reacted_proposal_ids:
-                    return False
+                    continue
                 reacted_proposal_ids.append(proposal_id)
                 accept: bool = reaction["accept"]
                 find_corresponding_proposal: bool = False
@@ -1478,14 +1477,15 @@ class Environment(Generic[ObsT]):
                                 proposal.get_item_name
                             )
                             if proposal.get_item_amount > holding_amount:
-                                return False
+                                continue
                         find_corresponding_proposal = True
                         break
                 if not find_corresponding_proposal:
-                    return False
+                    continue
+                valid_reactions.append(reaction)
             else:
-                return False
-        return True
+                continue
+        return valid_reactions
 
     def _process_reactions(
         self, agent_id: int, reactions: list[dict[str, Any]]
@@ -1585,7 +1585,7 @@ class Environment(Generic[ObsT]):
 
     def _check_set_prices(
         self, agent_id: int, set_prices: list[dict[str, Any]]
-    ) -> bool:
+    ) -> list[dict[str, Any]]:
         """Check whether the set_prices are valid.
 
         Args:
@@ -1593,7 +1593,7 @@ class Environment(Generic[ObsT]):
             set_prices (list[dict[str, Any]]): list of set_price dictionaries.
 
         Returns:
-            bool: whether the set_prices are valid.
+            list[dict[str, Any]]: list of valid set_price dictionaries.
 
         Note:
             Checked conditions:
@@ -1602,23 +1602,23 @@ class Environment(Generic[ObsT]):
             - The agent must have non-negative inventory of the item to set its price.
             - price in each set_price must be non-negative.
         """
-        if len(set_prices) == 0:
-            return True
+        valid_set_prices: list[dict[str, Any]] = []
         if agent_id in self.household_ids:
-            return False
+            return []
         agent: Agent = self.agent_id2agent[agent_id]
         for set_price in set_prices:
             if "item_name" not in set_price or "price" not in set_price:
-                return False
+                continue
             item_name: str = set_price["item_name"]
             price: float = set_price["price"]
             if item_name not in self.item_name2item:
-                return False
+                continue
             if agent.get_item_amount(item_name) <= 0:
-                return False
+                continue
             if price < 0:
-                return False
-        return True
+                continue
+            valid_set_prices.append(set_price)
+        return valid_set_prices
 
     def _set_prices(self, agent_id: int, set_prices: list[dict[str, Any]]) -> None:
         """Apply the set_prices action to the environment.
