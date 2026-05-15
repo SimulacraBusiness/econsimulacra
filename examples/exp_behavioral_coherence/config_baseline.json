@@ -129,9 +129,11 @@
         "provideInfo4AllAgents": ["self_pos"]
     },
     "promptBuilder": {
-        "type": "PromptBuilderWithRetailer",
-        "simulationDescriptionPathForRetailers": "simulation_description_retailers.txt",
-        "simulationDescriptionPathForHouseholds": "simulation_description_households.txt",
+        "type": "NameBasedPromptBuilder",
+        "name2SimulationDescriptionPath": {
+            "others": "simulation_description_retailers.txt",
+            "Household": "simulation_description_households.txt"
+        },
         "disabledActions": ["inner_thought"]
     },
     "llmClient": {

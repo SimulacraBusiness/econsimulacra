@@ -129,9 +129,11 @@
         "provideInfo4AllAgents": ["self_pos"]
     },
     "promptBuilder": {
-        "type": "PromptBuilderWithRetailer",
-        "simulationDescriptionPathForRetailers": "simulation_description_retailers.txt",
-        "simulationDescriptionPathForHouseholds": "simulation_description_households.txt"
+        "type": "NameBasedPromptBuilder",
+        "name2SimulationDescriptionPath": {
+            "others": "simulation_description_retailers.txt",
+            "Household": "simulation_description_households.txt"
+        }
     },
     "llmClient": {
         "type": "VLLMClient",
@@ -141,16 +143,14 @@
         "maxConcurrentGenerations": 12,
         "useGpu": true,
 	    "isDataParallel": false,
-        "gpuIds": [0,1],
+        "gpuIds": [0],
         "host": "127.0.0.1",
         "port": 8000,
         "timeOut": 600,
         "maxRetries": 3,
         "serverStartTimeout": 1200,
         "trustRemoteCode": false,
-        "gpuMemoryUtilization": 0.85,
-        "enforceEager": true,
-        "quantization": "awq",
+        "gpuMemoryUtilization": 0.75,
         "modifySchema": true,
         "gridSpace": [9, 15],
         "items": [
