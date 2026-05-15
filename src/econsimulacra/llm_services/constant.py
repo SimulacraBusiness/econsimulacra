@@ -132,7 +132,7 @@ DEFAULT_OBS_DESCRIPTION: dict[str, str] = {
     + "Use stress as an internal signal of dissatisfaction when interpreting your situation and deciding what to do.",
     "self_pos": "Your current coordinates in the grid space, represented as a list of integers [x, y].",
     "self_init_pos": "Your home in the grid space, represented as a list of integers [x, y]. "
-    + "You may feel relaxed when you are at home, " 
+    + "You may feel relaxed when you are at home, "
     + "while staying away from home for a long time may gradually cause stress to build up.",
     "self_is_moving": "A boolean indicating whether you are currently moving. "
     + "If True, you will automatically be moved to the target coordinates in the next time step. "
