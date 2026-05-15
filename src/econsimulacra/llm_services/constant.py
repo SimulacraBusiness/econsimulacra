@@ -131,7 +131,9 @@ DEFAULT_OBS_DESCRIPTION: dict[str, str] = {
     + "You should take these stress signals into account when deciding your behavior. "
     + "Use stress as an internal signal of dissatisfaction when interpreting your situation and deciding what to do.",
     "self_pos": "Your current coordinates in the grid space, represented as a list of integers [x, y].",
-    "self_init_pos": "Your home in the grid space, represented as a list of integers [x, y].",
+    "self_init_pos": "Your home in the grid space, represented as a list of integers [x, y]. "
+    + "You may feel relaxed when you are at home, " 
+    + "while staying away from home for a long time may gradually cause stress to build up.",
     "self_is_moving": "A boolean indicating whether you are currently moving. "
     + "If True, you will automatically be moved to the target coordinates in the next time step. "
     + "If False, you can choose whether to move elsewhere or stay in the same place in the next time step.",
@@ -172,9 +174,7 @@ DEFAULT_ACTION_DESCRIPTION: dict[str, str] = {
     + "(i.e., movement per step is limited to adjacent grid spaces or staying in place). "
     + "Therefore, you do not need to manually specify intermediate positions; simply choose the location you ultimately want to reach. "
     + "You can refer to the others_pos field in the observation to decide where to go if you want to visit a store. "
-    + "You can also refer to the self_init_pos field in the observation to go back home. "
-    + "Example: If the current position is [2, 3] and you want to go to [10, 5], you can specify [10, 5] as your move action. "
-    + "If you are a corporation (e.g., retailer or restaurant), you cannot move.",
+    + "You can also refer to the self_init_pos field in the observation to go back home.",
     "consumptions": "The consumptions action is a list of items that you want to consume. "
     + "Each item is represented as an object with 'item_name' and 'item_amount'. "
     + "If you do not want to consume anything, it can set this to an empty list. "
