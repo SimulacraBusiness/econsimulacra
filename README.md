@@ -197,6 +197,8 @@ $ source .venv-vllm/bin/activate
 $ pip install vllm
 ```
 
+Please also ensure that the installed versions of vLLM, PyTorch, and CUDA are compatible with your local NVIDIA driver and GPU environment.
+
 ### 2. Set VLLM configs
 
 ```json
