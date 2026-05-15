@@ -698,13 +698,17 @@ class Environment(Generic[ObsT]):
         valid_consumptions: list[dict[str, Any]] = self._check_consumptions(
             agent_id=agent_id, consumptions=consumptions
         )
-        self.invalid_action_dic["consumptions"] += len(consumptions) - len(valid_consumptions)
+        self.invalid_action_dic["consumptions"] += len(consumptions) - len(
+            valid_consumptions
+        )
         self._consume_items(
             agent_id=agent_id,
             consumptions=valid_consumptions,
         )
         orders: list[dict[str, Any]] = action_dic.get("orders", [])
-        valid_orders: list[dict[str, Any]] = self._check_orders(agent_id=agent_id, orders=orders)
+        valid_orders: list[dict[str, Any]] = self._check_orders(
+            agent_id=agent_id, orders=orders
+        )
         self.invalid_action_dic["orders"] += len(orders) - len(valid_orders)
         proposals: list[dict[str, Any]] = action_dic.get("proposals", [])
         valid_proposals: list[dict[str, Any]] = self._check_proposals(
@@ -985,7 +989,9 @@ class Environment(Generic[ObsT]):
             if self.logger is not None:
                 log.read_and_write(logger=self.logger)
 
-    def _check_orders(self, agent_id: int, orders: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    def _check_orders(
+        self, agent_id: int, orders: list[dict[str, Any]]
+    ) -> list[dict[str, Any]]:
         """Check whether the orders are valid.
 
         Args:
@@ -1038,7 +1044,9 @@ class Environment(Generic[ObsT]):
                 valid_orders.append(order_dic)
         return valid_orders
 
-    def _check_proposals(self, agent_id: int, proposals: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    def _check_proposals(
+        self, agent_id: int, proposals: list[dict[str, Any]]
+    ) -> list[dict[str, Any]]:
         """Check whether the proposals are valid.
 
         Args:
@@ -1400,7 +1408,9 @@ class Environment(Generic[ObsT]):
                         give_item_amount=proposal.get_item_amount,
                     )
 
-    def _check_reactions(self, agent_id: int, reactions: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    def _check_reactions(
+        self, agent_id: int, reactions: list[dict[str, Any]]
+    ) -> list[dict[str, Any]]:
         """Check whether the reactions are valid.
 
         Args:
