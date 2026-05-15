@@ -84,7 +84,7 @@ simulator = Simulator(
 )
 ```
 
-You can introduce your custom classes in your simulation by specifying ```"type": "MyClass"``` in the config and register them to the Simulator. [examples/openai/main.py](https://github.com/SimulacraBusiness/econsimulacra/blob/main/examples/openai/main.py) provides an example to introduce the custom event ```SubsidyEvent```.
+You can introduce your custom classes in your simulation by specifying ```"type": "MyClass"``` in the config and register them to the Simulator. [examples/openai/main.py](https://github.com/SimulacraBusiness/econsimulacra/blob/main/examples/openai/main.py) provides an example to introduce the custom event ```SubsidyEvent``` and custom agent ```DiscountRestaurant```.
 
 ```python
 simulator.register_classes([MyClass1, MyClass2])
@@ -101,7 +101,7 @@ The **Environment** manages the global state of the simulated world, including t
 The environment includes multiple submodules, such as:
 
 - [**GridSpace**](https://github.com/SimulacraBusiness/econsimulacra/blob/main/src/econsimulacra/envs/space.py): A spatial environment in which agents reside and move. This allows the simulation of spatial interactions, mobility, and location-dependent behaviors.
-- [**SocialNetwork**](https://github.com/SimulacraBusiness/econsimulacra/blob/main/src/econsimulacra/envs/social_networks/base.py): A communication layer where agents can exchange messages and interact socially, enabling the study of information diffusion and social influence. The social network also includes a customizable [**RecommenderSystem**](https://github.com/SimulacraBusiness/econsimulacra/blob/main/src/econsimulacra/envs/social_networks/recsys.py) that can suggest other agents to follow.
+- [**SocialNetwork**](https://github.com/SimulacraBusiness/econsimulacra/blob/main/src/econsimulacra/social_networks/base.py): A communication layer where agents can exchange messages and interact socially, enabling the study of information diffusion and social influence. The social network also includes a customizable [**RecommenderSystem**](https://github.com/SimulacraBusiness/econsimulacra/blob/main/src/econsimulacra/social_networks/recsys.py) that can suggest other agents to follow.
 
 ## [**Agent**](https://github.com/SimulacraBusiness/econsimulacra/blob/main/src/econsimulacra/agents/base.py)
 
@@ -181,7 +181,7 @@ $ cd examples/openai
 $ python main.py
 ```
 
-In this script, custom ```Event``` class: ```SubsidyEvent``` is implemented. The script will 1) load ```config.json```, 2) generate simulator and register the ```SubsidyEvent``` to the simulator, 3) reset the environment and run the simulation loop, and 4) output logs to the specified path.
+In this script, custom ```Event``` class: ```SubsidyEvent``` and rule-based restaurant ```DiscountRestaurant``` are implemented. The script will 1) load ```config.json```, 2) generate simulator and register the ```SubsidyEvent``` and ```DiscountRestaurant``` to the simulator, 3) reset the environment and run the simulation loop, and 4) output logs to the specified path.
 
 ## VLLM
 
@@ -192,7 +192,7 @@ This section explains how to run EconSimulacra by using a vLLM-backed OpenAI-com
 We recommend preparing a dedicated virtual environment for vLLM, and running the vLLM server there as a separate process, since some dependency requirements conflict with EconSimulacra environment.
 
 ```bash
-$ python3.10 -m venv .venv-vllm
+$ python -m venv .venv-vllm
 $ source .venv-vllm/bin/activate
 $ pip install vllm
 ```
