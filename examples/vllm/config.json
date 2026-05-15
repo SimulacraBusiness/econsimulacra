@@ -1,23 +1,30 @@
 {
     "simulation": {
-        "numSteps": 72,
-        "parallelBatchSize": 32
+        "numSteps": 120,
+        "parallelBatchSize": 32,
+        "events": ["provideSubsidy"]
     },
     "environment": {
         "space": "gridSpace",
         "socialNetwork": "socialNetwork",
         "cashName": "Yen",
         "agents": ["Household", "Retailer", "Restaurant"],
-        "items": ["Yen", "Rice", "Pizza", "Apple"],
-        "service": ["promptBuilder", "llmClient", "timeTranslator", "personaBuilder", "memoryHandler"]
+        "items": [
+            "Yen", "Rice", "Pizza", "Soda",
+            "Tomatoes", "Soup", "Bread", "Salad"
+        ],
+        "service": [
+            "promptBuilder", "llmClient", "timeTranslator",
+            "personaBuilder", "memoryHandler"
+        ]
     },
     "gridSpace": {
         "type": "GridSpace",
-        "gridSize": [50, 50]
+        "gridSize": [10, 10]
     },
     "socialNetwork": {
         "type": "SocialNetwork",
-        "followCap": 3,
+        "followCap": 5,
         "recSys": {
             "type": "TwoHopRecommenderSystem",
             "maxRecommendations": 2,
@@ -25,52 +32,92 @@
             "temperature": 0.4
         }
     },
-    "Household": {
-        "type": "LLMAgent",
-        "isHousehold": true,
-        "numAgents": 118,
+    "Restaurant": {
+        "type": "DiscountRestaurant",
+        "name": "Pizza Place",
+        "isRichInfoAllowed": true,
+        "isHousehold": false,
+        "initialCoords": [1, 1],
+        "numAgents": 1,
         "inventory": {
-            "Yen": [100000, 200000],
-            "Rice": [3, 10],
-            "Pizza": 0,
-            "Apple": [0, 5]
+            "Yen": 0,
+            "Pizza": 50,
+            "Soda": 50
         },
-        "svgPath": "../../imgs/human.svg",
+        "discounts": [
+            {
+                "start": "2025-12-19 09:00:00",
+                "end": "2025-12-22 21:00:00",
+                "discountRate": 0.0,
+                "items": ["Pizza"]
+            },
+            {
+                "start": "2025-12-23 09:00:00",
+                "end": "2025-12-25 21:00:00",
+                "discountRate": 0.4,
+                "items": ["Pizza"]
+            },
+            {
+                "start": "2025-12-26 09:00:00",
+                "end": "2025-12-28 21:00:00",
+                "discountRate": 0.0,
+                "items": ["Pizza"]
+            }
+        ],
+        "tweets": [
+            {
+                "start": "2025-12-19 09:00:00",
+                "end": "2025-12-22 21:00:00",
+                "tweet": "🎄 Holiday Sale Incoming 🎄 All pizzas will be 40% discount! The sale begins on 12/23🍕👀 Stay aware!" 
+            },
+            {
+                "start": "2025-12-23 09:00:00",
+                "end": "2025-12-25 21:00:00",
+                "tweet": "🎄 CHRISTMAS SALE 🎄 All pizzas are 40% OFF NOW! Come celebrate together 🍕🎉"
+            },
+            {
+                "start": "2025-12-26 09:00:00",
+                "end": "2025-12-28 21:00:00",
+                "tweet": "Thank you for the amazing holiday week 🍕 Did you enjoy?"
+            }
+        ],
+        "provideInfo4CoLocatedAgents": ["inventory"],
+        "provideInfo4AllAgents": ["self_pos"],
+        "svgPath": "../../imgs/store.svg",
         "iconScale": 0.2
     },
     "Retailer": {
         "type": "AutoReactLLMAgent",
+        "name": "Daily Mart",
         "isRichInfoAllowed": true,
         "isHousehold": false,
-        "initialCoords": [15, 25],
+        "initialCoords": [5, 5],
         "numAgents": 1,
         "inventory": {
-            "Yen": 1000000,
-            "Rice": 10000,
-            "Pizza": 0,
-            "Apple": 10000
+            "Yen": 0,
+            "Rice": 200,
+            "Tomatoes": 200,
+            "Soup": 200,
+            "Bread": 200,
+            "Salad": 200
         },
         "provideInfo4CoLocatedAgents": ["inventory"],
-
         "provideInfo4AllAgents": ["self_pos"],
         "svgPath": "../../imgs/store.svg",
         "iconScale": 0.2
     },
-    "Restaurant": {
-        "type": "AutoReactLLMAgent",
-        "isRichInfoAllowed": true,
-        "isHousehold": false,
-        "initialCoords": [35, 25],
-        "numAgents": 1,
+    "Household": {
+        "type": "LLMAgent",
+        "isHousehold": true,
+        "numAgents": 30,
         "inventory": {
-            "Yen": 1000000,
-            "Pizza": 10000,
-            "Rice": 0,
-            "Apple": 0
+            "Yen": [0, 300000],
+            "Rice": 1,
+            "Soup": 1,
+            "Bread": 1,
+            "Salad": 1
         },
-        "provideInfo4CoLocatedAgents": ["inventory"],
-        "provideInfo4AllAgents": ["self_pos"],
-        "svgPath": "../../imgs/store.svg",
+        "svgPath": "../../imgs/human.svg",
         "iconScale": 0.2
     },
     "Yen": {
@@ -81,43 +128,66 @@
         "type": "Item",
         "initialPrice": 1000.0
     },
-    "Apple": {
-        "type": "Item",
-        "initialPrice": 100.0
-    },
     "Pizza": {
         "type": "Item",
-        "initialPrice": 1500.0
+        "initialPrice": 4000.0
+    },
+    "Soda": {
+        "type": "Item",
+        "initialPrice": 150.0
+    },
+    "Tomatoes": {
+        "type": "Item",
+        "initialPrice": 200.0
+    },
+    "Soup": {
+        "type": "Item",
+        "initialPrice": 300.0
+    },
+    "Bread": {
+        "type": "Item",
+        "initialPrice": 400.0
+    },
+    "Salad": {
+        "type": "Item",
+        "initialPrice": 500.0
     },
     "promptBuilder": {
-        "type": "PromptBuilder"
+        "type": "NameBasedPromptBuilder",
+        "name2SimulationDescriptionPath": {
+            "others": "simulation_description_retailers.txt",
+            "Household": "simulation_description_households.txt"
+        }
     },
     "llmClient": {
         "type": "VLLMClient",
-        "modelName": "Qwen/Qwen2.5-7B-Instruct",
-        "other_choice": "meta-llama/Meta-Llama-3-8B-Instruct, mistralai/Mistral-7B-Instruct-v0.3",
+        "modelName": "openai/gpt-oss-20b",
+        "other_choice": "openai/gpt-oss-20b, Qwen/Qwen2.5-7B-Instruct, meta-llama/Meta-Llama-3-8B-Instruct, mistralai/Mistral-7B-Instruct-v0.3",
         "vllmPython": "/home/m2023rhashimoto/econsimulacra/.venv-vllm/bin/python",
         "useGpu": true,
-        "gpuIds": [0, 1],
-        "isDataParallel": true,
+        "gpuIds": [0],
+        "isDataParallel": false,
         "host": "127.0.0.1",
         "port": 8000,
-        "timeOut": 60,
+        "timeOut": 300,
         "maxRetries": 3,
         "serverStartTimeout": 300,
         "maxConcurrentGenerations": 32,
         "trustRemoteCode": false,
-        "gpuMemoryUtilization": 0.9,
-        "modifySchema": true,
-        "gridSpace": [50, 50],
-        "items": ["Yen", "Rice", "Pizza", "Apple"],
-        "numAgents": 120
+        "gpuMemoryUtilization": 0.7,
+        "gridSpace": [10, 10],
+        "items": [
+            "Yen", "Rice", "Pizza", "Soda",
+            "Tomatoes", "Soup", "Bread", "Salad"
+        ],
+        "numAgents": 32
     },
     "timeTranslator": {
         "type": "TimeTranslator",
-        "numSteps": 72,
-        "startDatetime": "2025-10-11 09:00:00",
-        "endDatetime": "2025-10-12 21:00:00"
+        "numSteps": 120,
+        "startDatetime": "2025-12-19 09:00:00",
+        "endDatetime": "2025-12-28 21:00:00",
+        "activeTimeRanges": [["09:00:00", "21:00:00"]]
     },
     "personaBuilder": {
         "type": "ScoredPersonaBuilder",
@@ -133,26 +203,66 @@
     },
     "memoryHandler": {
         "type": "MemoryHandler",
-        "memoryLength": 5,
+        "memoryLength": 24,
+        "numObs": 23,
         "memorySummarizer": {
             "type": "StressAwareSummarizer",
+            "relativeThresholdForPriceChange": 0.01,
             "stressCalculator": {
                 "type": "StressCalculator",
+                "stressTypes": [
+                    "consumption_history",
+                    "move_history",
+                    "state_evaluation_history"
+                ],
                 "item2Weight": {
-                    "Yen": 0.0, "Rice": 10.0, "Pizza": 8.0, "Apple": 1.0
+                    "Yen": 0.0,
+                    "Rice": 3.0,
+                    "Soda": 0.1,
+                    "Pizza": 3.0,
+                    "Tomatoes": 0.3,
+                    "Soup": 1.0,
+                    "Bread": 2.0,
+                    "Salad": 1.5
                 },
                 "maxMagnitude": 100,
-                "targetConsumptionQuantity": 15,
-                "windowSizeForConsumption": 20,
-                "timeDecayForConsumption": 0.9,
-                "toleranceThresholdForStress": 20
+                "targetConsumptionQuantity": 40,
+                "windowSizeForConsumption": 40,
+                "timeDecayForConsumption": 0.98,
+                "targetMoveDistance": 8.0,
+                "windowSizeForMove": 24,
+                "timeDecayForMove": 0.95,
+                "homeComfortWeight": 0.4,
+                "targetBuyingPower": 20.0,
+                "targetRelativeWealth": -1,
+                "targetWealthGrowth": -0.1,
+                "windowSizeForStateEvaluation": 5,
+                "buyingPowerWeight": 1.5,
+                "relativeWealthWeight": 0.9,
+                "wealthDrawdownWeight": 0.3,
+                "toleranceThresholdForStress": 50
             }
         }
+    },
+    "provideSubsidy": {
+        "type": "SubsidyEvent",
+        "trigger": {
+            "every": 12
+        },
+        "subsidyAmount": 1000
+    },
+    "constantSupply": {
+        "type": "ConstantSupply",
+        "trigger": {
+            "with": ["AgentGenerationLog"],
+            "every": 12
+        },
+        "suppliedAgentNames": ["Daily Mart", "Pizza Place"]
     },
     "animation": {
         "cellSize": 1,
         "drawMarginCells": 2,
-        "maxTweetsInTL": 5,
+        "maxTweetsInTL": 13,
         "fastRendering": true
     }
 }

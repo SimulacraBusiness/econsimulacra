@@ -34,6 +34,7 @@ class OpenAIClient(LLMClient):
             config (dict): Configuration dictionary for the OpenAI client. This may include parameters such as:
                 - "modelName": model name to use for generation (e.g., "gpt-4-0613").
                 - "apiKey": OpenAI API key (optional, can also be set via OPENAI_API_KEY environment variable).
+                - "temperature": sampling temperature for generation (optional, default is 1.0).
                 - "jsonSchemaPath": path to a custom JSON schema file for structured generation (optional, if not provided, a default schema will be used).
                 - "modifySchema": whether to modify the default JSON schema based on config (optional, default is False).
                 - "gridSpace": a list of two integers representing the dimensions of the grid space (optional, may be provided if modifySchema is True).
@@ -59,6 +60,7 @@ class OpenAIClient(LLMClient):
             )
         time_out: float = config.get("timeOut", 30.0)
         self.max_retries: int = config.get("maxRetries", 3)
+        self.temperature: float = config.get("temperature", 1.0)
         self.client: AsyncOpenAI = AsyncOpenAI(
             api_key=api_key, timeout=time_out, max_retries=self.max_retries
         )
@@ -80,6 +82,7 @@ class OpenAIClient(LLMClient):
                     response: ChatCompletion = (
                         await self.client.chat.completions.create(
                             model=self.model_name,
+                            temperature=self.temperature,
                             messages=[
                                 {
                                     "role": "user",

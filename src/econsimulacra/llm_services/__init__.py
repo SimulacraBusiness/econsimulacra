@@ -15,7 +15,10 @@ from .personas import (
     PersonaBuilder as PersonaBuilder,
     ScoredPersonaBuilder as ScoredPersonaBuilder,
 )
-from .prompts import PromptBuilder as PromptBuilder
+from .prompts import (
+    NameBasedPromptBuilder as NameBasedPromptBuilder,
+    PromptBuilder as PromptBuilder,
+)
 
 __all__ = [
     "LLMClient",
@@ -24,6 +27,7 @@ __all__ = [
     "VLLMClient",
     "PersonaBuilder",
     "ScoredPersonaBuilder",
+    "NameBasedPromptBuilder",
     "PromptBuilder",
     "DEFAULT_ACTION_JSON_SCHEMA",
     "DEFAULT_ACTION_DESCRIPTION",
