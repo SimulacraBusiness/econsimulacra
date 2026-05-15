@@ -717,8 +717,8 @@ class Environment(Generic[ObsT]):
         self.invalid_action_dic["proposals"] += len(proposals) - len(valid_proposals)
         self._add_new_orders_and_proposals(
             agent_id=agent_id,
-            orders=orders,
-            proposals=proposals,
+            orders=valid_orders,
+            proposals=valid_proposals,
         )
         reactions: list[dict[str, Any]] = action_dic.get("reactions", [])
         valid_reactions: list[dict[str, Any]] = self._check_reactions(
@@ -1039,7 +1039,8 @@ class Environment(Generic[ObsT]):
                 expected_price *= item_amount
                 total_cost += expected_price
             if total_cost > cash_amount:
-                break
+                total_cost -= expected_price
+                continue
             else:
                 valid_orders.append(order_dic)
         return valid_orders
