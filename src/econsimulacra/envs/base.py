@@ -1039,7 +1039,8 @@ class Environment(Generic[ObsT]):
                 expected_price *= item_amount
                 total_cost += expected_price
             if total_cost > cash_amount:
-                total_cost -= expected_price
+                if expected_price is not None:
+                    total_cost -= expected_price
                 continue
             else:
                 valid_orders.append(order_dic)
