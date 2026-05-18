@@ -15,6 +15,7 @@ from ..logs import (
     ConsumptionLog,
     FollowLog,
     InnerThoughtLog,
+    ItemGenerationLog,
     Log,
     Logger,
     MoveLog,
@@ -571,6 +572,16 @@ class Environment(Generic[ObsT]):
                 config=item_config,
             )
             self.item_name2item[item_key] = item_instance
+            log: ItemGenerationLog = ItemGenerationLog(
+                time=self.get_time(),
+                time_step=self.get_time_step(),
+                item_name=item_key,
+                price=item_instance.get_price(),
+            )
+            self.remember_log(log)
+            self.event_manager.trigger_events_after_log(log=log, env=self)
+            if self.logger is not None:
+                log.read_and_write(logger=self.logger)
 
     def get_total_amount(self, item_name: str) -> float | int:
         """Get the total amount of the specified item in the environment.
@@ -746,21 +757,22 @@ class Environment(Generic[ObsT]):
         tweet: Optional[str] = action_dic.get("tweet", None)
         follow_agent_id: Optional[int] = action_dic.get("follow", None)
         unfollow_agent_id: Optional[int] = action_dic.get("unfollow", None)
-        follow_unfollow_allowed: bool = self._check_follow_unfollow(
+        valid_follow_agent_id: Optional[int]
+        valid_unfollow_agent_id: Optional[int]
+        valid_follow_agent_id, valid_unfollow_agent_id = self._check_follow_unfollow(
             agent_id=agent_id,
             follow_agent_id=follow_agent_id,
             unfollow_agent_id=unfollow_agent_id,
         )
-        if not follow_unfollow_allowed:
+        if follow_agent_id is not None and valid_follow_agent_id is None:
             self.invalid_action_dic["follow"] += 1
+        if unfollow_agent_id is not None and valid_unfollow_agent_id is None:
             self.invalid_action_dic["unfollow"] += 1
-            follow_agent_id = None
-            unfollow_agent_id = None
         self._act_in_social_network(
             agent_id=agent_id,
             tweet=tweet,
-            follow_agent_id=follow_agent_id,
-            unfollow_agent_id=unfollow_agent_id,
+            follow_agent_id=valid_follow_agent_id,
+            unfollow_agent_id=valid_unfollow_agent_id,
         )
 
     def _process_inner_thought(self, agent_id: int, inner_thought: str) -> None:
@@ -1237,13 +1249,16 @@ class Environment(Generic[ObsT]):
         agent_id: int,
         follow_agent_id: Optional[int],
         unfollow_agent_id: Optional[int],
-    ) -> bool:
+    ) -> tuple[Optional[int], Optional[int]]:
         """Check whether the follow and unfollow actions are valid.
 
         Args:
             agent_id (int): agent id of the agent who performs the follow and unfollow actions.
             follow_agent_id (int, optional): agent id of the target agent to follow. Optional, default None.
             unfollow_agent_id (int, optional): agent id of the target agent to unfollow. Optional, default None.
+
+        Returns:
+            tuple[Optional[int], Optional[int]]: A tuple containing the valid follow_agent_id and unfollow_agent_id, or None if invalid.
 
         Note:
             Checked conditions:
@@ -1254,22 +1269,24 @@ class Environment(Generic[ObsT]):
             - The number of follows after performing the follow and unfollow actions cannot exceed
                 the follow cap. See also: econsimulacra.social_networks.base.SocialNetwork.follow_cap
         """
+        valid_follow_agent_id: Optional[int] = follow_agent_id
+        valid_unfollow_agent_id: Optional[int] = unfollow_agent_id
         if agent_id == follow_agent_id:
-            return False
+            valid_follow_agent_id = None
         if follow_agent_id is not None:
             if follow_agent_id not in self.agent_ids:
-                return False
+                valid_follow_agent_id = None
             if follow_agent_id in self.social_network.get_follows(agent_id=agent_id):
-                return False
+                valid_follow_agent_id = None
         if agent_id == unfollow_agent_id:
-            return False
+            valid_unfollow_agent_id = None
         if unfollow_agent_id is not None:
             if unfollow_agent_id not in self.agent_ids:
-                return False
+                valid_unfollow_agent_id = None
             if unfollow_agent_id not in self.social_network.get_follows(
                 agent_id=agent_id
             ):
-                return False
+                valid_unfollow_agent_id = None
         allowed_num_follows: Optional[int] = (
             self.social_network.get_allowed_num_follows(agent_id=agent_id)
         )
@@ -1279,8 +1296,8 @@ class Environment(Generic[ObsT]):
             if follow_agent_id is not None:
                 allowed_num_follows -= 1
             if allowed_num_follows < 0:
-                return False
-        return True
+                valid_follow_agent_id = None
+        return valid_follow_agent_id, valid_unfollow_agent_id
 
     def _act_in_social_network(
         self,
