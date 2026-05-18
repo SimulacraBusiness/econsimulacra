@@ -48,7 +48,9 @@ class DummyHousehold(Agent):
         visible_tl: list[dict[str, Any]] = obs["visible_tl"]
         follows: set[int] = [tl_dic["agent_id"] for tl_dic in visible_tl]
         unfollow_id = follows[0] if len(follows) > 0 else None
-        recommended_follows: list[int] = obs["recommended_follows"]
+        recommended_follows: list[int] = [
+            rec["agent_id"] for rec in obs["recommended_follows"]
+        ]
         follow_id = recommended_follows[0] if len(recommended_follows) > 0 else None
         action_dic["follow"] = follow_id
         action_dic["unfollow"] = unfollow_id

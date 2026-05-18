@@ -48,6 +48,8 @@ class TestAnalysisManager:
                 parse_time("2025-03-01 20:56:05"): 0,
             },
         }
-        assert results["store_sales"] == {
-            "PrimeDiner4": {parse_time("2025-03-05 08:28:41"): 15001.0}
-        }
+        print(results["store_sales"])
+        assert results["store_sales"] == (
+            {"PrimeDiner4": {parse_time("2025-03-05 08:28:41"): 15001.0}},
+            {"PrimeDiner4": {parse_time("2025-03-05 08:28:41"): 2.0}},
+        )

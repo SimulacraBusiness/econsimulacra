@@ -68,6 +68,26 @@ class AgentGenerationRecord(BaseRecord):
 
 
 @dataclass(frozen=True)
+class ItemGenerationRecord(BaseRecord):
+    """A record for item generation events.
+
+    Corresponds to econsimulacra.logs.ItemGenerationLog.
+
+    Attributes:
+        type (str): must be "item_generation".
+        time (int | datetime): The timestamp of the log entry, as a datetime object or integer.
+        time_step (int): The time step of the log entry, as an integer.
+        item_name (str): The name of the generated item.
+        price (float): The initial price of the generated item.
+    """
+
+    time: int | datetime
+    time_step: int
+    item_name: str
+    price: float
+
+
+@dataclass(frozen=True)
 class SpaceAssignRecord(BaseRecord):
     """A record for space assignment events.
 
@@ -404,3 +424,24 @@ class StateEvaluationRecord(TimedRecord):
     wealth: float
     inventory: dict[str, float]
     persona: Optional[dict[str, Any]]
+
+
+@dataclass(frozen=True)
+class ObsRecord(TimedRecord):
+    """A record for observation events.
+
+    Corresponds to econsimulacra.logs.ObsLog.
+
+    Attributes:
+        type (str): must be "observation".
+        obs_type (str): The type of the observation. See also: econsimulacra.logs.ObsLog.
+        time (int | datetime): The timestamp of the log entry,
+            as a datetime object or integer.
+        time_step (int): The time step of the log entry, as an integer.
+        agent_id (int): The ID of the agent that made the observation.
+        obs (Any): The content of the observation.
+    """
+
+    obs_type: str
+    agent_id: int
+    obs: Any

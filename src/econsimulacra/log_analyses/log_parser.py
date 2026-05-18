@@ -11,7 +11,9 @@ from .records import (
     ConsumptionRecord,
     FollowRecord,
     InnerThoughtRecord,
+    ItemGenerationRecord,
     MoveRecord,
+    ObsRecord,
     OrderExpirationRecord,
     OrderReactionRecord,
     OrderRecord,
@@ -75,6 +77,15 @@ def parse_record(record: dict[str, Any]) -> Optional[BaseRecord]:
             wealth=float(record["wealth"]),
             inventory=to_inventory(record),
             persona=to_persona(record),
+        )
+
+    if record_type == "item_generation":
+        return ItemGenerationRecord(
+            type=record_type,
+            time=parse_time(record["time"]),
+            time_step=int(record["time_step"]),
+            item_name=str(record["item_name"]),
+            price=float(record["price"]),
         )
 
     if record_type == "space_assign":
@@ -238,6 +249,16 @@ def parse_record(record: dict[str, Any]) -> Optional[BaseRecord]:
             wealth=float(record["wealth"]),
             inventory=to_inventory(record),
             persona=to_persona(record),
+        )
+
+    if record_type == "observation":
+        return ObsRecord(
+            type=record_type,
+            time=parse_time(record["time"]),
+            time_step=int(record["time_step"]),
+            agent_id=int(record["agent_id"]),
+            obs_type=str(record["obs_type"]),
+            obs=record["obs"],
         )
 
     return None

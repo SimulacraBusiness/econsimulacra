@@ -27,6 +27,14 @@ class AgentBehaviorStatsAnalyzer(AnalyzerBase[dict[str, dict[int, float]]]):
 
     name = "agent_behavior_stats"
 
+    def __init__(self, exclude_agent_ids: list[int] = []):
+        """Initialization.
+
+        Args:
+            exclude_agent_ids (list[int], optional): A list of agent IDs to exclude from the analysis. Defaults to an empty list.
+        """
+        self.exclude_agent_ids = exclude_agent_ids
+
     def analyze(self, store: RecordStore) -> dict[str, dict[int, float]]:
         """Summarizes the behavior of each agent in the log.
 
@@ -52,6 +60,8 @@ class AgentBehaviorStatsAnalyzer(AnalyzerBase[dict[str, dict[int, float]]]):
         }
         agent_id2name: dict[int, str] = self.get_agent_id2name(store)
         for agent_id in agent_id2name.keys():
+            if agent_id in self.exclude_agent_ids:
+                continue
             records: list[BaseRecord] = store.get_by_agent(agent_id)
             total_purchase_price: float = 0.0
             total_unit_price: float = 0.0
