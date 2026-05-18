@@ -111,6 +111,29 @@ class AgentGenerationLog(Log):
         return d
 
 
+class ItemGenerationLog(Log):
+    def __init__(
+        self,
+        time: int | str,
+        time_step: int,
+        item_name: str,
+        price: float,
+    ) -> None:
+        """Initialization.
+
+        Args:
+            time (int | str): Current time of the environment.
+            time_step (int): Current integer step index of the environment.
+            item_name (str): The name of the generated item.
+            price (float): The initial price of the generated item.
+        """
+        self.type: str = "item_generation"
+        self.time: int | str = time
+        self.time_step: int = time_step
+        self.item_name: str = item_name
+        self.price: float = price
+
+
 class SpaceAssignLog(Log):
     def __init__(self, agent_id: int, pos: tuple[int, ...]) -> None:
         """Initialization.

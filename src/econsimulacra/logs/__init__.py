@@ -4,6 +4,7 @@ from .base import (
     ConsumptionLog as ConsumptionLog,
     FollowLog as FollowLog,
     InnerThoughtLog as InnerThoughtLog,
+    ItemGenerationLog as ItemGenerationLog,
     Log as Log,
     Logger as Logger,
     MoveLog as MoveLog,
@@ -24,6 +25,7 @@ from .dict_logger import DictLogger as DictLogger
 __all__ = [
     "Log",
     "AgentGenerationLog",
+    "ItemGenerationLog",
     "SpaceAssignLog",
     "MoveLog",
     "ConsumptionLog",
