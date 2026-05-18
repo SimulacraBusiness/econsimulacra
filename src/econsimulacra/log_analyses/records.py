@@ -68,6 +68,26 @@ class AgentGenerationRecord(BaseRecord):
 
 
 @dataclass(frozen=True)
+class ItemGenerationRecord(BaseRecord):
+    """A record for item generation events.
+
+    Corresponds to econsimulacra.logs.ItemGenerationLog.
+
+    Attributes:
+        type (str): must be "item_generation".
+        time (int | datetime): The timestamp of the log entry, as a datetime object or integer.
+        time_step (int): The time step of the log entry, as an integer.
+        item_name (str): The name of the generated item.
+        price (float): The initial price of the generated item.
+    """
+
+    time: int | datetime
+    time_step: int
+    item_name: str
+    price: float
+
+
+@dataclass(frozen=True)
 class SpaceAssignRecord(BaseRecord):
     """A record for space assignment events.
 
