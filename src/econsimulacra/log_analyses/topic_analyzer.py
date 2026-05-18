@@ -6,8 +6,8 @@ from typing import Optional
 
 import matplotlib.pyplot as plt
 import pandas as pd
-from pandas import DataFrame
 from matplotlib.figure import Figure
+from pandas import DataFrame
 from rich.console import Group
 from rich.panel import Panel
 from rich.table import Table
@@ -314,8 +314,6 @@ class TopicAnalyzer(AnalyzerBase[TopicResult]):
         fig, ax = plt.subplots(figsize=(10, 5))
 
         topic_counts[top_topics].plot(ax=ax)
-
-        ax.set_title("Tweet Topic Counts Over Time")
         ax.set_xlabel("Time window")
         ax.set_ylabel("#Tweets")
         ax.legend(title="Topic", bbox_to_anchor=(1.02, 1), loc="upper left")
