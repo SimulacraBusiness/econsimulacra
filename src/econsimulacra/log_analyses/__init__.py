@@ -30,6 +30,7 @@ from .price_analyzer import PriceAnalyzer
 from .store import RecordStore
 from .store_sales_analyzer import StoreSalesAnalyzer
 from .stress_analyzer import StressAnalyzer
+from .topic_analyzer import TopicAnalyzer
 
 __all__ = [
     "ActionCounter",
@@ -63,4 +64,5 @@ __all__ = [
     "ObsRecord",
     "StressAnalyzer",
     "PriceAnalyzer",
+    "TopicAnalyzer",
 ]
