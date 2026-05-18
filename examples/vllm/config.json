@@ -27,9 +27,9 @@
         "followCap": 5,
         "recSys": {
             "type": "TwoHopRecommenderSystem",
-            "maxRecommendations": 2,
+            "maxRecommendations": 1,
             "isRandomized": true,
-            "temperature": 0.4
+            "temperature": 0.5
         }
     },
     "Restaurant": {
