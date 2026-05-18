@@ -278,7 +278,7 @@ class TestEnvironment:
         env.reset(seed=42)
         logger = env.logger
         assert isinstance(logger, DictLogger)
-        assert len(logger.logs) == 12
+        assert len(logger.logs) == 14
 
     def test_move(self) -> None:
         env = Environment(config=self.config)
@@ -615,7 +615,7 @@ class TestEnvironment:
         assert event_manager.events[1].num_executions == 3
         logger = env.logger
         assert isinstance(logger, DictLogger)
-        assert len(logger.logs) > 12
+        assert len(logger.logs) > 14
         memory_handler = env.get_memory_handler()
         for agent_id in env.agent_ids:
             memory = memory_handler.agent_id2memory[agent_id]
