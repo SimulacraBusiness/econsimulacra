@@ -1,8 +1,8 @@
 {
     "simulation": {
         "numSteps": 120,
-        "parallelBatchSize": 32,
-        "events": ["provideSubsidy"]
+        "parallelBatchSize": 12,
+        "events": ["provideSubsidy", "constantSupply"]
     },
     "environment": {
         "space": "gridSpace",
@@ -165,8 +165,8 @@
         "other_choice": "openai/gpt-oss-20b, Qwen/Qwen2.5-7B-Instruct, meta-llama/Meta-Llama-3-8B-Instruct, mistralai/Mistral-7B-Instruct-v0.3",
         "vllmPython": "/home/m2023rhashimoto/econsimulacra/.venv-vllm/bin/python",
         "useGpu": true,
-        "gpuIds": [0],
-        "isDataParallel": false,
+        "gpuIds": [0,1,2],
+        "isDataParallel": true,
         "host": "127.0.0.1",
         "port": 8000,
         "timeOut": 300,
@@ -226,10 +226,10 @@
                     "Salad": 1.5
                 },
                 "maxMagnitude": 100,
-                "targetConsumptionQuantity": 40,
+                "targetConsumptionQuantity": 10,
                 "windowSizeForConsumption": 40,
                 "timeDecayForConsumption": 0.98,
-                "targetMoveDistance": 8.0,
+                "targetMoveDistance": 15.0,
                 "windowSizeForMove": 24,
                 "timeDecayForMove": 0.95,
                 "homeComfortWeight": 0.4,
