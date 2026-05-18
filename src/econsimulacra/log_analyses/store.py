@@ -55,6 +55,23 @@ class RecordStore:
         """
         return self.by_agent.get(agent_id, [])
 
+    def get_by_agent_time(self, agent_id: int, time_step: int) -> list[BaseRecord]:
+        """Get records by agent ID and time step.
+
+        Args:
+            agent_id (int): The ID of the agent whose records to retrieve.
+            time_step (int): The time step to filter records by.
+
+        Returns:
+            list[BaseRecord]: A list of records associated with the specified agent ID and time step.
+        """
+        record_w_time: list[BaseRecord] = []
+        record_w_agent: list[BaseRecord] = self.get_by_agent(agent_id)
+        for record in record_w_agent:
+            if getattr(record, "time_step", None) == time_step:
+                record_w_time.append(record)
+        return record_w_time
+
     def typed(self, cls: type[T]) -> list[T]:
         """Get records of a specific class.
 
