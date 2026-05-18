@@ -50,10 +50,6 @@ class TestAnalysisManager:
         }
         print(results["store_sales"])
         assert results["store_sales"] == (
-            {
-                "PrimeDiner4": {parse_time("2025-03-05 08:28:41"): 15001.0}
-            },
-            {
-                "PrimeDiner4": {parse_time("2025-03-05 08:28:41"): 2.0}
-            },
+            {"PrimeDiner4": {parse_time("2025-03-05 08:28:41"): 15001.0}},
+            {"PrimeDiner4": {parse_time("2025-03-05 08:28:41"): 2.0}},
         )
