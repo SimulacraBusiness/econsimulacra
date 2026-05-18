@@ -16,12 +16,12 @@ if __name__ == "__main__":
     manager = AnalysisManager(
         analyzers=[
             ActionCounter(),
-            AgentBehaviorStatsAnalyzer(),
+            AgentBehaviorStatsAnalyzer(exclude_agent_ids=[30, 31]),
             FollowerCounter(),
             StoreSalesAnalyzer(),
             ItemSalesAnalyzer(),
             PriceAnalyzer(),
-            StressAnalyzer(),
+            StressAnalyzer(exclude_agent_ids=[30, 31]),
             TopicAnalyzer(exclude_agent_ids=[31]),
             TopicAnalyzer(is_inner_thought=True, exclude_agent_ids=[31]),
         ]
