@@ -20,6 +20,14 @@ class StressAnalyzer(AnalyzerBase[dict[int, dict[str, dict[datetime | int, float
 
     name = "stress"
 
+    def __init__(self, exclude_agent_ids: list[int] = []):
+        """Initialization.
+
+        Args:
+            exclude_agent_ids (list[int], optional): A list of agent IDs to exclude from the analysis. Defaults to an empty list.
+        """
+        self.exclude_agent_ids = exclude_agent_ids
+
     def analyze(
         self, store: RecordStore
     ) -> dict[int, dict[str, dict[datetime | int, float]]]:
@@ -50,11 +58,13 @@ class StressAnalyzer(AnalyzerBase[dict[int, dict[str, dict[datetime | int, float
         for record in store.typed(ObsRecord):
             if record.obs_type != "memory":
                 continue
+            agent_id = record.agent_id
+            if agent_id in self.exclude_agent_ids:
+                continue
             memory_key: str
             memory_value: dict[str, Any]
             for memory_key, memory_value in record.obs.items():
                 if memory_key.endswith("_history_stress"):
-                    agent_id = record.agent_id
                     stress_type = memory_key.removesuffix("_history_stress")
                     time = record.time
                     stress_value = float(cast(float | int, memory_value))
