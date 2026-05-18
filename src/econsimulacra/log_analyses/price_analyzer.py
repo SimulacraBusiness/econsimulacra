@@ -3,10 +3,10 @@ from __future__ import annotations
 from datetime import datetime
 from typing import cast
 
+import numpy as np
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
-import numpy as np
-from rich.console import Group, RenderableType
+from rich.console import RenderableType
 from rich.panel import Panel
 from rich.table import Table
 
@@ -35,8 +35,8 @@ class PriceAnalyzer(AnalyzerBase[dict[str, dict[datetime | int, float]]]):
         item_prices: dict[str, dict[datetime | int, float]] = {}
         record: ChangePriceRecord | ItemGenerationRecord
 
-        for record in (
-            store.typed(ItemGenerationRecord) +store.typed(ChangePriceRecord)
+        for record in store.typed(ItemGenerationRecord) + store.typed(
+            ChangePriceRecord
         ):
             item_name = record.item_name
             time = record.time
@@ -50,7 +50,7 @@ class PriceAnalyzer(AnalyzerBase[dict[str, dict[datetime | int, float]]]):
             item_prices[item_name][time] = price
 
         return item_prices
-    
+
     def draw_figs(
         self,
         result: dict[str, dict[datetime | int, float]],
@@ -111,7 +111,7 @@ class PriceAnalyzer(AnalyzerBase[dict[str, dict[datetime | int, float]]]):
             fig_dic[f"price_{item_name}"] = fig
 
         return fig_dic
-    
+
     def build_summary(
         self,
         result: dict[str, dict[datetime | int, float]],
@@ -160,4 +160,3 @@ class PriceAnalyzer(AnalyzerBase[dict[str, dict[datetime | int, float]]]):
             title=f"{self.name} Summary",
             border_style="blue",
         )
-        

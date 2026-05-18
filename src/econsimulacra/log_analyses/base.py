@@ -150,7 +150,7 @@ class FigureSaver:
 
 class AnalysisManager:
     """Manager class to run multiple analyzers and save their results and figures. Basic usage:
-    
+
     >>> records = load_from_file("path/to/log.txt")
     >>> store = RecordStore(records)
     >>> analyzers = [ActionCounter(), FollowerCounter(), SalesAnalyzer()]

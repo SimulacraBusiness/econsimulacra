@@ -78,7 +78,7 @@ def parse_record(record: dict[str, Any]) -> Optional[BaseRecord]:
             inventory=to_inventory(record),
             persona=to_persona(record),
         )
-    
+
     if record_type == "item_generation":
         return ItemGenerationRecord(
             type=record_type,

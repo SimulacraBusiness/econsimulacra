@@ -4,9 +4,9 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional
 
-import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 import pandas as pd
+from pandas import DataFrame
 from matplotlib.figure import Figure
 from rich.console import Group
 from rich.panel import Panel
@@ -30,11 +30,11 @@ TimeKey = int | datetime
 class TopicResult:
     """Result of tweet topic analysis."""
 
-    tweets: pd.DataFrame
-    topic_counts: pd.DataFrame
-    topic_shares: pd.DataFrame
-    topic_summary: pd.DataFrame
-    agent_topic_counts: pd.DataFrame
+    tweets: DataFrame
+    topic_counts: DataFrame
+    topic_shares: DataFrame
+    topic_summary: DataFrame
+    agent_topic_counts: DataFrame
 
 
 class TopicAnalyzer(AnalyzerBase[TopicResult]):
@@ -113,7 +113,7 @@ class TopicAnalyzer(AnalyzerBase[TopicResult]):
         topic_model = self._get_topic_model()
 
         topics: list[int]
-        topics, _ = topic_model.fit_transform(docs) # type: ignore
+        topics, _ = topic_model.fit_transform(docs)  # type: ignore
         df["topic"] = topics
 
         topic_names = self._get_topic_names(topic_model)
@@ -167,16 +167,18 @@ class TopicAnalyzer(AnalyzerBase[TopicResult]):
             return figs
 
         top_topics = self._get_top_topic_names(result)
-
-        figs["topic_counts_over_time"] = self._draw_topic_counts_over_time(
+        inner_str = "inner_thought" if self.is_inner_thought else "tweet"
+        figs[f"topic_counts_over_time_{inner_str}"] = self._draw_topic_counts_over_time(
             result.topic_counts,
             top_topics,
         )
-        figs["topic_shares_over_time"] = self._draw_topic_shares_over_time(
+        figs[f"topic_shares_over_time_{inner_str}"] = self._draw_topic_shares_over_time(
             result.topic_shares,
             top_topics,
         )
-        figs["top_topic_counts"] = self._draw_top_topic_counts(result.topic_summary)
+        figs[f"top_topic_counts_{inner_str}"] = self._draw_top_topic_counts(
+            result.topic_summary
+        )
 
         return figs
 
@@ -191,7 +193,9 @@ class TopicAnalyzer(AnalyzerBase[TopicResult]):
 
         total_tweets = len(result.tweets)
         total_agents = result.tweets["agent_id"].nunique()
-        total_topics = result.tweets.loc[result.tweets["topic"] != -1, "topic"].nunique()
+        total_topics = result.tweets.loc[
+            result.tweets["topic"] != -1, "topic"
+        ].nunique()
         noise_tweets = int((result.tweets["topic"] == -1).sum())
 
         overview = Table(title="Overview")
@@ -222,10 +226,11 @@ class TopicAnalyzer(AnalyzerBase[TopicResult]):
             "Topic -1 is BERTopic's outlier/noise topic.",
             style="dim",
         )
+        inner_str = "Inner thought" if self.is_inner_thought else "Tweet"
 
         return Panel.fit(
             Group(overview, top_table, note),
-            title="Tweet Topic Analysis",
+            title=f"{inner_str} Topic Analysis",
             border_style="green",
         )
 
@@ -273,8 +278,8 @@ class TopicAnalyzer(AnalyzerBase[TopicResult]):
                         "time_step": record.time_step,
                         "agent_id": record.agent_id,
                         "message": record.inner_thought,
-                        "num_follows": None,
-                        "num_followers": None,
+                        "num_follows": 0,
+                        "num_followers": 0,
                     }
                 )
 
@@ -303,7 +308,7 @@ class TopicAnalyzer(AnalyzerBase[TopicResult]):
 
     def _draw_topic_counts_over_time(
         self,
-        topic_counts: pd.DataFrame,
+        topic_counts: DataFrame,
         top_topics: list[str],
     ) -> Figure:
         fig, ax = plt.subplots(figsize=(10, 5))
@@ -321,7 +326,7 @@ class TopicAnalyzer(AnalyzerBase[TopicResult]):
 
     def _draw_topic_shares_over_time(
         self,
-        topic_shares: pd.DataFrame,
+        topic_shares: DataFrame,
         top_topics: list[str],
     ) -> Figure:
         fig, ax = plt.subplots(figsize=(10, 5))
@@ -335,7 +340,7 @@ class TopicAnalyzer(AnalyzerBase[TopicResult]):
         fig.tight_layout()
         return fig
 
-    def _draw_top_topic_counts(self, topic_summary: pd.DataFrame) -> Figure:
+    def _draw_top_topic_counts(self, topic_summary: DataFrame) -> Figure:
         fig, ax = plt.subplots(figsize=(10, 5))
 
         summary = topic_summary[topic_summary["topic"] != -1].head(self.top_n_topics)

@@ -4,6 +4,7 @@ from .base import AnalysisManager, AnalyzerBase
 from .follower_counter import FollowerCounter
 from .item_sales_analyzer import ItemSalesAnalyzer
 from .log_parser import load_from_file
+from .price_analyzer import PriceAnalyzer
 from .records import (
     AgentGenerationRecord,
     BaseRecord,
@@ -26,7 +27,6 @@ from .records import (
     TweetRecord,
     UnfollowRecord,
 )
-from .price_analyzer import PriceAnalyzer
 from .store import RecordStore
 from .store_sales_analyzer import StoreSalesAnalyzer
 from .stress_analyzer import StressAnalyzer
