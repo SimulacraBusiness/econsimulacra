@@ -159,7 +159,7 @@ class StoreSalesAnalyzer(
             fig_sales.tight_layout()
             fig_sold_amounts.tight_layout()
 
-            fig_dic[f"store_sales_amount_{store_name}"] = fig_sales
+            fig_dic[f"store_sales_{store_name}"] = fig_sales
             fig_dic[f"store_sold_amount_{store_name}"] = fig_sold_amounts
 
         return fig_dic

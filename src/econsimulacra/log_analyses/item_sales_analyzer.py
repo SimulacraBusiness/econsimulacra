@@ -121,7 +121,7 @@ class ItemSalesAnalyzer(
             fig_sales.tight_layout()
             fig_sold_amounts.tight_layout()
 
-            fig_dic[f"item_sales_amount_{item_name}"] = fig_sales
+            fig_dic[f"item_sales_{item_name}"] = fig_sales
             fig_dic[f"item_sold_amount_{item_name}"] = fig_sold_amounts
 
         return fig_dic
