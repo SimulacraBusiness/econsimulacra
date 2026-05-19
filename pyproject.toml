@@ -44,6 +44,7 @@ protobuf = "^7.34.0"
 types-tqdm = "^4.67.3.20260205"
 matplotlib = "^3.10.9"
 bertopic = "^0.17.4"
+umap-learn = "^0.5.12"
 
 # ---------------------------------------------------------
 # Development tools
