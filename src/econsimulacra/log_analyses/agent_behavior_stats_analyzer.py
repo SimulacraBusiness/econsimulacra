@@ -8,14 +8,13 @@ from rich.console import RenderableType
 from rich.panel import Panel
 from rich.table import Table
 
-from econsimulacra.log_analyses.records import (
+from .base import AnalyzerBase
+from .records import (
     BaseRecord,
     MoveRecord,
     OrderReactionRecord,
     TweetRecord,
 )
-
-from .base import AnalyzerBase
 from .store import RecordStore
 
 
