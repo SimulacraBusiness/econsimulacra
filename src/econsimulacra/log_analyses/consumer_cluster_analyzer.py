@@ -3,25 +3,30 @@ from __future__ import annotations
 from collections import Counter, defaultdict
 from dataclasses import dataclass
 from datetime import datetime
-from typing import TypeAlias, cast
+from typing import Any, Protocol, TypeAlias, cast
 
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.axes import Axes
+from matplotlib.collections import PathCollection
+from matplotlib.dates import DateFormatter, date2num
 from matplotlib.figure import Figure
 from numpy.typing import NDArray
 from rich.panel import Panel
 from rich.table import Table
-from sklearn.cluster import KMeans
-from sklearn.decomposition import PCA
-from sklearn.metrics import adjusted_rand_score, silhouette_score
+from sklearn.cluster import KMeans  # type: ignore[import-untyped]
+from sklearn.decomposition import PCA  # type: ignore[import-untyped]
+from sklearn.metrics import (  # type: ignore[import-untyped]
+    adjusted_rand_score,
+    silhouette_score,
+)
 
 from .base import AnalyzerBase
 from .records import ConsumptionRecord, ItemGenerationRecord, OrderRecord
 from .store import RecordStore
 
 try:
-    from umap import UMAP
+    from umap import UMAP  # type: ignore[import-untyped]
 except ImportError:
     UMAP = None
 
@@ -30,6 +35,12 @@ ConsumerVector: TypeAlias = NDArray[np.float32]
 Embedding: TypeAlias = NDArray[np.float64]
 ClusterLabelArray: TypeAlias = NDArray[np.int_]
 ConsumerClusterResult: TypeAlias = dict[int, dict[TimeKey, tuple[int, ConsumerVector]]]
+
+
+class FitTransform2D(Protocol):
+    def fit_transform(self, x: NDArray[np.float32]) -> Any:
+        """Project input vectors into a lower-dimensional representation."""
+        ...
 
 
 @dataclass
@@ -313,16 +324,22 @@ class ConsumerClusterAnalyzer(AnalyzerBase[ConsumerClusterResult]):
         x_matrix: ConsumerVector = self.vectors_
 
         if len(x_matrix) >= 3 and UMAP is not None:
-            reducer: object = UMAP(
-                n_components=2,
-                random_state=self.random_state,
-                n_neighbors=min(15, max(2, len(x_matrix) - 1)),
+            reducer: FitTransform2D = cast(
+                FitTransform2D,
+                UMAP(
+                    n_components=2,
+                    random_state=self.random_state,
+                    n_neighbors=min(15, max(2, len(x_matrix) - 1)),
+                ),
             )
-            raw_embedding: object = reducer.fit_transform(x_matrix)
+            raw_embedding: Any = reducer.fit_transform(x_matrix)
             embedding_title: str = "UMAP"
         else:
-            pca: PCA = PCA(n_components=2, random_state=self.random_state)
-            raw_embedding = pca.fit_transform(x_matrix)
+            reducer = cast(
+                FitTransform2D,
+                PCA(n_components=2, random_state=self.random_state),
+            )
+            raw_embedding = reducer.fit_transform(x_matrix)
             embedding_title = "PCA fallback"
 
         embedding: Embedding = np.asarray(raw_embedding, dtype=np.float64)
@@ -331,7 +348,7 @@ class ConsumerClusterAnalyzer(AnalyzerBase[ConsumerClusterResult]):
         ax_by_agent: Axes
         fig_by_agent, ax_by_agent = plt.subplots(figsize=(7, 5))
 
-        scatter_by_agent: object = ax_by_agent.scatter(
+        scatter_by_agent: PathCollection = ax_by_agent.scatter(
             embedding[:, 0],
             embedding[:, 1],
             c=np.asarray(self.agent_ids_, dtype=np.int_),
@@ -354,16 +371,49 @@ class ConsumerClusterAnalyzer(AnalyzerBase[ConsumerClusterResult]):
         ax_by_time: Axes
         fig_by_time, ax_by_time = plt.subplots(figsize=(7, 5))
 
-        scatter_by_time: object = ax_by_time.scatter(
+        # Convert time labels into matplotlib date numbers
+        time_numeric: NDArray[np.float64]
+
+        if all(isinstance(t, datetime) for t in self.window_starts_):
+            datetime_windows: list[datetime] = [
+                cast(datetime, t) for t in self.window_starts_
+            ]
+            time_numeric = np.asarray(
+                date2num(datetime_windows),
+                dtype=np.float64,
+            )
+        else:
+            time_numeric = np.asarray(
+                [
+                    float(t.timestamp() if isinstance(t, datetime) else t)
+                    for t in self.window_starts_
+                ],
+                dtype=np.float64,
+            )
+
+        scatter_by_time: PathCollection = ax_by_time.scatter(
             embedding[:, 0],
             embedding[:, 1],
-            c=np.asarray(time_values, dtype=np.float64),
+            c=time_numeric,
             alpha=0.8,
         )
+
         ax_by_time.set_title(f"Consumer vectors by time ({embedding_title})")
         ax_by_time.set_xlabel("dim 1")
         ax_by_time.set_ylabel("dim 2")
-        fig_by_time.colorbar(scatter_by_time, ax=ax_by_time, label="window_start")
+
+        cbar = fig_by_time.colorbar(
+            scatter_by_time,
+            ax=ax_by_time,
+        )
+        cbar.set_label("window_start")
+
+        # Format datetime ticks nicely
+        if all(isinstance(t, datetime) for t in self.window_starts_):
+            cbar.ax.yaxis.set_major_formatter(DateFormatter("%Y-%m-%d"))
+
+        fig_by_time.tight_layout()
+
         figures["embedding_by_time"] = fig_by_time
 
         transition_counts: Counter[tuple[int, int]] = Counter()
