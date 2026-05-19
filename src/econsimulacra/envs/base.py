@@ -1845,6 +1845,8 @@ class Environment(Generic[ObsT]):
         )
         weighted_price: float = 0
         for item in self.item_name2item.values():
+            if self.cash_name == item.item_name:
+                continue
             weight: float = (
                 item.weight_in_basket / total_weight if total_weight > 0 else 0
             )
