@@ -14,8 +14,7 @@
             "Tomatoes", "Soup", "Bread", "Salad"
         ],
         "service": [
-            "promptBuilder", "llmClient", "timeTranslator",
-            "personaBuilder", "memoryHandler"
+            "promptBuilder", "llmClient", "timeTranslator", "memoryHandler"
         ]
     },
     "gridSpace": {
@@ -24,7 +23,7 @@
     },
     "socialNetwork": {
         "type": "SocialNetwork",
-        "followCap": 5,
+        "followCap": 8,
         "recSys": {
             "type": "TwoHopRecommenderSystem",
             "maxRecommendations": 1,
@@ -37,7 +36,7 @@
         "name": "Pizza Place",
         "isRichInfoAllowed": true,
         "isHousehold": false,
-        "initialCoords": [1, 1],
+        "initialCoords": [2, 2],
         "numAgents": 1,
         "inventory": {
             "Yen": 0,
@@ -78,7 +77,7 @@
             {
                 "start": "2025-12-26 09:00:00",
                 "end": "2025-12-28 21:00:00",
-                "tweet": "Thank you for the amazing holiday week 🍕 Did you enjoy?"
+                "tweet": "Holiday week is over! Did you enjoy?"
             }
         ],
         "provideInfo4CoLocatedAgents": ["inventory"],
@@ -91,15 +90,15 @@
         "name": "Daily Mart",
         "isRichInfoAllowed": true,
         "isHousehold": false,
-        "initialCoords": [5, 5],
+        "initialCoords": [8, 8],
         "numAgents": 1,
         "inventory": {
             "Yen": 0,
-            "Rice": 200,
-            "Tomatoes": 200,
-            "Soup": 200,
-            "Bread": 200,
-            "Salad": 200
+            "Rice": 50,
+            "Tomatoes": 50,
+            "Soup": 50,
+            "Bread": 50,
+            "Salad": 50
         },
         "provideInfo4CoLocatedAgents": ["inventory"],
         "provideInfo4AllAgents": ["self_pos"],
@@ -111,11 +110,7 @@
         "isHousehold": true,
         "numAgents": 30,
         "inventory": {
-            "Yen": [0, 300000],
-            "Rice": 1,
-            "Soup": 1,
-            "Bread": 1,
-            "Salad": 1
+            "Yen": [0, 100000]
         },
         "svgPath": "../../imgs/human.svg",
         "iconScale": 0.2
@@ -130,7 +125,7 @@
     },
     "Pizza": {
         "type": "Item",
-        "initialPrice": 4000.0
+        "initialPrice": 2000.0
     },
     "Soda": {
         "type": "Item",
