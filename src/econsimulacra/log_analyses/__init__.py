@@ -1,6 +1,7 @@
 from .action_counter import ActionCounter
 from .agent_behavior_stats_analyzer import AgentBehaviorStatsAnalyzer
 from .base import AnalysisManager, AnalyzerBase
+from .consumer_cluster_analyzer import ConsumerClusterAnalyzer
 from .follower_counter import FollowerCounter
 from .item_sales_analyzer import ItemSalesAnalyzer
 from .log_parser import load_from_file
@@ -37,6 +38,7 @@ __all__ = [
     "AgentBehaviorStatsAnalyzer",
     "AnalyzerBase",
     "AnalysisManager",
+    "ConsumerClusterAnalyzer",
     "FollowerCounter",
     "ItemSalesAnalyzer",
     "StoreSalesAnalyzer",
