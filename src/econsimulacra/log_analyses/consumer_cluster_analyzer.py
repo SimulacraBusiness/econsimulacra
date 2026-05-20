@@ -504,10 +504,11 @@ class ConsumerClusterAnalyzer(AnalyzerBase[ConsumerClusterResult]):
         ax_cluster_counts.set_xticks(x)
         ax_cluster_counts.set_xticklabels(
             [
-                t.strftime("%Y-%m-%d\n%H:%M")
-                if isinstance(t, datetime) else str(t) for t in times
+                t.strftime("%Y-%m-%d\n%H:%M") if isinstance(t, datetime) else str(t)
+                for t in times
             ],
-            rotation=45, ha="right"
+            rotation=45,
+            ha="right",
         )
         figures["cluster_counts"] = fig_cluster_counts
         return figures
