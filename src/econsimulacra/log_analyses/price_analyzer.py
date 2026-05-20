@@ -1,9 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
-from typing import cast
-
-import numpy as np
+import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from rich.console import RenderableType
@@ -15,7 +12,7 @@ from .records import ChangePriceRecord, ItemGenerationRecord
 from .store import RecordStore
 
 
-class PriceAnalyzer(AnalyzerBase[dict[str, dict[datetime | int, float]]]):
+class PriceAnalyzer(AnalyzerBase[dict[str, dict[int, float]]]):
     """Price analyzer.
 
     PriceAnalyzer tracks the prices of items over time.
@@ -23,7 +20,7 @@ class PriceAnalyzer(AnalyzerBase[dict[str, dict[datetime | int, float]]]):
 
     name = "price"
 
-    def analyze(self, store: RecordStore) -> dict[str, dict[datetime | int, float]]:
+    def analyze(self, store: RecordStore) -> dict[str, dict[int, float]]:
         """Tracks the prices of items over time.
 
         Args:
@@ -32,14 +29,15 @@ class PriceAnalyzer(AnalyzerBase[dict[str, dict[datetime | int, float]]]):
         Returns:
             A dictionary mapping item names to a dictionary of timestamps and prices.
         """
-        item_prices: dict[str, dict[datetime | int, float]] = {}
+        self._prepare_time_axis(store)
+        item_prices: dict[str, dict[int, float]] = {}
         record: ChangePriceRecord | ItemGenerationRecord
 
         for record in store.typed(ItemGenerationRecord) + store.typed(
             ChangePriceRecord
         ):
             item_name = record.item_name
-            time = record.time
+            time_step = record.time_step
             price: float
             if isinstance(record, ChangePriceRecord):
                 price = record.new_price
@@ -47,18 +45,18 @@ class PriceAnalyzer(AnalyzerBase[dict[str, dict[datetime | int, float]]]):
                 price = record.price
             if item_name not in item_prices:
                 item_prices[item_name] = {}
-            item_prices[item_name][time] = price
+            item_prices[item_name][time_step] = price
 
         return item_prices
 
     def draw_figs(
         self,
-        result: dict[str, dict[datetime | int, float]],
+        result: dict[str, dict[int, float]],
     ) -> dict[str, Figure]:
         """Draw price time series figures for each item.
 
         Args:
-            result (dict[str, dict[datetime | int, float]]): A dictionary mapping item names to dictionaries of
+            result (dict[str, dict[int, float]]): A dictionary mapping item names to dictionaries of
                 timestamps and prices.
 
         Returns:
@@ -70,40 +68,28 @@ class PriceAnalyzer(AnalyzerBase[dict[str, dict[datetime | int, float]]]):
             if not time2price:
                 continue
 
-            times: list[datetime | int] = sorted(time2price.keys())
-            prices: list[float] = [time2price[time] for time in times]
-            x = np.arange(len(times))
+            fig: Figure
+            ax: Axes
+            fig, ax = plt.subplots(figsize=(8, 6))
 
-            fig: Figure = Figure(figsize=(10, 6))
-            ax: Axes = fig.add_subplot(1, 1, 1)
+            times: list[int] = sorted(time2price.keys())
+            last_time: int = times[-1]
 
-            ax.plot(x, prices, marker="o")
+            plot_time2price = dict(time2price)
+
+            if self._time_axis_config is not None:
+                max_time = int(self._time_axis_config.x_max)
+                if last_time < max_time:
+                    plot_time2price[max_time] = plot_time2price[last_time]
+
+            times = sorted(plot_time2price.keys())
+            prices: list[float] = [plot_time2price[t] for t in times]
+            x_values: list[float] = [float(t) for t in times]
+
+            ax.step(x_values, prices, where="post", marker="o")
             ax.set_xlabel("Time")
             ax.set_ylabel("Price")
-            ax.set_title(f"Price: {item_name}")
-
-            num_ticks: int = min(10, len(times))
-            step: int = max(1, len(times) // num_ticks)
-            tick_positions = x[::step]
-            tick_times = times[::step]
-
-            ax.set_xticks(tick_positions)
-
-            if tick_times and isinstance(tick_times[0], datetime):
-                datetime_tick_times = cast(list[datetime], tick_times)
-                ax.set_xticklabels(
-                    [time.strftime("%Y-%m-%d %H:%M") for time in datetime_tick_times],
-                    rotation=45,
-                    ha="right",
-                    rotation_mode="anchor",
-                )
-            else:
-                ax.set_xticklabels(
-                    [str(time) for time in tick_times],
-                    rotation=45,
-                    ha="right",
-                    rotation_mode="anchor",
-                )
+            self._apply_time_axis(ax)
 
             ax.grid(True, alpha=0.3)
             fig.tight_layout()
@@ -114,7 +100,7 @@ class PriceAnalyzer(AnalyzerBase[dict[str, dict[datetime | int, float]]]):
 
     def build_summary(
         self,
-        result: dict[str, dict[datetime | int, float]],
+        result: dict[str, dict[int, float]],
     ) -> RenderableType:
         """Build a rich summary table for item prices."""
         table = Table(
@@ -134,7 +120,7 @@ class PriceAnalyzer(AnalyzerBase[dict[str, dict[datetime | int, float]]]):
             if not time2price:
                 continue
 
-            times: list[datetime | int] = sorted(time2price.keys())
+            times: list[int] = sorted(time2price.keys())
 
             initial_price: float = time2price[times[0]]
             final_price: float = time2price[times[-1]]

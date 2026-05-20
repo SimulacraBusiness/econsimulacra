@@ -41,15 +41,11 @@ class TestAnalysisManager:
         }
         assert results["follower_count"] == {
             "Government": {
-                parse_time("2025-03-01 09:00:00"): 0,
+                0: 0,
             },
-            "Agent 33": {
-                parse_time("2025-03-01 09:00:00"): 0,
-                parse_time("2025-03-01 20:56:05"): 0,
-            },
+            "Agent 33": {0: 0, 1: 0},
         }
-        print(results["store_sales"])
         assert results["store_sales"] == (
-            {"PrimeDiner4": {parse_time("2025-03-05 08:28:41"): 15001.0}},
-            {"PrimeDiner4": {parse_time("2025-03-05 08:28:41"): 2.0}},
+            {"PrimeDiner4": {8: 15001.0}},
+            {"PrimeDiner4": {8: 2.0}},
         )

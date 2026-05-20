@@ -58,24 +58,24 @@
         "numAgents": 1,
         "inventory": {
             "Yen": 0,
-            "Rice": 800,
-            "Eggs": 800,
-            "Milk": 800,
-            "Bread": 800,
-            "Cooking oil": 800,
-            "Tomatoes": 400,
-            "Cheese": 400,
-            "Chicken": 400,
-            "Beef": 400,
-            "Instant noodles": 300,
-            "Potato chips": 300,
-            "Chocolate": 300,
-            "Premium coffee": 200,
-            "Beer": 200,
-            "Laptop": 50,
-            "Tablet": 50,
-            "Headphones": 50,
-            "Smartwatch": 50
+            "Rice": 200,
+            "Eggs": 200,
+            "Milk": 200,
+            "Bread": 200,
+            "Cooking oil": 200,
+            "Tomatoes": 100,
+            "Cheese": 100,
+            "Chicken": 100,
+            "Beef": 100,
+            "Instant noodles": 150,
+            "Potato chips": 150,
+            "Chocolate": 150,
+            "Premium coffee": 150,
+            "Beer": 100,
+            "Laptop": 20,
+            "Tablet": 20,
+            "Headphones": 30,
+            "Smartwatch": 30
         },
         "provideInfo4CoLocatedAgents": ["inventory"],
         "provideInfo4AllAgents": ["self_pos"]
@@ -89,9 +89,9 @@
         "numAgents": 1,
         "inventory": {
             "Yen": 0,
-            "Ramen": 400,
-            "Curry rice": 400,
-            "Bento": 400
+            "Ramen": 200,
+            "Curry rice": 200,
+            "Bento": 200
         },
         "provideInfo4CoLocatedAgents": ["inventory"],
         "provideInfo4AllAgents": ["self_pos"]
@@ -105,8 +105,8 @@
         "numAgents": 1,
         "inventory": {
             "Yen": 0,
-            "Pasta": 300,
-            "Casual dinner set": 300
+            "Pasta": 200,
+            "Casual dinner set": 200
         },
         "provideInfo4CoLocatedAgents": ["inventory"],
         "provideInfo4AllAgents": ["self_pos"]
@@ -143,7 +143,7 @@
         "maxConcurrentGenerations": 12,
         "useGpu": true,
 	    "isDataParallel": false,
-        "gpuIds": [0],
+        "gpuIds": [1,2],
         "host": "127.0.0.1",
         "port": 8000,
         "timeOut": 600,
@@ -175,7 +175,7 @@
     },
     "memoryHandler": {
         "type": "MemoryHandler",
-        "memoryLength": 10,
+        "memoryLength": 24,
         "numObs": 23,
         "memorySummarizer": {
             "type": "StressAwareSummarizer",

@@ -5,6 +5,7 @@ from .consumer_cluster_analyzer import ConsumerClusterAnalyzer
 from .follower_counter import FollowerCounter
 from .item_sales_analyzer import ItemSalesAnalyzer
 from .log_parser import load_from_file
+from .move_distance_analyzer import MoveDistanceAnalyzer
 from .price_analyzer import PriceAnalyzer
 from .records import (
     AgentGenerationRecord,
@@ -67,4 +68,5 @@ __all__ = [
     "StressAnalyzer",
     "PriceAnalyzer",
     "TopicAnalyzer",
+    "MoveDistanceAnalyzer",
 ]

@@ -52,3 +52,28 @@ Analyzers
    :members:
    :undoc-members:
    :show-inheritance:
+
+.. automodule:: econsimulacra.log_analyses.price_analyzer
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: econsimulacra.log_analyses.move_distance_analyzer
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: econsimulacra.log_analyses.stress_analyzer
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: econsimulacra.log_analyses.topic_analyzer
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: econsimulacra.log_analyses.consumer_cluster_analyzer
+   :members:
+   :undoc-members:
+   :show-inheritance:

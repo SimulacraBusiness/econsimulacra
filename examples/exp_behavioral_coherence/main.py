@@ -10,11 +10,11 @@ from econsimulacra.envs import Environment
 from econsimulacra.logs import DictLogger
 from econsimulacra.simulator import SimulationSummarizer, Simulator
 
-# export LOG_TXT_PATH="log_full.txt"
+# export LOG_TXT_PATH="log_baseline.txt"
 
 
 def conduct_simulation():
-    config_dic_path: Path = pathlib.Path(__file__).parent / "config_full.json"
+    config_dic_path: Path = pathlib.Path(__file__).parent / "config_baseline.json"
     logger: DictLogger = DictLogger()
     simulator: Simulator = Simulator(
         config=config_dic_path,
