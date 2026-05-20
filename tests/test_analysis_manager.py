@@ -43,10 +43,7 @@ class TestAnalysisManager:
             "Government": {
                 0: 0,
             },
-            "Agent 33": {
-                0: 0,
-                1: 0
-            },
+            "Agent 33": {0: 0, 1: 0},
         }
         assert results["store_sales"] == (
             {"PrimeDiner4": {8: 15001.0}},
