@@ -185,7 +185,7 @@ class TimeTranslator:
         """Convert a simulation step to a datetime.
 
         Args:
-            step (int): The simulation step to convert. Must be between 0 and numSteps - 1.
+            step (int): The simulation step to convert. Must be between -1 and numSteps - 1.
 
         Returns:
             datetime: The corresponding datetime for the given simulation step.
@@ -194,6 +194,8 @@ class TimeTranslator:
             raise ValueError(
                 f"TimeTranslator: 'step' must be between -1 and {self.num_steps}."
             )
+        if step == -1:
+            return self.start_datetime.strftime("%Y-%m-%d %H:%M:%S")
 
         return self.step_datetimes[step].strftime("%Y-%m-%d %H:%M:%S")
 
