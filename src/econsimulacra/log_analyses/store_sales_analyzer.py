@@ -120,14 +120,14 @@ class StoreSalesAnalyzer(
                     sold_amount_values.append(0.0)
             fig_sales: Figure
             ax_sales: Axes
-            fig_sales, ax_sales = plt.subplots(figsize=(15, 6))
+            fig_sales, ax_sales = plt.subplots(figsize=(8, 6))
             ax_sales.bar(times, sales_values)
             ax_sales.set_xlabel("Time")
             ax_sales.set_ylabel("Sales Amount")
             ax_sales.set_title(f"Sales Amount: {store_name}")
             fig_sold_amounts: Figure
             ax_sold_amounts: Axes
-            fig_sold_amounts, ax_sold_amounts = plt.subplots(figsize=(15, 6))
+            fig_sold_amounts, ax_sold_amounts = plt.subplots(figsize=(8, 6))
             ax_sold_amounts.bar(times, sold_amount_values)
             ax_sold_amounts.set_xlabel("Time")
             ax_sold_amounts.set_ylabel("Sold Amount")

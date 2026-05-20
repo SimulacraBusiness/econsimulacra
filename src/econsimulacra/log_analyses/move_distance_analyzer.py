@@ -193,7 +193,7 @@ class MoveDistanceAnalyzer(AnalyzerBase[MoveDistanceResult]):
         figures: dict[str, Figure] = {}
         fig_total: Figure
         ax_total: Axes
-        fig_total, ax_total = plt.subplots(figsize=(15, 6))
+        fig_total, ax_total = plt.subplots(figsize=(8, 6))
         ax_total.plot(np.array(times), total_distances, marker="o")
         ax_total.set_title("Total movement distance by time window")
         ax_total.set_xlabel("window start")
@@ -205,7 +205,7 @@ class MoveDistanceAnalyzer(AnalyzerBase[MoveDistanceResult]):
 
         fig_mean: Figure
         ax_mean: Axes
-        fig_mean, ax_mean = plt.subplots(figsize=(15, 6))
+        fig_mean, ax_mean = plt.subplots(figsize=(8, 6))
         ax_mean.plot(np.array(times), mean_distances, marker="o")
         ax_mean.set_title("Mean movement distance per move by time window")
         ax_mean.set_xlabel("window start")
@@ -217,7 +217,7 @@ class MoveDistanceAnalyzer(AnalyzerBase[MoveDistanceResult]):
 
         fig_count: Figure
         ax_count: Axes
-        fig_count, ax_count = plt.subplots(figsize=(15, 6))
+        fig_count, ax_count = plt.subplots(figsize=(8, 6))
         ax_count.plot(np.array(times), move_counts, marker="o", label="move count")
         ax_count.plot(
             np.array(times),
@@ -246,7 +246,7 @@ class MoveDistanceAnalyzer(AnalyzerBase[MoveDistanceResult]):
 
             fig_agent: Figure
             ax_agent: Axes
-            fig_agent, ax_agent = plt.subplots(figsize=(15, 6))
+            fig_agent, ax_agent = plt.subplots(figsize=(8, 6))
             ax_agent.bar(agent_ids, agent_distances)
             ax_agent.set_title(f"Top {len(top_agents)} agents by movement distance")
             ax_agent.set_xlabel("agent_id")

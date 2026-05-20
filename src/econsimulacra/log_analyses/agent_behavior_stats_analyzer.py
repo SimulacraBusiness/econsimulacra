@@ -95,7 +95,7 @@ class AgentBehaviorStatsAnalyzer(AnalyzerBase[dict[str, dict[int, float]]]):
     ) -> dict[str, Figure]:
         fig_dic: dict[str, Figure] = {}
         for stat_name, agent_id2stat in result.items():
-            fig: Figure = Figure(figsize=(12, 6))
+            fig: Figure = Figure(figsize=(8, 6))
             ax: Axes = fig.add_subplot(1, 1, 1)
             stat_values: list[float] = list(agent_id2stat.values())
             ax.hist(stat_values, bins=50)

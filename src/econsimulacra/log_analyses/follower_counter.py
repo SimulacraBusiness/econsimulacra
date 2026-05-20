@@ -51,7 +51,7 @@ class FollowerCounter(AnalyzerBase[dict[str, dict[int, int]]]):
         self,
         result: dict[str, dict[int, int]],
     ) -> dict[str, Figure]:
-        fig: Figure = Figure(figsize=(15, 6))
+        fig: Figure = Figure(figsize=(8, 6))
         ax: Axes = fig.add_subplot(1, 1, 1)
         agent_name2max_followers: dict[str, int] = {
             agent_name: max(time_counts.values())

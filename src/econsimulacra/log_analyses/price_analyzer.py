@@ -70,7 +70,7 @@ class PriceAnalyzer(AnalyzerBase[dict[str, dict[int, float]]]):
 
             fig: Figure
             ax: Axes
-            fig, ax = plt.subplots(figsize=(15, 6))
+            fig, ax = plt.subplots(figsize=(8, 6))
 
             times: list[int] = sorted(time2price.keys())
             last_time: int = times[-1]

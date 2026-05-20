@@ -83,7 +83,7 @@ class StressAnalyzer(AnalyzerBase[dict[int, dict[str, dict[int, float]]]]):
                 if fig_key not in fig_dic:
                     fig: Figure
                     ax: Axes
-                    fig, ax = plt.subplots(figsize=(15, 6))
+                    fig, ax = plt.subplots(figsize=(8, 6))
                     fig_dic[fig_key] = fig
                 fig = fig_dic[fig_key]
                 ax = fig.axes[0]

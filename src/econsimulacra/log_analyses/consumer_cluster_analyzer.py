@@ -309,7 +309,7 @@ class ConsumerClusterAnalyzer(AnalyzerBase[ConsumerClusterResult]):
         embedding: Embedding = np.asarray(raw_embedding, dtype=np.float64)
         fig_by_agent: Figure
         ax_by_agent: Axes
-        fig_by_agent, ax_by_agent = plt.subplots(figsize=(15, 6))
+        fig_by_agent, ax_by_agent = plt.subplots(figsize=(8, 6))
         scatter_by_agent: PathCollection = ax_by_agent.scatter(
             embedding[:, 0],
             embedding[:, 1],
@@ -330,7 +330,7 @@ class ConsumerClusterAnalyzer(AnalyzerBase[ConsumerClusterResult]):
 
         fig_by_time: Figure
         ax_by_time: Axes
-        fig_by_time, ax_by_time = plt.subplots(figsize=(15, 6))
+        fig_by_time, ax_by_time = plt.subplots(figsize=(8, 6))
         # Convert time labels into matplotlib date numbers
         time_numeric: NDArray[np.float64]
         if all(isinstance(t, datetime) for t in self.window_starts_):
@@ -400,7 +400,7 @@ class ConsumerClusterAnalyzer(AnalyzerBase[ConsumerClusterResult]):
         }
         fig_network: Figure
         ax_network: Axes
-        fig_network, ax_network = plt.subplots(figsize=(15, 6))
+        fig_network, ax_network = plt.subplots(figsize=(8, 6))
         for cluster_id, position in positions.items():
             ax_network.scatter(float(position[0]), float(position[1]), s=900)
             ax_network.text(
@@ -453,7 +453,7 @@ class ConsumerClusterAnalyzer(AnalyzerBase[ConsumerClusterResult]):
         fig_representatives, axes_raw = plt.subplots(
             n_center_clusters,
             1,
-            figsize=(15, max(2.5, 2.0 * n_center_clusters)),
+            figsize=(8, max(2.5, 2.0 * n_center_clusters)),
             sharex=True,
         )
         if isinstance(axes_raw, np.ndarray):
@@ -470,7 +470,6 @@ class ConsumerClusterAnalyzer(AnalyzerBase[ConsumerClusterResult]):
         figures["cluster_representatives"] = fig_representatives
 
         time2cluster_counts: dict[TimeKey, Counter[int]] = defaultdict(Counter)
-
         for _, time2cluster in result.items():
             for time, (cluster_id, _) in time2cluster.items():
                 time2cluster_counts[time][cluster_id] += 1
@@ -484,7 +483,7 @@ class ConsumerClusterAnalyzer(AnalyzerBase[ConsumerClusterResult]):
         )
         fig_cluster_counts: Figure
         ax_cluster_counts: Axes
-        fig_cluster_counts, ax_cluster_counts = plt.subplots(figsize=(15, 6))
+        fig_cluster_counts, ax_cluster_counts = plt.subplots(figsize=(12, 6))
         x = np.arange(len(times))
         bottom = np.zeros(len(times), dtype=float)
         for cluster_id in cluster_ids:
@@ -504,7 +503,11 @@ class ConsumerClusterAnalyzer(AnalyzerBase[ConsumerClusterResult]):
         ax_cluster_counts.legend()
         ax_cluster_counts.set_xticks(x)
         ax_cluster_counts.set_xticklabels(
-            [str(t) for t in times], rotation=45, ha="right"
+            [
+                t.strftime("%Y-%m-%d\n%H:%M")
+                if isinstance(t, datetime) else str(t) for t in times
+            ],
+            rotation=45, ha="right"
         )
         figures["cluster_counts"] = fig_cluster_counts
         return figures
@@ -566,7 +569,7 @@ class ConsumerClusterAnalyzer(AnalyzerBase[ConsumerClusterResult]):
                 if int(label) != cluster_id:
                     continue
                 if isinstance(window_start, datetime):
-                    window_start_text: str = window_start.strftime("%Y-%m-%d %H:%M")
+                    window_start_text: str = window_start.strftime("%Y-%m-%d\n %H:%M")
                 else:
                     window_start_text = str(window_start)
                 time_counter[window_start_text] += 1
