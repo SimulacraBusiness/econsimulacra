@@ -58,24 +58,24 @@
         "numAgents": 1,
         "inventory": {
             "Yen": 0,
-            "Rice": 800,
-            "Eggs": 800,
-            "Milk": 800,
-            "Bread": 800,
-            "Cooking oil": 800,
-            "Tomatoes": 400,
-            "Cheese": 400,
-            "Chicken": 400,
-            "Beef": 400,
-            "Instant noodles": 300,
-            "Potato chips": 300,
-            "Chocolate": 300,
-            "Premium coffee": 200,
-            "Beer": 200,
-            "Laptop": 50,
-            "Tablet": 50,
-            "Headphones": 50,
-            "Smartwatch": 50
+            "Rice": 200,
+            "Eggs": 200,
+            "Milk": 200,
+            "Bread": 200,
+            "Cooking oil": 200,
+            "Tomatoes": 100,
+            "Cheese": 100,
+            "Chicken": 100,
+            "Beef": 100,
+            "Instant noodles": 150,
+            "Potato chips": 150,
+            "Chocolate": 150,
+            "Premium coffee": 150,
+            "Beer": 100,
+            "Laptop": 20,
+            "Tablet": 20,
+            "Headphones": 30,
+            "Smartwatch": 30
         },
         "provideInfo4CoLocatedAgents": ["inventory"],
         "provideInfo4AllAgents": ["self_pos"]
@@ -89,9 +89,9 @@
         "numAgents": 1,
         "inventory": {
             "Yen": 0,
-            "Ramen": 400,
-            "Curry rice": 400,
-            "Bento": 400
+            "Ramen": 200,
+            "Curry rice": 200,
+            "Bento": 200
         },
         "provideInfo4CoLocatedAgents": ["inventory"],
         "provideInfo4AllAgents": ["self_pos"]
@@ -105,8 +105,8 @@
         "numAgents": 1,
         "inventory": {
             "Yen": 0,
-            "Pasta": 300,
-            "Casual dinner set": 300
+            "Pasta": 200,
+            "Casual dinner set": 200
         },
         "provideInfo4CoLocatedAgents": ["inventory"],
         "provideInfo4AllAgents": ["self_pos"]
@@ -177,65 +177,11 @@
     },
     "memoryHandler": {
         "type": "MemoryHandler",
-        "memoryLength": 10,
+        "memoryLength": 24,
         "numObs": 23,
         "memorySummarizer": {
-            "type": "StressAwareSummarizer",
-            "relativeThresholdForPriceChange": 0.01,
-            "stressCalculator": {
-                "type": "StressCalculator",
-                "stressTypes": [
-                    "consumption_history",
-                    "move_history",
-                    "state_evaluation_history"
-                ],
-                "item2Weight": {
-                    "Yen": 0.0,
-                    "Rice": 10.0,
-                    "Eggs": 3.0,
-                    "Milk": 1.0,
-                    "Bread": 5.0,
-                    "Cooking oil": 1.0,
-                    "Tomatoes": 3.0,
-                    "Cheese": 3.0,
-                    "Chicken": 5.0,
-                    "Beef": 7.0,
-                    "Instant noodles": 6.0,
-                    "Potato chips": 5.0,
-                    "Chocolate": 2.0,
-                    "Premium coffee": 1.0,
-                    "Beer": 1.0,
-                    "Laptop": 0.0,
-                    "Tablet": 0.0,
-                    "Headphones": 0.0,
-                    "Smartwatch": 0.0,
-                    "Ramen": 10.0,
-                    "Curry rice": 10.0,
-                    "Bento": 8.0,
-                    "Pasta": 10.0,
-                    "Casual dinner set": 15.0,
-                    "Sushi": 15.0,
-                    "Course meals": 20.0,
-                    "Wagyu beef steak": 30.0,
-                    "Wine": 3.0
-                },
-                "maxMagnitude": 100,
-                "targetConsumptionQuantity": 15,
-                "windowSizeForConsumption": 20,
-                "timeDecayForConsumption": 0.9,
-                "targetMoveDistance": 5.0,
-                "windowSizeForMove": 20,
-                "timeDecayForMove": 0.9,
-                "homeComfortWeight": 0.2,
-                "targetBuyingPower": 10.0,
-                "targetRelativeWealth": -1,
-                "targetWealthGrowth": 0.0,
-                "windowSizeForStateEvaluation": 5,
-                "buyingPowerWeight": 1.5,
-                "relativeWealthWeight": 0.9,
-                "wealthDrawdownWeight": 0.3,
-                "toleranceThresholdForStress": 50
-            }
+            "type": "MemorySummarizer",
+            "relativeThresholdForPriceChange": 0.01
         }
     },
     "constantSalary": {
