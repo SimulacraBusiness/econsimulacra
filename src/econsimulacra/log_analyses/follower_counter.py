@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from datetime import datetime
-
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from rich.console import Group, RenderableType
@@ -13,7 +11,7 @@ from .records import FollowRecord, TweetRecord, UnfollowRecord
 from .store import RecordStore
 
 
-class FollowerCounter(AnalyzerBase[dict[str, dict[datetime | int, int]]]):
+class FollowerCounter(AnalyzerBase[dict[str, dict[int, int]]]):
     """Follower counter analyzer.
 
     FollowerCounter counts the number of followers for each agent over time.
@@ -21,7 +19,7 @@ class FollowerCounter(AnalyzerBase[dict[str, dict[datetime | int, int]]]):
 
     name = "follower_count"
 
-    def analyze(self, store: RecordStore) -> dict[str, dict[datetime | int, int]]:
+    def analyze(self, store: RecordStore) -> dict[str, dict[int, int]]:
         """Counts the number of followers for each agent over time.
 
         Args:
@@ -32,7 +30,7 @@ class FollowerCounter(AnalyzerBase[dict[str, dict[datetime | int, int]]]):
             a dictionary of timestamps and follower counts.
         """
         agent_id2name: dict[int, str] = self.get_agent_id2name(store)
-        follower_counts: dict[str, dict[datetime | int, int]] = {}
+        follower_counts: dict[str, dict[int, int]] = {}
 
         for record in (
             store.typed(FollowRecord)
@@ -40,7 +38,7 @@ class FollowerCounter(AnalyzerBase[dict[str, dict[datetime | int, int]]]):
             + store.typed(TweetRecord)
         ):
             agent_id = record.agent_id
-            time = record.time
+            time: int = record.time_step
             num_followers = record.num_followers
             agent_name = agent_id2name.get(agent_id, f"Agent {agent_id}")
             if agent_name not in follower_counts:
@@ -51,7 +49,7 @@ class FollowerCounter(AnalyzerBase[dict[str, dict[datetime | int, int]]]):
 
     def draw_figs(
         self,
-        result: dict[str, dict[datetime | int, int]],
+        result: dict[str, dict[int, int]],
     ) -> dict[str, Figure]:
         fig: Figure = Figure(figsize=(15, 6))
         ax: Axes = fig.add_subplot(1, 1, 1)
@@ -87,7 +85,7 @@ class FollowerCounter(AnalyzerBase[dict[str, dict[datetime | int, int]]]):
 
     def build_summary(
         self,
-        result: dict[str, dict[datetime | int, int]],
+        result: dict[str, dict[int, int]],
     ) -> RenderableType:
         """Build a rich summary table for follower counts."""
         agent_name2max_followers: dict[str, int] = {

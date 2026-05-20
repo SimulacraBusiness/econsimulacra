@@ -91,6 +91,7 @@ class TopicAnalyzer(AnalyzerBase[TopicResult]):
 
     def analyze(self, store: RecordStore) -> TopicResult:
         """Analyze tweet topic dynamics."""
+        self._prepare_time_axis(store)
         tweet_records: list[TweetRecord] | list[InnerThoughtRecord]
         if self.is_inner_thought:
             tweet_records = store.typed(InnerThoughtRecord)
@@ -311,14 +312,13 @@ class TopicAnalyzer(AnalyzerBase[TopicResult]):
         topic_counts: DataFrame,
         top_topics: list[str],
     ) -> Figure:
-        fig, ax = plt.subplots(figsize=(10, 5))
-
+        fig, ax = plt.subplots(figsize=(15, 6))
         topic_counts[top_topics].plot(ax=ax)
         ax.set_xlabel("Time window")
         ax.set_ylabel("#Tweets")
         ax.legend(title="Topic", bbox_to_anchor=(1.02, 1), loc="upper left")
         ax.grid(True, alpha=0.3)
-
+        self._apply_time_axis(ax)
         fig.tight_layout()
         return fig
 
@@ -327,26 +327,25 @@ class TopicAnalyzer(AnalyzerBase[TopicResult]):
         topic_shares: DataFrame,
         top_topics: list[str],
     ) -> Figure:
-        fig, ax = plt.subplots(figsize=(10, 5))
-
+        fig, ax = plt.subplots(figsize=(15, 6))
         topic_shares[top_topics].plot.area(ax=ax)
         ax.set_xlabel("Time window")
         ax.set_ylabel("Topic share")
         ax.set_ylim(0, 1)
         ax.legend(title="Topic", bbox_to_anchor=(1.02, 1), loc="upper left")
-
+        ax.grid(True, alpha=0.3)
+        self._apply_time_axis(ax)
         fig.tight_layout()
         return fig
 
     def _draw_top_topic_counts(self, topic_summary: DataFrame) -> Figure:
-        fig, ax = plt.subplots(figsize=(10, 5))
-
+        fig, ax = plt.subplots(figsize=(15, 6))
         summary = topic_summary[topic_summary["topic"] != -1].head(self.top_n_topics)
         ax.barh(summary["topic_name"], summary["num_tweets"])
         ax.invert_yaxis()
-
         ax.set_xlabel("#Tweets")
         ax.set_ylabel("Topic")
-
+        ax.grid(True, alpha=0.3)
+        self._apply_time_axis(ax)
         fig.tight_layout()
         return fig

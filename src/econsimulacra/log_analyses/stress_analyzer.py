@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from datetime import datetime
 from typing import Any, cast
 
-import numpy as np
+import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
@@ -12,7 +11,7 @@ from .records import ObsRecord
 from .store import RecordStore
 
 
-class StressAnalyzer(AnalyzerBase[dict[int, dict[str, dict[datetime | int, float]]]]):
+class StressAnalyzer(AnalyzerBase[dict[int, dict[str, dict[int, float]]]]):
     """Stress analyzer.
 
     StressAnalyzer analyzes stress data for each household stress_type "*_history_stress".
@@ -28,9 +27,7 @@ class StressAnalyzer(AnalyzerBase[dict[int, dict[str, dict[datetime | int, float
         """
         self.exclude_agent_ids = exclude_agent_ids
 
-    def analyze(
-        self, store: RecordStore
-    ) -> dict[int, dict[str, dict[datetime | int, float]]]:
+    def analyze(self, store: RecordStore) -> dict[int, dict[str, dict[int, float]]]:
         """Analyzes stress data for each household stress_type "*_history_stress".
 
         Args:
@@ -53,8 +50,8 @@ class StressAnalyzer(AnalyzerBase[dict[int, dict[str, dict[datetime | int, float
                 ...
             }
         """
-        result: dict[int, dict[str, dict[datetime | int, float]]] = {}
-
+        self._prepare_time_axis(store)
+        result: dict[int, dict[str, dict[int, float]]] = {}
         for record in store.typed(ObsRecord):
             if record.obs_type != "memory":
                 continue
@@ -66,32 +63,38 @@ class StressAnalyzer(AnalyzerBase[dict[int, dict[str, dict[datetime | int, float
             for memory_key, memory_value in record.obs.items():
                 if memory_key.endswith("_history_stress"):
                     stress_type = memory_key.removesuffix("_history_stress")
-                    time = record.time
+                    time = record.time_step
                     stress_value = float(cast(float | int, memory_value))
                     if agent_id not in result:
                         result[agent_id] = {}
                     if stress_type not in result[agent_id]:
                         result[agent_id][stress_type] = {}
                     result[agent_id][stress_type][time] = stress_value
-
         return result
 
     def draw_figs(
         self,
-        result: dict[int, dict[str, dict[datetime | int, float]]],
+        result: dict[int, dict[str, dict[int, float]]],
     ) -> dict[str, Figure]:
         fig_dic: dict[str, Figure] = {}
         for agent_id, stress_type2time_stress in result.items():
             for stress_type, time_stress in stress_type2time_stress.items():
                 fig_key: str = f"stress_{stress_type}"
                 if fig_key not in fig_dic:
-                    fig: Figure = Figure(figsize=(15, 6))
-                    ax: Axes = fig.add_subplot(1, 1, 1)
+                    fig: Figure
+                    ax: Axes
+                    fig, ax = plt.subplots(figsize=(15, 6))
                     fig_dic[fig_key] = fig
                 fig = fig_dic[fig_key]
                 ax = fig.axes[0]
                 times = list(time_stress.keys())
                 stress_values = list(time_stress.values())
-                x = np.arange(len(times))
-                ax.plot(x, stress_values, label=f"Agent {agent_id}")
+                last_time: int = max(times)
+                if self._time_axis_config is not None:
+                    max_time = int(self._time_axis_config.x_max)
+                    if last_time < max_time:
+                        times.append(max_time)
+                        stress_values.append(0)
+                ax.plot(times, stress_values, label=f"Agent {agent_id}")
+                self._apply_time_axis(ax)
         return fig_dic

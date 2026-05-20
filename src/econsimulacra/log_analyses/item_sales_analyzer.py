@@ -1,9 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
-from typing import cast
-
-import numpy as np
+import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from rich.console import RenderableType
@@ -18,8 +15,8 @@ from .store import RecordStore
 class ItemSalesAnalyzer(
     AnalyzerBase[
         tuple[
-            dict[str, dict[datetime | int, float]],
-            dict[str, dict[datetime | int, float]],
+            dict[str, dict[int, float]],
+            dict[str, dict[int, float]],
         ]
     ]
 ):
@@ -33,42 +30,41 @@ class ItemSalesAnalyzer(
 
     def analyze(
         self, store: RecordStore
-    ) -> tuple[
-        dict[str, dict[datetime | int, float]], dict[str, dict[datetime | int, float]]
-    ]:
+    ) -> tuple[dict[str, dict[int, float]], dict[str, dict[int, float]]]:
         """Analyzes sales data for each item.
 
         Args:
             store (RecordStore): The record store containing the records to analyze.
 
         Returns:
-            tuple[dict[str, dict[datetime | int, float]], dict[str, dict[datetime | int, float]]]: A tuple containing dictionaries mapping item names to their sales data and sold amounts.
+            tuple[dict[str, dict[int, float]], dict[str, dict[int, float]]]: A tuple containing dictionaries mapping item names to their sales data and sold amounts.
         """
-        sales: dict[str, dict[datetime | int, float]] = {}
-        sold_amounts: dict[str, dict[datetime | int, float]] = {}
+        self._prepare_time_axis(store)
+        sales: dict[str, dict[int, float]] = {}
+        sold_amounts: dict[str, dict[int, float]] = {}
         order_reactions: list[OrderReactionRecord] = store.typed(OrderReactionRecord)
-        time: datetime | int
+        time_step: int
         item_name: str
         for order_reaction in order_reactions:
             item_name = order_reaction.item_name
-            time = order_reaction.time
+            time_step = order_reaction.time_step
             if item_name not in sales:
                 sales[item_name] = {}
                 sold_amounts[item_name] = {}
-            if time not in sales[item_name]:
-                sales[item_name][time] = 0.0
-                sold_amounts[item_name][time] = 0.0
-            sales[item_name][time] += order_reaction.accept_amount * (
+            if time_step not in sales[item_name]:
+                sales[item_name][time_step] = 0.0
+                sold_amounts[item_name][time_step] = 0.0
+            sales[item_name][time_step] += order_reaction.accept_amount * (
                 order_reaction.price
             )
-            sold_amounts[item_name][time] += order_reaction.accept_amount
+            sold_amounts[item_name][time_step] += order_reaction.accept_amount
         return sales, sold_amounts
 
     def draw_figs(
         self,
         result: tuple[
-            dict[str, dict[datetime | int, float]],
-            dict[str, dict[datetime | int, float]],
+            dict[str, dict[int, float]],
+            dict[str, dict[int, float]],
         ],
     ) -> dict[str, Figure]:
         fig_dic: dict[str, Figure] = {}
@@ -79,47 +75,35 @@ class ItemSalesAnalyzer(
         for item_name in item_names:
             time2sales = sales_by_item.get(item_name, {})
             time2sold_amounts = sold_amounts_by_item.get(item_name, {})
-            times: list[datetime | int] = sorted(
+            times: list[int] = sorted(
                 set(time2sales.keys()) | set(time2sold_amounts.keys())
             )
-            x = np.arange(len(times))
-            sales_values: list[float] = [time2sales.get(time, 0.0) for time in times]
-            sold_amount_values: list[float] = [
-                time2sold_amounts.get(time, 0.0) for time in times
+            sales_values: list[float] = [
+                time2sales.get(time_step, 0.0) for time_step in times
             ]
-            fig_sales: Figure = Figure(figsize=(10, 6))
+            sold_amount_values: list[float] = [
+                time2sold_amounts.get(time_step, 0.0) for time_step in times
+            ]
+            last_time = times[-1] if times else 0
+            if self._time_axis_config is not None:
+                max_time = int(self._time_axis_config.x_max)
+                if last_time < max_time:
+                    times.append(max_time)
+                    sales_values.append(0.0)
+                    sold_amount_values.append(0.0)
+            fig_sales: Figure = Figure(figsize=(15, 6))
             ax_sales: Axes = fig_sales.add_subplot(1, 1, 1)
-            ax_sales.bar(x, sales_values)
+            ax_sales.bar(times, sales_values)
             ax_sales.set_xlabel("Time")
             ax_sales.set_ylabel("Sales Amount")
-            fig_sold_amounts: Figure = Figure(figsize=(10, 6))
-            ax_sold_amounts: Axes = fig_sold_amounts.add_subplot(1, 1, 1)
-            ax_sold_amounts.bar(x, sold_amount_values)
+            fig_sold_amounts: Figure
+            ax_sold_amounts: Axes
+            fig_sold_amounts, ax_sold_amounts = plt.subplots(figsize=(15, 6))
+            ax_sold_amounts.bar(times, sold_amount_values)
             ax_sold_amounts.set_xlabel("Time")
             ax_sold_amounts.set_ylabel("Sold Amount")
-            num_ticks: int = min(10, len(times))
-            step: int = max(1, len(times) // num_ticks)
-            tick_positions = x[::step]
-            tick_times = times[::step]
-            for ax in [ax_sales, ax_sold_amounts]:
-                ax.set_xticks(tick_positions)
-                if tick_times and isinstance(tick_times[0], datetime):
-                    datetime_tick_times = cast(list[datetime], tick_times)
-                    ax.set_xticklabels(
-                        [time.strftime("%Y-%m-%d") for time in datetime_tick_times],
-                        rotation=45,
-                        ha="right",
-                        rotation_mode="anchor",
-                    )
-                else:
-                    ax.set_xticklabels(
-                        [str(time) for time in tick_times],
-                        rotation=45,
-                        ha="right",
-                        rotation_mode="anchor",
-                    )
-            fig_sales.tight_layout()
-            fig_sold_amounts.tight_layout()
+            self._apply_time_axis(ax_sales)
+            self._apply_time_axis(ax_sold_amounts)
 
             fig_dic[f"item_sales_{item_name}"] = fig_sales
             fig_dic[f"item_sold_amount_{item_name}"] = fig_sold_amounts
@@ -129,8 +113,8 @@ class ItemSalesAnalyzer(
     def build_summary(
         self,
         result: tuple[
-            dict[str, dict[datetime | int, float]],
-            dict[str, dict[datetime | int, float]],
+            dict[str, dict[int, float]],
+            dict[str, dict[int, float]],
         ],
     ) -> RenderableType:
         """Build a rich summary table for total item sales and sold amounts."""

@@ -224,7 +224,7 @@ class AnalyzerBase(ABC, Generic[T]):
             Human-readable time label.
         """
         if isinstance(time_key, datetime):
-            return time_key.strftime("%Y-%m-%d %H:%M")
+            return time_key.strftime("%Y-%m-%d\n %H:%M")
 
         return str(time_key)
 
