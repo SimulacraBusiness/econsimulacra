@@ -7,7 +7,7 @@
 {"type": "move", "time": "2025-03-01 09:00:00", "time_step": 0, "agent_id": 44, "old_pos": [6, 5], "new_pos": [7, 5]}
 {"type": "tweet", "time": "2025-03-01 09:00:00", "time_step": 0, "agent_id": 0, "message": "dummy message", "num_follows": 0, "num_followers": 0}
 {"type": "follow", "time": "2025-03-01 09:00:00", "time_step": 0, "agent_id": 33, "target_agent_id": 32, "num_follows": 1, "num_followers": 0}
-{"type": "unfollow", "time": "2025-03-01 20:56:05", "time_step": 0, "agent_id": 33, "target_agent_id": 32, "num_follows": 0, "num_followers": 0}
+{"type": "unfollow", "time": "2025-03-01 20:56:05", "time_step": 1, "agent_id": 33, "target_agent_id": 32, "num_follows": 0, "num_followers": 0}
 {"type": "order", "time": "2025-03-01 09:00:00", "time_step": 0, "agent_id": 61, "counterparty_id": 2, "item_name": "dummy item", "item_amount": 1, "price": null, "order_id": 0}
 {"type": "proposal", "time": "2025-03-01 20:56:05", "time_step": 1, "proposal_id": 0, "proposer_agent_id": 48, "responder_agent_id": 74, "give_item_name": "give dummy item", "give_item_amount": 500, "get_item_name": "get dummy item", "get_item_amount": 1}
 {"type": "consumption", "time": "2025-03-02 20:48:15", "time_step": 3, "agent_id": 5, "item_name": "dummy item", "item_amount": 1}
