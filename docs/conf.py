@@ -49,6 +49,8 @@ autodoc_mock_imports = [
     "tqdm",
     "manim",
     "typing_extensions",
+    "bertopic",
+    "umap",
 ]
 
 intersphinx_mapping = {
