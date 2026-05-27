@@ -14,6 +14,7 @@ from .memory_items import (
     PurchaseHistoryItem,
     SaleHistoryItem,
     SetPriceHistoryItem,
+    SleepHistoryItem,
     SocialHistoryItem,
     StateEvaluationHistoryItem,
 )
@@ -69,6 +70,10 @@ class MemorySummarizer:
 
     def summarize_memory(self, agent_memory: AgentMemory) -> dict[str, str]:
         summary_specs: dict[str, tuple[Deque, Callable[[Deque], str]]] = {
+            "sleep_history": (
+                agent_memory.sleep_history,
+                self._summarize_sleep_history,
+            ),
             "move_history": (
                 agent_memory.move_history,
                 self._summarize_move_history,
@@ -137,11 +142,23 @@ class MemorySummarizer:
             | StateEvaluationHistoryItem
             | ObsHistoryItem
             | InnerThoughtHistoryItem
+            | SleepHistoryItem
         ],
         base_summary: str,
     ) -> dict[str, Any]:
         """Hook for subclasses to append or transform each summary."""
         return {}
+
+    def _summarize_sleep_history(self, sleep_history: Deque[SleepHistoryItem]) -> str:
+        if not sleep_history:
+            return "You have no sleep history."
+        return (
+            "You have slept "
+            + ", ".join(
+                f"from {item.start_time} to {item.end_time}" for item in sleep_history
+            )
+            + "."
+        )
 
     def _summarize_move_history(self, move_history: Deque[MoveHistoryItem]) -> str:
         if not move_history:
