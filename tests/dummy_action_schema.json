@@ -3,6 +3,13 @@
     "type": "object",
     "additionalProperties": false,
     "properties": {
+        "sleep_duration": {
+            "anyOf": [
+                {"type": "string"},
+                {"type": "integer"},
+                {"type": "null"}
+            ]
+        },
         "move": {
             "anyOf": [
                 {
@@ -103,6 +110,7 @@
         }
     },
     "required": [
+        "sleep_duration",
         "move",
         "consumptions",
         "orders",
