@@ -3,7 +3,7 @@ from typing import Any, Callable, Optional
 import pytest
 
 from econsimulacra.agents import Agent
-from econsimulacra.envs import Environment, Order
+from econsimulacra.envs import Environment, Order, SleepManager
 from econsimulacra.events import Event, EventTrigger
 from econsimulacra.items import Item
 from econsimulacra.logs import DictLogger
@@ -125,7 +125,7 @@ class TestEnvironment:
             "cashName": "Yen",
             "agents": ["DummyHousehold", "DummyRetailer"],
             "items": ["Yen", "Rice"],
-            "service": ["timeTranslator", "memoryHandler"],
+            "service": ["timeTranslator", "memoryHandler", "sleepManager"],
         },
         "gridSpace": {
             "type": "GridSpace",
@@ -189,6 +189,7 @@ class TestEnvironment:
                 },
             },
         },
+        "sleepManager": {"type": "SleepManager"},
         "DummyEvent1": {
             "trigger": {
                 "at": (1, 3, 5),
@@ -457,6 +458,11 @@ class TestEnvironment:
         action_dic03: dict[str, Any] = {"follow": household_id3}
         env.apply_action_to_env(agent_id=household_id0, action_dic=action_dic03)
         assert household_id3 in env.social_network.get_follows(household_id0)
+        action_dic4 = {"sleep_duration": "4h"}
+        env.apply_action_to_env(agent_id=household_id3, action_dic=action_dic4)
+        sleep_manager = env.get_sleep_manager()
+        assert isinstance(sleep_manager, SleepManager)
+        assert sleep_manager.agent_id2is_sleeping[household_id3]
         action_dic_retailer: dict[str, Any] = {
             "reactions": [
                 {
