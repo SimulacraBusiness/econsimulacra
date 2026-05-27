@@ -46,3 +46,5 @@ Stress Calculation
 .. autofunction:: econsimulacra.memory.stress_utils.calc_stress_from_move_history
 
 .. autofunction:: econsimulacra.memory.stress_utils.calc_stress_from_state_evaluation_history
+
+.. autofunction:: econsimulacra.memory.stress_utils.calc_stress_from_sleep_history

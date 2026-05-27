@@ -40,3 +40,11 @@ Time Translator
    :members:
    :undoc-members:
    :show-inheritance:
+
+Sleep Manager
+-------------
+
+.. automodule:: econsimulacra.envs.sleep_manager
+   :members:
+   :undoc-members:
+   :show-inheritance:
