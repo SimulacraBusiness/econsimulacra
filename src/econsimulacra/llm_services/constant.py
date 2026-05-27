@@ -4,6 +4,13 @@ DEFAULT_ACTION_JSON_SCHEMA: dict[str, Any] = {
     "type": "object",
     "additionalProperties": False,
     "properties": {
+        "sleep_duration": {
+            "anyOf": [
+                {"type": "string"},
+                {"type": "integer"},
+                {"type": "null"},
+            ]
+        },
         "move": {
             "anyOf": [
                 {
@@ -104,6 +111,7 @@ DEFAULT_ACTION_JSON_SCHEMA: dict[str, Any] = {
         },
     },
     "required": [
+        "sleep_duration",
         "move",
         "consumptions",
         "orders",
@@ -125,6 +133,7 @@ DEFAULT_OBS_DESCRIPTION: dict[str, str] = {
     "self_agent_id": "Your unique identifier.",
     "self_name": "Your name.",
     "self_is_household": "A boolean indicating whether you are a household agent. If True, you are a household; if False, you are a firm agent (e.g., retailer or restaurant).",
+    "self_is_sleeping": "A boolean indicating whether you are currently sleeping. If True, you are sleeping and will not be able to take any actions until you wake up. If False, you are awake and can take actions.",
     "memory": "A dictionary representing your memory, where the keys are memory keys and the values are the corresponding memory values."
     + 'Some memory entries may include an associated "stress" value. '
     + "A high stress value indicates that your needs or desires are not being satisfied and you are in a negative state."
@@ -168,6 +177,14 @@ DEFAULT_OBS_DESCRIPTION: dict[str, str] = {
 }
 
 DEFAULT_ACTION_DESCRIPTION: dict[str, str] = {
+    "sleep_duration": "The sleep_duration action represents your intention to sleep for a certain duration. "
+    + "If you want to sleep, specify the duration of sleep as either an integer (representing the number of time steps to sleep) or a string. "
+    + "If you specify a string, it should be 'float' + 'unit', where 'float' is a positive floating-point number and 'unit' is one of 'm', 'h'. "
+    + "For example, '5h' means sleeping for 5 hours. '30m' means sleeping for 30 minutes. "
+    + "If you do not want to sleep, set this to null. "
+    + "When you sleep, you will not be able to take any actions until you wake up. "
+    + "Sleeping can help you recover from stress and feel better. "
+    + "If you want to sleep, you must be located at your home (self_init_pos) to execute the sleep action.",
     "move": "The move action is a list of integers representing the destination coordinates you want to head toward. "
     + "Even if the destination is far away, you may specify any coordinates on the grid as your target. "
     + "The environment will automatically move you one step toward that destination at each time step "
