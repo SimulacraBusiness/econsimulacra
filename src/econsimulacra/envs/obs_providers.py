@@ -3,6 +3,8 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any, Generic, Optional, TypeVar
 
+from econsimulacra.envs.sleep_manager import SleepManager
+
 from ..agents import Agent
 
 if TYPE_CHECKING:
@@ -203,6 +205,24 @@ class SelfInitPosProvider(ObsProvider[tuple[int, ...]]):
             tuple[int, ...]: The initial position of the agent as a tuple of coordinates.
         """
         return self.env.agent_id2initial_coords[agent_id]
+
+
+class SelfIsSleepingProvider(ObsProvider[Optional[bool]]):
+    """Self Is Sleeping Provider class."""
+
+    def get_obs(self, agent_id: int) -> Optional[bool]:
+        """Get the sleep status of the agent.
+
+        Args:
+            agent_id (int): The ID of the agent for which to get the observation.
+
+        Returns:
+            bool: The sleep status of the agent. True if the agent is sleeping, False otherwise.
+        """
+        sleep_manager: Optional[SleepManager] = self.env.get_sleep_manager()
+        if sleep_manager is None:
+            return None
+        return sleep_manager.get_sleep_status(agent_id=agent_id)
 
 
 class SelfIsMovingProvider(ObsProvider[bool]):

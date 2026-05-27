@@ -17,6 +17,7 @@ from .obs_providers import (
     SelfInitPosProvider as SelfInitPosProvider,
     SelfInventoryProvider as SelfInventoryProvider,
     SelfIsMovingProvider as SelfIsMovingProvider,
+    SelfIsSleepingProvider as SelfIsSleepingProvider,
     SelfNameProvider as SelfNameProvider,
     SelfPosProvider as SelfPosProvider,
     SelfSalaryProvider as SelfSalaryProvider,
@@ -26,6 +27,7 @@ from .obs_providers import (
     VisibleTLProvider as VisibleTLProvider,
 )
 from .order import Order as Order, SwapProposal as SwapProposal
+from .sleep_manager import SleepManager as SleepManager
 from .space import GridSpace as GridSpace
 from .time_translator import TimeTranslator as TimeTranslator
 
@@ -42,6 +44,7 @@ __all__ = [
     "SelfIDProvider",
     "SelfNameProvider",
     "SelfPosProvider",
+    "SelfIsSleepingProvider",
     "SelfInitPosProvider",
     "SelfIsMovingProvider",
     "SelfDestinationProvider",
@@ -59,4 +62,5 @@ __all__ = [
     "ItemName2PriceProvider",
     "OthersInventoriesProvider",
     "MemoryProvider",
+    "SleepManager",
 ]
