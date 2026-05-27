@@ -150,6 +150,24 @@ class ExchangeHistoryItem:
 
 
 @dataclass
+class SleepHistoryItem:
+    """A class representing a sleep history item in the agent's memory.
+
+    Attributes:
+        start_time (int | str): the time of the sleep action.
+        end_time (int | str): the time when the sleep action ends.
+
+    Note:
+        This history item is generated based on the SleepStartLog and SleepEndLog.
+        See also: econsimulacra.logs.base.SleepStartLog, econsimulacra.logs.base.SleepEndLog,
+        econsimulacra.envs.base.Environment.(agent_id)
+    """
+
+    start_time: int | str
+    end_time: Optional[int | str]
+
+
+@dataclass
 class SetPriceHistoryItem:
     """A class representing a price change history item in the agent's memory.
 
@@ -269,6 +287,7 @@ class AgentMemory:
     """
 
     consumption_history: Deque[ConsumptionHistoryItem]
+    sleep_history: Deque[SleepHistoryItem]
     move_history: Deque[MoveHistoryItem]
     purchase_history: Deque[PurchaseHistoryItem]
     sale_history: Deque[SaleHistoryItem]
