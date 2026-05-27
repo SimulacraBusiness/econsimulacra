@@ -519,9 +519,6 @@ def calc_stress_from_sleep_history(
         sleep_history (Deque[SleepHistoryItem]):
             A deque of sleep history items. Each item represents one sleep
             interval with ``start_time`` and ``end_time``.
-            If any item has ``end_time is None``, this function raises
-            ``ValueError`` because ongoing sleep intervals should not be
-            evaluated by this function.
 
         current_time (int | str):
             The current simulation time. If this is an ``int``, all sleep
@@ -725,8 +722,6 @@ def calc_stress_from_sleep_history(
 
         Corner cases:
 
-        - If ``sleep_history`` contains an ongoing sleep interval, i.e.,
-          ``end_time is None``, this function raises ``ValueError``.
         - If no sleep overlaps with the evaluation window and
           ``current_time_step >= window_size``, the function returns
           ``max_stress``.
@@ -794,13 +789,12 @@ def calc_stress_from_sleep_history(
     end_clock_times: list[float] = []
 
     for item in sleep_history:
-        if item.end_time is None:
-            raise ValueError(
-                "sleep_history contains an ongoing sleep item: end_time is None."
-            )
-
         start_value: float = _to_continuous_time(item.start_time)
-        end_value: float = _to_continuous_time(item.end_time)
+        end_value: float
+        if item.end_time is None:
+            end_value = current_value
+        else:
+            end_value = _to_continuous_time(item.end_time)
 
         if end_value < start_value:
             raise ValueError(
@@ -817,7 +811,11 @@ def calc_stress_from_sleep_history(
 
         sleep_duration += overlap
         start_clock_times.append(_to_clock_time(item.start_time))
-        end_clock_times.append(_to_clock_time(item.end_time))
+        end_clock_times.append(
+            _to_clock_time(item.end_time)
+            if item.end_time is not None
+            else _to_clock_time(current_time)
+        )
 
     if sleep_duration == 0.0:
         if current_time_step >= window_size:
