@@ -104,6 +104,24 @@ class SpaceAssignRecord(BaseRecord):
 
 
 @dataclass(frozen=True)
+class SleepRecord(TimedRecord):
+    """A record for sleep events.
+
+    Corresponds to econsimulacra.logs.SleepLog.
+
+    Attributes:
+        type (str): must be "sleep".
+        time (int | datetime): The timestamp when the agent wake up, as a datetime object or integer.
+        time_step (int): The time step when the agent wake up, as an integer.
+        since (int | datetime): The timestamp when the agent went to sleep, as a datetime object or integer.
+        agent_id (int): The ID of the sleeping agent.
+    """
+
+    agent_id: int
+    since: int | datetime
+
+
+@dataclass(frozen=True)
 class MoveRecord(TimedRecord):
     """A record for agent movement events.
 
