@@ -6,6 +6,13 @@ MODIFIED_ACTION_JSON_SCHEMA = {
     "type": "object",
     "additionalProperties": False,
     "properties": {
+        "sleep_duration": {
+            "anyOf": [
+                {"type": "string"},
+                {"type": "integer"},
+                {"type": "null"},
+            ]
+        },
         "move": {
             "anyOf": [
                 {
@@ -116,6 +123,7 @@ MODIFIED_ACTION_JSON_SCHEMA = {
         },
     },
     "required": [
+        "sleep_duration",
         "move",
         "consumptions",
         "orders",

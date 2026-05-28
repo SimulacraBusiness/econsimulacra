@@ -1,8 +1,15 @@
 from __future__ import annotations
 
+from datetime import datetime
+from math import cos, pi, sin, sqrt
 from typing import Deque, Optional
 
-from .base import ConsumptionHistoryItem, MoveHistoryItem, StateEvaluationHistoryItem
+from .base import (
+    ConsumptionHistoryItem,
+    MoveHistoryItem,
+    SleepHistoryItem,
+    StateEvaluationHistoryItem,
+)
 
 
 def calc_stress_from_consumption_history(
@@ -485,3 +492,419 @@ def calc_stress_from_state_evaluation_history(
         reason_parts.append(reason)
     stress_reason: str = " ".join(reason_parts)
     return stress_level, stress_reason
+
+
+def calc_stress_from_sleep_history(
+    sleep_history: Deque[SleepHistoryItem],
+    current_time: int | str,
+    current_time_step: int,
+    max_stress: int,
+    target_sleep_duration: float,
+    window_size: float,
+    tolerance_threshold: float,
+    duration_weight: float = 0.7,
+    regularity_weight: float = 0.3,
+) -> tuple[int, str]:
+    """Calculate sleep stress from sleep duration and sleep regularity.
+
+    This function evaluates the agent's sleep condition over a recent
+    time window by combining two stress components:
+
+    1. sleep-duration stress, which increases when the total sleep duration
+       within the window is below the target duration; and
+    2. sleep-regularity stress, which increases when sleep onset and wake-up
+       times are irregular across sleep episodes.
+
+    Args:
+        sleep_history (Deque[SleepHistoryItem]):
+            A deque of sleep history items. Each item represents one sleep
+            interval with ``start_time`` and ``end_time``.
+
+        current_time (int | str):
+            The current simulation time. If this is an ``int``, all sleep
+            times are interpreted as integer simulation steps. If this is a
+            ``str``, all sleep times are parsed using ``time_format`` and
+            interpreted as datetimes.
+
+        current_time_step (int):
+            The current simulation step. This is used only for detecting the
+            initial phase of the simulation. If no sleep is observed and
+            ``current_time_step < window_size``, the function returns zero
+            stress because the agent has not yet had enough time to sleep.
+
+        max_stress (int):
+            The maximum possible stress level.
+
+        target_sleep_duration (float):
+            The target amount of sleep within the time window. The unit must
+            be consistent with ``current_time`` and ``window_size``. If
+            ``current_time`` is an ``int``, this is measured in simulation
+            steps. If ``current_time`` is a datetime string, this is measured
+            in hours.
+
+        window_size (float):
+            The size of the retrospective time window. The function evaluates
+            sleep intervals overlapping with
+            ``[current_time - window_size, current_time]``. If ``current_time``
+            is an ``int``, this is measured in simulation steps. If
+            ``current_time`` is a datetime string, this is measured in hours.
+
+        time_format (str):
+            Datetime format used to parse string-valued times. The default is
+            ``"%Y-%m-%d %H:%M:%S"``.
+
+        tolerance_threshold (float):
+            Threshold below which the stress level is regarded as acceptable.
+
+        duration_weight (float):
+            Weight assigned to sleep-duration stress.
+
+        regularity_weight (float):
+            Weight assigned to sleep-regularity stress.
+
+    Returns:
+        tuple[int, str]:
+            A tuple containing:
+
+            - ``stress_level``: the calculated sleep stress level.
+            - ``stress_reason``: a human-readable explanation of the stress.
+
+    Raises:
+        ValueError:
+            If ``max_stress`` is negative.
+        ValueError:
+            If ``target_sleep_duration`` is not positive.
+        ValueError:
+            If ``window_size`` is not positive.
+        ValueError:
+            If ``tolerance_threshold`` is outside
+            ``[0, max_stress]``.
+        ValueError:
+            If ``duration_weight`` or ``regularity_weight`` is negative.
+        ValueError:
+            If ``duration_weight + regularity_weight`` is not positive.
+        ValueError:
+            If a sleep history item has ``end_time is None``.
+        ValueError:
+            If a sleep interval satisfies ``end_time < start_time``.
+
+    Notes:
+        Let :math:`t` be the current time and :math:`W` be the window size.
+        The retrospective evaluation window is
+
+        .. math::
+
+            [t - W, t].
+
+        Each completed sleep episode :math:`i` is represented by its start
+        time :math:`a_i` and end time :math:`b_i`. Only the overlap between
+        the sleep interval and the evaluation window contributes to the
+        observed sleep duration:
+
+        .. math::
+
+            d_i(t)
+            =
+            \\max\\left(
+                0,
+                \\min(b_i, t) - \\max(a_i, t - W)
+            \\right).
+
+        The total sleep duration in the window is therefore
+
+        .. math::
+
+            D(t) = \\sum_i d_i(t).
+
+        Given the target sleep duration :math:`D^*`, the sleep-duration
+        stress is defined as
+
+        .. math::
+
+            s_{\\mathrm{dur}}(t)
+            =
+            \\min\\left(
+                s_{\\max},
+                \\left\\lfloor
+                \\frac{\\max(0, D^* - D(t))}{D^*}
+                s_{\\max}
+                \\right\\rfloor
+            \\right).
+
+        This definition penalizes sleep deficiency but does not penalize
+        oversleeping. That is, if :math:`D(t) \\geq D^*`, then
+        :math:`s_{\\mathrm{dur}}(t) = 0`.
+
+        Sleep regularity is evaluated using the circular variance of sleep
+        onset times and wake-up times. Let :math:`x_j \\in [0, 24)` denote
+        clock times in hours. Each clock time is mapped to an angle
+
+        .. math::
+
+            \\theta_j = \\frac{2\\pi x_j}{24}.
+
+        The mean resultant length is
+
+        .. math::
+
+            R
+            =
+            \\sqrt{
+                \\left(
+                    \\frac{1}{n} \\sum_{j=1}^n \\cos \\theta_j
+                \\right)^2
+                +
+                \\left(
+                    \\frac{1}{n} \\sum_{j=1}^n \\sin \\theta_j
+                \\right)^2
+            }.
+
+        The circular variance is then
+
+        .. math::
+
+            V = 1 - R.
+
+        Let :math:`V_{\\mathrm{start}}` and :math:`V_{\\mathrm{end}}`
+        denote the circular variances of sleep onset times and wake-up times,
+        respectively. The sleep-regularity stress is
+
+        .. math::
+
+            s_{\\mathrm{reg}}(t)
+            =
+            \\left\\lfloor
+            \\frac{
+                V_{\\mathrm{start}} + V_{\\mathrm{end}}
+            }{2}
+            s_{\\max}
+            \\right\\rfloor.
+
+        If fewer than two completed sleep episodes are available in the
+        evaluation window, regularity cannot be estimated and the function
+        sets
+
+        .. math::
+
+            s_{\\mathrm{reg}}(t) = 0.
+
+        Finally, the total sleep stress is the weighted average of duration
+        stress and regularity stress:
+
+        .. math::
+
+            s(t)
+            =
+            \\min\\left(
+                s_{\\max},
+                \\left\\lfloor
+                \\tilde{w}_{\\mathrm{dur}} s_{\\mathrm{dur}}(t)
+                +
+                \\tilde{w}_{\\mathrm{reg}} s_{\\mathrm{reg}}(t)
+                \\right\\rfloor
+            \\right),
+
+        where normalized weights are given by
+
+        .. math::
+
+            \\tilde{w}_{\\mathrm{dur}}
+            =
+            \\frac{w_{\\mathrm{dur}}}{
+                w_{\\mathrm{dur}} + w_{\\mathrm{reg}}
+            },
+            \\quad
+            \\tilde{w}_{\\mathrm{reg}}
+            =
+            \\frac{w_{\\mathrm{reg}}}{
+                w_{\\mathrm{dur}} + w_{\\mathrm{reg}}
+            }.
+
+        Corner cases:
+
+        - If no sleep overlaps with the evaluation window and
+          ``current_time_step >= window_size``, the function returns
+          ``max_stress``.
+        - If no sleep overlaps with the evaluation window and
+          ``current_time_step < window_size``, the function returns ``0``.
+        - If only one sleep episode is available in the evaluation window,
+          sleep-duration stress is computed normally, but
+          sleep-regularity stress is set to ``0``.
+
+    Examples:
+        Evaluate sleep stress using integer simulation steps:
+
+        .. code-block:: python
+
+            stress, reason = calc_stress_from_sleep_history(
+                sleep_history=sleep_history,
+                current_time=48,
+                current_time_step=48,
+                max_stress=10,
+                target_sleep_duration=8.0,
+                window_size=24.0,
+            )
+
+        Evaluate sleep stress using datetime strings:
+
+        .. code-block:: python
+
+            stress, reason = calc_stress_from_sleep_history(
+                sleep_history=sleep_history,
+                current_time="2026-05-26 09:00:00",
+                current_time_step=48,
+                max_stress=10,
+                target_sleep_duration=8.0,
+                window_size=24.0,
+                time_format="%Y-%m-%d %H:%M:%S",
+            )
+    """
+
+    if max_stress < 0:
+        raise ValueError("max_stress must be non-negative.")
+    if target_sleep_duration <= 0:
+        raise ValueError("target_sleep_duration must be positive.")
+    if window_size <= 0:
+        raise ValueError("window_size must be positive.")
+    if not 0 <= tolerance_threshold <= max_stress:
+        raise ValueError("tolerance_threshold must be between 0 and max_stress.")
+    if duration_weight < 0 or regularity_weight < 0:
+        raise ValueError("duration_weight and regularity_weight must be non-negative.")
+    if duration_weight + regularity_weight <= 0:
+        raise ValueError("duration_weight + regularity_weight must be positive.")
+
+    weight_sum: float = duration_weight + regularity_weight
+    duration_weight = duration_weight / weight_sum
+    regularity_weight = regularity_weight / weight_sum
+    if current_time_step < window_size:
+        target_sleep_duration = target_sleep_duration * (
+            current_time_step / window_size
+        )
+
+    current_value: float = _to_continuous_time(current_time)
+    window_start: float = current_value - window_size
+
+    sleep_duration: float = 0.0
+    start_clock_times: list[float] = []
+    end_clock_times: list[float] = []
+
+    for item in sleep_history:
+        start_value: float = _to_continuous_time(item.start_time)
+        end_value: float
+        if item.end_time is None:
+            end_value = current_value
+        else:
+            end_value = _to_continuous_time(item.end_time)
+
+        if end_value < start_value:
+            raise ValueError(
+                f"Invalid sleep interval: end_time < start_time. "
+                f"start_time={item.start_time}, end_time={item.end_time}"
+            )
+
+        overlap_start: float = max(start_value, window_start)
+        overlap_end: float = min(end_value, current_value)
+        overlap: float = max(0.0, overlap_end - overlap_start)
+
+        if overlap <= 0.0:
+            continue
+
+        sleep_duration += overlap
+        start_clock_times.append(_to_clock_time(item.start_time))
+        end_clock_times.append(
+            _to_clock_time(item.end_time)
+            if item.end_time is not None
+            else _to_clock_time(current_time)
+        )
+
+    if sleep_duration == 0.0:
+        if current_time_step >= window_size:
+            return max_stress, "You have not slept recently. You are exhausted!"
+        return 0, ""
+
+    duration_stress = min(
+        max_stress,
+        int(
+            max(0.0, target_sleep_duration - sleep_duration)
+            / target_sleep_duration
+            * max_stress
+        ),
+    )
+
+    if len(start_clock_times) < 2:
+        regularity_stress = 0
+    else:
+        start_cv = _circular_variance(start_clock_times, period=24.0)
+        end_cv = _circular_variance(end_clock_times, period=24.0)
+        regularity_stress = int(((start_cv + end_cv) / 2.0) * max_stress)
+
+    stress_level = min(
+        max_stress,
+        int(duration_weight * duration_stress + regularity_weight * regularity_stress),
+    )
+
+    if stress_level < tolerance_threshold:
+        return stress_level, "Acceptable sleep level."
+
+    reasons: list[str] = []
+
+    if duration_stress >= tolerance_threshold:
+        reasons.append(
+            "You have not slept enough. You had better go back home and sleep. "
+            f"(sleep_duration: {sleep_duration:.1f}, "
+            f"target: {target_sleep_duration:.1f})"
+        )
+
+    if regularity_stress >= tolerance_threshold:
+        reasons.append(
+            "Your sleep rhythm is irregular. You had better establish a more consistent sleep schedule. "
+            f"(regularity_stress: {regularity_stress}, "
+            f"duration_stress: {duration_stress})"
+        )
+
+    if not reasons:
+        reasons.append(
+            "Your sleep condition is slightly stressful. "
+            f"(duration_stress: {duration_stress}, "
+            f"regularity_stress: {regularity_stress})"
+        )
+
+    return stress_level, " ".join(reasons)
+
+
+def _to_continuous_time(value: int | str) -> float:
+    """Convert int time or datetime string into continuous time.
+
+    - int is interpreted as simulation step.
+    - str is interpreted as datetime and converted into hours.
+    """
+    if isinstance(value, int):
+        return float(value)
+
+    dt = datetime.strptime(value, "%Y-%m-%d %H:%M:%S")
+    return dt.timestamp() / 3600.0
+
+
+def _to_clock_time(value: int | str) -> float:
+    """Convert time into clock time in [0, 24).
+
+    For int time, this assumes 1 step corresponds to 1 hour.
+    """
+    if isinstance(value, int):
+        return float(value % 24)
+
+    dt = datetime.strptime(value, "%Y-%m-%d %H:%M:%S")
+    return dt.hour + dt.minute / 60.0 + dt.second / 3600.0
+
+
+def _circular_variance(values: list[float], period: float) -> float:
+    """Calculate circular variance in [0, 1]."""
+    if not values:
+        return 0.0
+
+    angles = [2.0 * pi * value / period for value in values]
+    mean_sin = sum(sin(angle) for angle in angles) / len(angles)
+    mean_cos = sum(cos(angle) for angle in angles) / len(angles)
+    resultant_length = sqrt(mean_sin**2 + mean_cos**2)
+
+    return 1.0 - resultant_length

@@ -13,7 +13,7 @@ from econsimulacra.events import Event
 from econsimulacra.logs import DictLogger
 from econsimulacra.simulator import SimulationSummarizer, Simulator
 
-# export LOG_TXT_PATH="log_gpt-4o-mini.txt"
+# export LOG_TXT_PATH="log_gpt-oss-20b.txt"
 
 
 class SubsidyEvent(Event):

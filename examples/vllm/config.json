@@ -1,7 +1,7 @@
 {
     "simulation": {
-        "numSteps": 120,
-        "parallelBatchSize": 12,
+        "numSteps": 228,
+        "parallelBatchSize": 32,
         "events": ["provideSubsidy", "constantSupply"]
     },
     "environment": {
@@ -14,7 +14,8 @@
             "Tomatoes", "Soup", "Bread", "Salad"
         ],
         "service": [
-            "promptBuilder", "llmClient", "timeTranslator", "memoryHandler"
+            "promptBuilder", "llmClient", "timeTranslator",
+            "memoryHandler", "sleepManager"
         ]
     },
     "gridSpace": {
@@ -23,12 +24,12 @@
     },
     "socialNetwork": {
         "type": "SocialNetwork",
-        "followCap": 8,
+        "followCap": 5,
         "recSys": {
             "type": "TwoHopRecommenderSystem",
-            "maxRecommendations": 1,
+            "maxRecommendations": 3,
             "isRandomized": true,
-            "temperature": 0.5
+            "temperature": 0.8
         }
     },
     "Restaurant": {
@@ -160,16 +161,16 @@
         "other_choice": "openai/gpt-oss-20b, Qwen/Qwen2.5-7B-Instruct, meta-llama/Meta-Llama-3-8B-Instruct, mistralai/Mistral-7B-Instruct-v0.3",
         "vllmPython": "/home/m2023rhashimoto/econsimulacra/.venv-vllm/bin/python",
         "useGpu": true,
-        "gpuIds": [0,1,2],
+        "gpuIds": [1,2],
         "isDataParallel": true,
         "host": "127.0.0.1",
         "port": 8000,
-        "timeOut": 300,
+        "timeOut": 600,
         "maxRetries": 3,
-        "serverStartTimeout": 300,
+        "serverStartTimeout": 1200,
         "maxConcurrentGenerations": 32,
         "trustRemoteCode": false,
-        "gpuMemoryUtilization": 0.7,
+        "gpuMemoryUtilization": 0.8,
         "gridSpace": [10, 10],
         "items": [
             "Yen", "Rice", "Pizza", "Soda",
@@ -179,10 +180,9 @@
     },
     "timeTranslator": {
         "type": "TimeTranslator",
-        "numSteps": 120,
+        "numSteps": 228,
         "startDatetime": "2025-12-19 09:00:00",
-        "endDatetime": "2025-12-28 21:00:00",
-        "activeTimeRanges": [["09:00:00", "21:00:00"]]
+        "endDatetime": "2025-12-28 21:00:00"
     },
     "personaBuilder": {
         "type": "ScoredPersonaBuilder",
@@ -196,6 +196,9 @@
         "maxMagnitude": 3,
         "personaDescriptionPath": "persona_description.txt"
     },
+    "sleepManager": {
+        "type": "SleepManager"
+    },
     "memoryHandler": {
         "type": "MemoryHandler",
         "memoryLength": 24,
@@ -206,6 +209,7 @@
             "stressCalculator": {
                 "type": "StressCalculator",
                 "stressTypes": [
+                    "sleep_history",
                     "consumption_history",
                     "move_history",
                     "state_evaluation_history"
@@ -221,6 +225,10 @@
                     "Salad": 1.5
                 },
                 "maxMagnitude": 100,
+                "targetSleepDuration": 16.0,
+                "windowSizeForSleep": 48,
+                "durationWeightForSleep": 0.6,
+                "regularityWeightForSleep": 0.4,
                 "targetConsumptionQuantity": 10,
                 "windowSizeForConsumption": 40,
                 "timeDecayForConsumption": 0.98,
@@ -242,7 +250,7 @@
     "provideSubsidy": {
         "type": "SubsidyEvent",
         "trigger": {
-            "every": 12
+            "every": 24
         },
         "subsidyAmount": 1000
     },
@@ -250,7 +258,7 @@
         "type": "ConstantSupply",
         "trigger": {
             "with": ["AgentGenerationLog"],
-            "every": 12
+            "every": 24
         },
         "suppliedAgentNames": ["Daily Mart", "Pizza Place"]
     },

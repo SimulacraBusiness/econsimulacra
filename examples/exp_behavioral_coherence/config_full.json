@@ -141,6 +141,7 @@
         "otherChoice": "Qwen/Qwen3.6-35B-A3B",
         "vllmPython": "/home/m2023rhashimoto/econsimulacra/.venv-vllm/bin/python",
         "maxConcurrentGenerations": 12,
+        "quantization": "awq",
         "useGpu": true,
 	    "isDataParallel": false,
         "gpuIds": [1,2],

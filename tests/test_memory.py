@@ -3,6 +3,8 @@ from econsimulacra.logs import (
     ConsumptionLog,
     MoveLog,
     ObsLog,
+    SleepEndLog,
+    SleepStartLog,
     SpaceAssignLog,
     StateEvaluationLog,
 )
@@ -19,12 +21,17 @@ class TestMemoryHandler:
             "stressCalculator": {
                 "type": "StressCalculator",
                 "stressTypes": [
+                    "sleep_history",
                     "consumption_history",
                     "move_history",
                     "state_evaluation_history",
                 ],
                 "item2Weight": {"Yen": 0.0, "Rice": 10.0, "Apple": 1.0},
                 "maxMagnitude": 100,
+                "targetSleepDuration": 16.0,
+                "windowSizeForSleep": 48,
+                "durationWeightForSleep": 0.6,
+                "regularityWeightForSleep": 0.4,
                 "targetConsumptionQuantity": 15,
                 "windowSizeForConsumption": 20,
                 "timeDecayForConsumption": 0.9,
@@ -53,6 +60,10 @@ class TestMemoryHandler:
         stress_calculator = summarizer.stress_calculator
         assert isinstance(summarizer.stress_calculator, StressCalculator)
         assert stress_calculator.max_magnitude == 100
+        assert stress_calculator.target_sleep_duration == 16.0
+        assert stress_calculator.window_size_for_sleep == 48
+        assert stress_calculator.duration_weight_for_sleep == 0.6
+        assert stress_calculator.regularity_weight_for_sleep == 0.4
         assert stress_calculator.target_consumption_quantity == 15
         assert stress_calculator.window_size_for_consumption == 20
         assert stress_calculator.time_decay_for_consumption == 0.9
@@ -259,4 +270,16 @@ class TestMemoryHandler:
             "Your observations history are: The price of Rice increased from 100.0 to 110.0; "
             "The price of Apple decreased from 10.0 to 9.0. "
             "From time 0 to 7, you have increased the number of people you follow from 0 to 5 (+5)."
+        )
+        log8 = SleepStartLog(time=14, time_step=14, agent_id=1, until=16)
+        memory_handler.update(log=log8)
+        log9 = SleepEndLog(time=16, time_step=16, agent_id=1, since=14)
+        memory_handler.update(log=log9)
+        d = memory_handler.get_memory(agent_id=1)
+        assert d["sleep_history"] == "You have slept from 14 to 16."
+        assert d["sleep_history_stress"] == 37
+        assert (
+            d["sleep_history_stress_reason"]
+            == "Your stress level from this sleep is 37 out of 100. You have not slept enough. "
+            "You had better go back home and sleep. (sleep_duration: 2.0, target: 5.3)"
         )

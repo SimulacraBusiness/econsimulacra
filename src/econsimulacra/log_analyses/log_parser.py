@@ -20,6 +20,7 @@ from .records import (
     ProposalExpirationRecord,
     ProposalReactionRecord,
     ProposalRecord,
+    SleepRecord,
     SpaceAssignRecord,
     StateEvaluationRecord,
     TweetRecord,
@@ -93,6 +94,15 @@ def parse_record(record: dict[str, Any]) -> Optional[BaseRecord]:
             type=record_type,
             agent_id=int(record["agent_id"]),
             pos=to_pos(record["pos"]),
+        )
+
+    if record_type == "sleep_end":
+        return SleepRecord(
+            type=record_type,
+            time=parse_time(record["time"]),
+            time_step=int(record["time_step"]),
+            agent_id=int(record["agent_id"]),
+            since=parse_time(record["since"]),
         )
 
     if record_type == "move":

@@ -66,7 +66,7 @@ class AnalyzerBase(ABC, Generic[T]):
         self,
         store: RecordStore,
         *,
-        max_ticks: int = 11,
+        max_ticks: int = 10,
     ) -> None:
         """Prepare a shared x-axis based on simulation time steps.
 

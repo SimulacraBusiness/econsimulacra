@@ -19,6 +19,8 @@ from ..logs import (
     ProposalExpirationLog,
     ProposalLog,
     ProposalReactionLog,
+    SleepEndLog,
+    SleepStartLog,
     SpaceAssignLog,
     StateEvaluationLog,
     TweetLog,
@@ -35,6 +37,7 @@ from .memory_items import (
     PurchaseHistoryItem,
     SaleHistoryItem,
     SetPriceHistoryItem,
+    SleepHistoryItem,
     SocialHistoryItem,
     StateEvaluationHistoryItem,
 )
@@ -126,6 +129,7 @@ class MemoryHandler:
 
                 {
                     "memory_length": int,
+                    "sleep_history": "slept from time to time, ...",
                     "move_history": "(x0,y0) -> (x1,y1) -> (x2,y2)",
                     "consumption_history": "item_name x quantity at time, ...",
                     "purchase_history": "item_name x quantity at price from agent_id at time, ...",
@@ -158,6 +162,8 @@ class MemoryHandler:
         return {
             AgentGenerationLog: self._process_agent_generation_log,
             SpaceAssignLog: self._process_space_assign_log,
+            SleepStartLog: self._process_sleep_start_log,
+            SleepEndLog: self._process_sleep_end_log,
             MoveLog: self._process_move_log,
             ConsumptionLog: self._process_consumption_log,
             OrderLog: self._process_order_log,
@@ -212,6 +218,7 @@ class MemoryHandler:
             agent_memory: AgentMemory = AgentMemory(
                 consumption_history=deque(maxlen=self.memory_length),
                 move_history=deque(maxlen=self.memory_length),
+                sleep_history=deque(maxlen=self.memory_length),
                 purchase_history=deque(maxlen=self.memory_length),
                 sale_history=deque(maxlen=self.memory_length),
                 exchange_history=deque(maxlen=self.memory_length),
@@ -259,6 +266,58 @@ class MemoryHandler:
         move_history.append(
             MoveHistoryItem(pos=log.pos, init_pos=log.pos, time=None, time_step=-1)
         )
+
+    def _process_sleep_start_log(self, log: SleepStartLog) -> None:
+        """Process the SleepStartLog to update the sleep history of the agent in memory.
+
+        Args:
+            log (SleepStartLog): the log of sleep start.
+
+        Note:
+            Generate a new SleepHistoryItem and add it to the sleep_history of the agent's memory.
+            The time of this SleepHistoryItem is log.time, indicating the time when the agent starts sleeping.
+            The end_time of this SleepHistoryItem is set to None, indicating that the agent is still sleeping.
+        """
+        agent_id: int = log.agent_id
+        if agent_id not in self.agent_id2memory:
+            raise ValueError(f"Agent with id {agent_id} does not exist in memory.")
+        agent_memory: AgentMemory = self.agent_id2memory[agent_id]
+        sleep_history: Deque[SleepHistoryItem] = agent_memory.sleep_history
+        sleep_history.append(
+            SleepHistoryItem(
+                start_time=log.time,
+                end_time=None,
+            )
+        )
+
+    def _process_sleep_end_log(self, log: SleepEndLog) -> None:
+        """Process the SleepEndLog to update the sleep history of the agent in memory.
+
+        Args:
+            log (SleepEndLog): the log of sleep end.
+
+        Note:
+            Find the last SleepHistoryItem in the sleep_history of the agent's memory whose end_time is None,
+            and update its end_time to the time in the log.
+            If there is no SleepHistoryItem with end_time None, raise an error.
+        """
+        agent_id: int = log.agent_id
+        if agent_id not in self.agent_id2memory:
+            raise ValueError(f"Agent with id {agent_id} does not exist in memory.")
+        agent_memory: AgentMemory = self.agent_id2memory[agent_id]
+        sleep_history: Deque[SleepHistoryItem] = agent_memory.sleep_history
+        latest_sleep_history: Optional[SleepHistoryItem] = (
+            sleep_history[-1] if sleep_history else None
+        )
+        if latest_sleep_history is None:
+            raise ValueError(
+                f"Agent with id {agent_id} has no sleep history in memory, but received SleepEndLog."
+            )
+        if latest_sleep_history.end_time is not None:
+            raise ValueError(
+                f"Agent with id {agent_id} has no ongoing sleep in memory, but received SleepEndLog."
+            )
+        latest_sleep_history.end_time = log.time
 
     def _process_move_log(self, log: MoveLog) -> None:
         """Process the MoveLog to update the position of the agent in memory.

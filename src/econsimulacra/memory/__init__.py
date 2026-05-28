@@ -12,6 +12,7 @@ from .memory_items import (
     PurchaseHistoryItem,
     SaleHistoryItem,
     SetPriceHistoryItem,
+    SleepHistoryItem,
     SocialHistoryItem,
     StateEvaluationHistoryItem,
 )
@@ -27,6 +28,8 @@ from .stress_aware_summarizer import (
 from .stress_utils import (
     calc_stress_from_consumption_history,
     calc_stress_from_move_history,
+    calc_stress_from_sleep_history,
+    calc_stress_from_state_evaluation_history,
 )
 
 __all__ = [
@@ -38,6 +41,7 @@ __all__ = [
     "InnerThoughtHistoryItem",
     "ObsHistoryItem",
     "SetPriceHistoryItem",
+    "SleepHistoryItem",
     "SocialHistoryItem",
     "StateEvaluationHistoryItem",
     "AgentMemory",
@@ -47,6 +51,8 @@ __all__ = [
     "StressCalculator",
     "calc_stress_from_consumption_history",
     "calc_stress_from_move_history",
+    "calc_stress_from_sleep_history",
+    "calc_stress_from_state_evaluation_history",
     "summarize_observed_price_changes",
     "summarize_num_changes",
     "summarize_self_tweet_frequency",

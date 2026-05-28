@@ -13,12 +13,14 @@ from .memory_items import (
     PurchaseHistoryItem,
     SaleHistoryItem,
     SetPriceHistoryItem,
+    SleepHistoryItem,
     SocialHistoryItem,
     StateEvaluationHistoryItem,
 )
 from .stress_utils import (
     calc_stress_from_consumption_history,
     calc_stress_from_move_history,
+    calc_stress_from_sleep_history,
     calc_stress_from_state_evaluation_history,
 )
 from .summarizer import MemorySummarizer
@@ -50,7 +52,11 @@ class StressCalculator:
                 and may contain:
                 maxMagnitude: the maximum magnitude of the stress level.
                     The stress level will be normalized to be between 0 and maxMagnitude.
-                targetConsumptionQuantity: the target quantity to consume for stress calculation.
+                targetSleepDuration: the target sleep duration for stress calculation from sleep history.
+                windowSizeForSleep: the size of the time window in time steps to consider for stress calculation from sleep history.
+                durationWeightForSleep: the weight for sleep duration in stress calculation from sleep history.
+                regularityWeightForSleep: the weight for sleep regularity in stress calculation from sleep history
+                targetConsumptionQuantity: the target quantity to consume for stress calculation from consumption history.
                 windowSizeForConsumption: the size of the time window in time steps to consider for stress calculation.
                 timeDecayForConsumption: the decay factor for the stress contribution of past consumption events.
                 targetMoveDistance: the target distance to move for stress calculation.
@@ -78,6 +84,14 @@ class StressCalculator:
             self.item_name2weight: dict[str, float] = config["item2Weight"]
         self.stress_types: list[str] = config.get("stressTypes", [])
         self.max_magnitude: int = config.get("maxMagnitude", 100)
+        self.target_sleep_duration: float = config.get("targetSleepDuration", 8.0)
+        self.window_size_for_sleep: int = config.get("windowSizeForSleep", 24)
+        self.duration_weight_for_sleep: float = config.get(
+            "durationWeightForSleep", 0.8
+        )
+        self.regularity_weight_for_sleep: float = config.get(
+            "regularityWeightForSleep", 0.2
+        )
         self.target_consumption_quantity: int = config.get(
             "targetConsumptionQuantity", 10
         )
@@ -115,6 +129,7 @@ class StressCalculator:
                         | ExchangeHistoryItem
                         | SetPriceHistoryItem
                         | InnerThoughtHistoryItem
+                        | SleepHistoryItem
                         | SocialHistoryItem
                         | StateEvaluationHistoryItem
                         | ObsHistoryItem
@@ -134,6 +149,7 @@ class StressCalculator:
             "state_evaluation_history": (
                 self._calc_stress_from_state_evaluation_history_dispatch
             ),
+            "sleep_history": self._calc_stress_from_sleep_history_dispatch,
             "obs_history": self._calc_stress_from_obs_history_dispatch,
         }
         self.current_time: int | str = -1
@@ -155,6 +171,7 @@ class StressCalculator:
             | ExchangeHistoryItem
             | SetPriceHistoryItem
             | InnerThoughtHistoryItem
+            | SleepHistoryItem
             | SocialHistoryItem
             | StateEvaluationHistoryItem
             | ObsHistoryItem
@@ -209,6 +226,14 @@ class StressCalculator:
     ) -> tuple[Optional[int], str]:
         return self._calc_stress_from_consumption_history(
             cast(Deque[ConsumptionHistoryItem], history)
+        )
+
+    def _calc_stress_from_sleep_history_dispatch(
+        self,
+        history: Deque[Any],
+    ) -> tuple[Optional[int], str]:
+        return self._calc_stress_from_sleep_history(
+            cast(Deque[SleepHistoryItem], history)
         )
 
     def _calc_stress_from_move_history_dispatch(
@@ -299,6 +324,25 @@ class StressCalculator:
             )
         else:
             return None, ""
+
+    def _calc_stress_from_sleep_history(
+        self,
+        history: Deque[SleepHistoryItem],
+    ) -> tuple[Optional[int], str]:
+        """Calculate the stress level from the sleep history."""
+        if "sleep_history" in self.stress_types:
+            return calc_stress_from_sleep_history(
+                sleep_history=history,
+                current_time=self.current_time,
+                current_time_step=self.current_time_step,
+                max_stress=self.max_magnitude,
+                target_sleep_duration=self.target_sleep_duration,
+                window_size=self.window_size_for_sleep,
+                duration_weight=self.duration_weight_for_sleep,
+                regularity_weight=self.regularity_weight_for_sleep,
+                tolerance_threshold=self.tolerance_threshold_for_stress,
+            )
+        return None, ""
 
     def _calc_stress_from_move_history(
         self,
@@ -456,6 +500,7 @@ class StressAwareSummarizer(MemorySummarizer):
             | SocialHistoryItem
             | StateEvaluationHistoryItem
             | ObsHistoryItem
+            | SleepHistoryItem
         ],
         base_summary: str,
     ) -> dict[str, Any]:

@@ -148,6 +148,54 @@ class SpaceAssignLog(Log):
         self.pos: tuple[int, ...] = pos
 
 
+class SleepStartLog(Log):
+    def __init__(
+        self,
+        time: int | str,
+        time_step: int,
+        agent_id: int,
+        until: str | int,
+    ) -> None:
+        """Initialization.
+
+        Args:
+            time (int | str): Current time of the environment when the sleep starts.
+            time_step (int): Current integer step index of the environment when the sleep starts.
+            agent_id (int): The unique id of the sleeping agent.
+            until (str | int): The wake-up time for the sleeping agent.
+                It can be either a string in ISO format (e.g., "2024-01-01 08:00:00")
+                or an integer representing the time step index when the agent will wake up.
+        """
+        self.type: str = "sleep_start"
+        self.time: int | str = time
+        self.time_step: int = time_step
+        self.agent_id: int = agent_id
+        self.until: str | int = until
+
+
+class SleepEndLog(Log):
+    def __init__(
+        self,
+        time: int | str,
+        time_step: int,
+        agent_id: int,
+        since: str | int,
+    ) -> None:
+        """Initialization.
+
+        Args:
+            time (int | str): Current time of the environment when the sleep ends.
+            time_step (int): Current integer step index of the environment when the sleep ends.
+            agent_id (int): The unique id of the waking agent.
+            since (str | int): The sleep start time for the waking agent.
+        """
+        self.type: str = "sleep_end"
+        self.time: int | str = time
+        self.time_step: int = time_step
+        self.agent_id: int = agent_id
+        self.since: str | int = since
+
+
 class MoveLog(Log):
     def __init__(
         self,

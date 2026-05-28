@@ -26,6 +26,8 @@ from ..logs import (
     ProposalExpirationLog,
     ProposalLog,
     ProposalReactionLog,
+    SleepEndLog,
+    SleepStartLog,
     SpaceAssignLog,
     StateEvaluationLog,
     TweetLog,
@@ -53,6 +55,7 @@ from .obs_providers import (
     SelfInventoryProvider,
     SelfIsHouseholdProvider,
     SelfIsMovingProvider,
+    SelfIsSleepingProvider,
     SelfNameProvider,
     SelfPosProvider,
     SelfSalaryProvider,
@@ -62,10 +65,16 @@ from .obs_providers import (
     VisibleTLProvider,
 )
 from .order import Order, SwapProposal
+from .sleep_manager import SleepManager
 from .space import GridSpace
 from .time_translator import TimeTranslator
 
 ObsT = TypeVar("ObsT")
+
+
+# check sleep_duration, homeじゃなきゃ寝れないように．
+# obs provider追加？
+# LLMAgent用にis_sleepingは入れて，細かい情報はmemoryhandler行き
 
 
 class Environment(Generic[ObsT]):
@@ -115,14 +124,14 @@ class Environment(Generic[ObsT]):
                     # Optional, the common environment services provided for the agents. Default to [].
                 }
                 "gridSpace": {
-                    "type": "GridSpace", # See also: econsimulacra.envs.space.GridSpace
+                    "type": "GridSpace", # See also: ``econsimulacra.envs.space.GridSpace``
                     "gridSize": [int, ...],
                 },
                 "socialNetwork": {
-                    "type": "SocialNetwork", # See also: econsimulacra.envs.social_networks.base.SocialNetwork
+                    "type": "SocialNetwork", # See also: ``econsimulacra.envs.social_networks.base.SocialNetwork``
                     "followCap": int, # Optional, default is no limit
                     "recSys": {
-                        "type": "TwoHopRecommenderSystem", # See also: econsimulacra.envs.social_networks.recsys.TwoHopRecommenderSystem
+                        "type": "TwoHopRecommenderSystem", # See also: ``econsimulacra.envs.social_networks.recsys.TwoHopRecommenderSystem``
                         ...
                     }
                 },
@@ -130,7 +139,7 @@ class Environment(Generic[ObsT]):
                     "type": "LLMAgent",
                     # Requires "llmClient", "promptBuilder", and optionally "personaBuilder"
                     # to be included in the environment services.
-                    # See also: econsimulacra.envs.agents.llm_agent.LLMAgent
+                    # See also: ``econsimulacra.envs.agents.llm_agent.LLMAgent``
                     "isHousehold": bool,
                     "numAgents": int, # Optional, default 1
                     ...,
@@ -147,7 +156,7 @@ class Environment(Generic[ObsT]):
                     ...
                 },
                 "Yen": {
-                    "type": "Item", # See also: econsimulacra.envs.items.base.Item
+                    "type": "Item", # See also: ``econsimulacra.envs.items.base.Item``
                     "initialPrice": float,
                 },
                 "Rice": {
@@ -155,11 +164,11 @@ class Environment(Generic[ObsT]):
                     "initialPrice": float,
                 },
                 "promptBuilder": {
-                    "type": "PromptBuilder", # See also: econsimulacra.envs.prompt_builder.PromptBuilder
+                    "type": "PromptBuilder", # See also: ``econsimulacra.envs.prompt_builder.PromptBuilder``
                     ...
                 },
                 "llmClient": {
-                    "type": "OpenAIClient", # See also: econsimulacra.envs.llm_client.OpenAIClient
+                    "type": "OpenAIClient", # See also: ``econsimulacra.envs.llm_client.OpenAIClient``
                     "api_key": str, # Optional if OPENAI_API_KEY environment variable is set
                     "maxConcurrentGenerations": 2, # Optional, maximum number of concurrent generations allowed for the LLM client. Default is 1 (no concurrency).
                     "json_schema_path": str, # Optional, path to a custom JSON schema file for structured generation
@@ -169,19 +178,19 @@ class Environment(Generic[ObsT]):
                     "numAgents": int, # Optional, only needed if modify_schema is True. Must be the total number of agents in the environment.
                 },
                 "timeTranslator": {
-                    "type": "TimeTranslator", # See also: econsimulacra.envs.time_translator.TimeTranslator
+                    "type": "TimeTranslator", # See also: ``econsimulacra.envs.time_translator.TimeTranslator``
                     "numSteps": int, # must be the same as simulation.numSteps
                     "startDatetime": str, # "%Y-%m-%d %H:%M:%S"
                     "endDatetime": str, # "%Y-%m-%d %H:%M:%S"
                 },
                 "personaBuilder": {
-                    "type": "Big5PersonaBuilder", # See also: econsimulacra.envs.persona_builder.big5.Big5PersonaBuilder
+                    "type": "Big5PersonaBuilder", # See also: ``econsimulacra.envs.persona_builder.big5.Big5PersonaBuilder``
                     "numSteps": int, # must be the same as simulation.numSteps
                     "startDatetime": str, # "%Y-%m-%d %H:%M:%S"
                     "endDatetime": str, # "%Y-%m-%d %H:%M:%S"
                 },
                 "memoryHandler": {
-                    "type": "MemoryHandler", # See also: econsimulacra.envs.memory.MemoryHandler
+                    "type": "MemoryHandler", # See also: ``econsimulacra.envs.memory.MemoryHandler``
                     "memoryLength": int, # the maximum number of logs to be stored in memory for each agent
                 },
                 "Event1": {
@@ -228,6 +237,10 @@ class Environment(Generic[ObsT]):
     def get_persona_builder(self) -> Optional[PersonaBuilder]:
         """Get the PersonaBuilder service provider from the environment's service dictionary, if it exists."""
         return self.get_service(PersonaBuilder)
+
+    def get_sleep_manager(self) -> Optional[SleepManager]:
+        """Get the SleepManager service provider from the environment's service dictionary, if it exists."""
+        return self.get_service(SleepManager)
 
     def get_time(self) -> int | str:
         """Get the current time in the environment.
@@ -344,6 +357,7 @@ class Environment(Generic[ObsT]):
             and count the invalid action in this dictionary for later analysis.
         """
         self.invalid_action_dic: dict[str, int] = {
+            "sleep": 0,
             "move": 0,
             "consumptions": 0,
             "orders": 0,
@@ -405,7 +419,7 @@ class Environment(Generic[ObsT]):
             The current econsimulacra.agents.llm_agent.LLMAgent implementation requires:
             "llmClient", promptBuilder", and "personaBuilder" (optional) to be included
             in the service_provider_keys.
-            See also: econsimulacra.agents.llm_agent.LLMAgent.__init__
+            See also: ``econsimulacra.agents.llm_agent.LLMAgent.__init__``
         """
         for service_provider_key in service_provider_keys:
             if service_provider_key not in self.config:
@@ -471,8 +485,8 @@ class Environment(Generic[ObsT]):
             - "initialCoords": tuple[int, ...], the initial coordinates of the agent in the grid space.
                 If not provided, the agent will be placed in a random empty cell in the grid space.
             See also:
-                econsimulacra.envs.agents.base.Agent.__init__
-                econsimulacra.envs.agents.llm_agent.LLMAgent.__init__
+                - ``econsimulacra.envs.agents.base.Agent.__init__``
+                - ``econsimulacra.envs.agents.llm_agent.LLMAgent.__init__``
         """
         current_agent_id: int = 0
         self.agent_ids: list[int] = []
@@ -556,8 +570,7 @@ class Environment(Generic[ObsT]):
             item_config optionally includes:
             - "type": str, the type of the item, which can be used to find the corresponding item class for instantiation.
             - "initialPrice": float, the initial price of the item. If not provided, the initial price is set to 0.
-            See also:
-                econsimulacra.items.base.Item.__init__
+            See also: ``econsimulacra.items.base.Item.__init__``
         """
         self.item_name2item: dict[str, Item] = {}
         for item_key in item_keys:
@@ -632,8 +645,7 @@ class Environment(Generic[ObsT]):
                 to their respective action dictionaries for this step.
 
         Note:
-            See also:
-            econsimulacra.envs.base.Environment.apply_action_to_env for the expected format of each agent's action dictionary.
+            See also: ``econsimulacra.envs.base.Environment.apply_action_to_env``
         """
         for agent_id, action_dic in all_actions_dic.items():
             self.apply_action_to_env(
@@ -667,6 +679,7 @@ class Environment(Generic[ObsT]):
             action_dic example::
 
                 {
+                    "sleep_duration": str | int, # optional, the duration of sleep in timedelta (e.g., "1h", "30m") or in number of time steps (e.g., 2). If not provided, the agent will wake up immediately.
                     "move": tuple[int, ...] | str,
                     "consumptions": [
                         {"item_name": str, "item_amount": float | int}, ...
@@ -695,6 +708,32 @@ class Environment(Generic[ObsT]):
             for the expected format of the action dictionary used to validate
             generated actions from LLM-based agents.
         """
+        sleep_duration: Optional[str | int] = action_dic.get("sleep_duration", None)
+        sleep_allowed: bool = self._check_sleep_duration(
+            agent_id=agent_id,
+            sleep_duration=sleep_duration,
+        )
+        if not sleep_allowed:
+            self.invalid_action_dic["sleep"] += 1
+            sleep_duration = None
+        sleep_manager: Optional[SleepManager] = self.get_sleep_manager()
+        if sleep_manager is not None:
+            log: Optional[SleepStartLog | SleepEndLog] = (
+                sleep_manager.update_sleep_status(
+                    agent_id=agent_id,
+                    current_time=self.get_time(),
+                    current_time_step=self.get_time_step(),
+                    sleep_duration=sleep_duration,
+                )
+            )
+            if log is not None:
+                self.remember_log(log)
+                self.event_manager.trigger_events_after_log(log=log, env=self)
+                if self.logger is not None:
+                    log.read_and_write(logger=self.logger)
+            is_sleeping: bool = sleep_manager.get_sleep_status(agent_id=agent_id)
+            if is_sleeping:
+                return
         where_to_move: Optional[tuple[int, ...] | str] = action_dic.get("move", None)
         move_allowed: bool = self._check_move(where_to_move=where_to_move)
         if not move_allowed:
@@ -774,6 +813,59 @@ class Environment(Generic[ObsT]):
             follow_agent_id=valid_follow_agent_id,
             unfollow_agent_id=valid_unfollow_agent_id,
         )
+
+    def _check_sleep_duration(
+        self, agent_id: int, sleep_duration: Optional[str | int]
+    ) -> bool:
+        """Check the validity of the sleep duration specified in the action dictionary.
+
+        Args:
+            agent_id (int): the ID of the agent.
+            sleep_duration (Optional[str | int]): the duration of sleep in timedelta (e.g., "1h", "30m") or in number of time steps (e.g., 2).
+
+        Returns:
+            bool: whether the sleep duration is valid.
+
+        Note:
+            Checked conditions:
+            - If sleep_duration is None, it is valid.
+            - If sleep_duration is not None,
+                - the agent must not be currently sleeping (i.e., cannot start a new sleep if already sleeping).
+                - the agent must be in their house (i.e. their initial_coords) to start sleeping.
+            - If sleep_duration is a string, it must be in a valid format that can be parsed by the SleepManager (e.g., "1h", "30m", "2d", etc.).
+            - If sleep_duration is an integer, it must be a positive number.
+        """
+        if sleep_duration is None:
+            return True
+        sleep_manager: Optional[SleepManager] = self.get_sleep_manager()
+        if sleep_manager is None:
+            return False
+        is_sleeping: bool = sleep_manager.get_sleep_status(agent_id=agent_id)
+        if is_sleeping:
+            return False
+        initial_coords: tuple[int, ...] = self.agent_id2initial_coords[agent_id]
+        current_pos: tuple[int, ...] = self.grid_space.get_pos(agent_id=agent_id)
+        if current_pos != initial_coords:
+            return False
+        if isinstance(sleep_duration, str):
+            if len(sleep_duration) < 2:
+                return False
+            time_unit: str = sleep_duration[-1]
+            time_value_str: str = sleep_duration[:-1]
+            if time_unit not in ["m", "h"]:
+                return False
+            try:
+                time_value: float = float(time_value_str)
+            except ValueError:
+                return False
+            if time_value <= 0:
+                return False
+        elif isinstance(sleep_duration, int):
+            if sleep_duration <= 0:
+                return False
+        else:
+            return False
+        return True
 
     def _process_inner_thought(self, agent_id: int, inner_thought: str) -> None:
         """Process the inner thought of the agent for this step.
@@ -1267,7 +1359,7 @@ class Environment(Generic[ObsT]):
             - If follow_agent_id is already followed by the agent, it cannot be followed again.
             - If unfollow_agent_id is not followed by the agent, it cannot be unfollowed.
             - The number of follows after performing the follow and unfollow actions cannot exceed
-                the follow cap. See also: econsimulacra.social_networks.base.SocialNetwork.follow_cap
+                the follow cap. See also: ``econsimulacra.social_networks.base.SocialNetwork.follow_cap``
         """
         valid_follow_agent_id: Optional[int] = follow_agent_id
         valid_unfollow_agent_id: Optional[int] = unfollow_agent_id
@@ -1322,9 +1414,9 @@ class Environment(Generic[ObsT]):
                 "unfollow": int # <- corresponds to the unfollow_agent_id argument
             }
             See also:
-            - econsimulacra.social_networks.base.SocialNetwork.tweet
-            - econsimulacra.social_networks.base.SocialNetwork.follow_agent
-            - econsimulacra.social_networks.base.SocialNetwork.unfollow_agent
+            - ``econsimulacra.social_networks.base.SocialNetwork.tweet``
+            - ``econsimulacra.social_networks.base.SocialNetwork.follow_agent``
+            - ``econsimulacra.social_networks.base.SocialNetwork.unfollow_agent``
         """
         if tweet is not None and len(tweet) > 0:
             self.social_network.tweet(agent_id=agent_id, message=tweet)
@@ -1378,9 +1470,9 @@ class Environment(Generic[ObsT]):
 
         Note:
             See also:
-            - econsimulacra.envs.order.Order
-            - econsimulacra.envs.order.SwapProposal
-            - econsimulacra.agents.base.Agent.exchange_goods
+            - ``econsimulacra.envs.order.Order``
+            - ``econsimulacra.envs.order.SwapProposal``
+            - ``econsimulacra.agents.base.Agent.exchange_goods``
         """
         for order in self.pending_orders:
             if order.accepted_amount > 0:
@@ -1535,8 +1627,8 @@ class Environment(Generic[ObsT]):
                 ] # <- corresponds to the reactions list in the arguments.
             }
             See also:
-            - econsimulacra.envs.order.Order.react
-            - econsimulacra.envs.order.SwapProposal.react
+            - ``econsimulacra.envs.order.Order.react``
+            - ``econsimulacra.envs.order.SwapProposal.react``
         """
         for reaction in reactions:
             if "kind" not in reaction:
@@ -1703,12 +1795,12 @@ class Environment(Generic[ObsT]):
             The Order and SwapProposal instances whose time to live (ttl)
             has reached 0 are considered expired and removed from the environment.
             See also:
-            - econsimulacra.envs.order.Order.ttl
-            - econsimulacra.envs.order.Order.is_expired
-            - econsimulacra.envs.order.Order.is_fulfilled
-            - econsimulacra.envs.order.SwapProposal.ttl
-            - econsimulacra.envs.order.SwapProposal.is_expired
-            - econsimulacra.envs.order.SwapProposal.is_fulfilled
+            - ``econsimulacra.envs.order.Order.ttl``
+            - ``econsimulacra.envs.order.Order.is_expired``
+            - ``econsimulacra.envs.order.Order.is_fulfilled``
+            - ``econsimulacra.envs.order.SwapProposal.ttl``
+            - ``econsimulacra.envs.order.SwapProposal.is_expired``
+            - ``econsimulacra.envs.order.SwapProposal.is_fulfilled``
         """
         _pending_orders: list[Order] = []
         for order in self.pending_orders:
@@ -1801,7 +1893,7 @@ class Environment(Generic[ObsT]):
                 Returns None if the agent is not a household agent.
 
         Note:
-            See also: econsimulacra.logs.StateEvaluationLog
+            See also: ``econsimulacra.logs.StateEvaluationLog``
         """
         if agent_id not in self.household_ids:
             return None
@@ -1930,8 +2022,7 @@ class Environment(Generic[ObsT]):
         Note:
             Custom observation provider can be added by creating a new ObsProvider class
             and registering it in this method.
-            See also:
-            econsimulacra.envs.obs_providers
+            See also: ``econsimulacra.envs.obs_providers``
         """
         return {
             "time": TimeProvider(env=self),
@@ -1942,6 +2033,7 @@ class Environment(Generic[ObsT]):
             "memory": MemoryProvider(env=self),
             "self_pos": SelfPosProvider(env=self),
             "self_init_pos": SelfInitPosProvider(env=self),
+            "self_is_sleeping": SelfIsSleepingProvider(env=self),
             "self_is_moving": SelfIsMovingProvider(env=self),
             "self_destination": SelfDestinationProvider(env=self),
             "others_pos": OthersPosProvider(env=self),

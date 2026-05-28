@@ -81,6 +81,9 @@ class LLMAgent(Agent[dict[str, Any]]):
             (constructed by the prompt builder).
             It then sends the prompt to the LLM client to generate a response.
         """
+        is_sleeping: bool = obs.get("self_is_sleeping", False)
+        if is_sleeping:
+            return {}
         persona_prompt: str = ""
         if self.persona_builder is not None:
             persona_prompt = self.persona_builder.build_persona_prompt(
