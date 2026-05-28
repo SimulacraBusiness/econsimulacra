@@ -95,7 +95,7 @@ def parse_record(record: dict[str, Any]) -> Optional[BaseRecord]:
             agent_id=int(record["agent_id"]),
             pos=to_pos(record["pos"]),
         )
-    
+
     if record_type == "sleep_end":
         return SleepRecord(
             type=record_type,
