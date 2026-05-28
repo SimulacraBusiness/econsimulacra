@@ -5,6 +5,7 @@ from econsimulacra.log_analyses import (
     ConsumerClusterAnalyzer,
     FollowerCounter,
     ItemSalesAnalyzer,
+    MoveDistanceAnalyzer,
     PriceAnalyzer,
     RecordStore,
     StoreSalesAnalyzer,
@@ -32,11 +33,12 @@ if __name__ == "__main__":
                 is_consumption=True,
                 normalize=True,
             ),
+            MoveDistanceAnalyzer(),
         ]
     )
-    stores = RecordStore(load_from_file("log_gpt-oss-20b.txt"))
+    stores = RecordStore(load_from_file("log_gpt-oss-20b_w_sleep.txt"))
     results = manager.run_all(
         stores,
         render_summary=True,
-        figs_save_path="results",
+        figs_save_path="results_w_sleep",
     )
