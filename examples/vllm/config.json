@@ -1,6 +1,6 @@
 {
     "simulation": {
-        "numSteps": 228,
+        "numSteps": 216,
         "parallelBatchSize": 32,
         "events": ["provideSubsidy", "constantSupply"]
     },
@@ -29,7 +29,7 @@
             "type": "TwoHopRecommenderSystem",
             "maxRecommendations": 3,
             "isRandomized": true,
-            "temperature": 0.8
+            "temperature": 0.5
         }
     },
     "Restaurant": {
@@ -41,8 +41,8 @@
         "numAgents": 1,
         "inventory": {
             "Yen": 0,
-            "Pizza": 50,
-            "Soda": 50
+            "Pizza": 20,
+            "Soda": 20
         },
         "discounts": [
             {
@@ -68,12 +68,17 @@
             {
                 "start": "2025-12-19 09:00:00",
                 "end": "2025-12-22 21:00:00",
-                "tweet": "🎄 Holiday Sale Incoming 🎄 All pizzas will be 40% discount! The sale begins on 12/23🍕👀 Stay aware!" 
+                "tweet": "🎄 Holiday Sale Incoming 🎄 All pizzas will be 40% discount! The sale begins on 12/23 09:00 and ends on 12/25 21:00 🍕👀 Stay aware!" 
             },
             {
                 "start": "2025-12-23 09:00:00",
-                "end": "2025-12-25 21:00:00",
+                "end": "2025-12-24 21:00:00",
                 "tweet": "🎄 CHRISTMAS SALE 🎄 All pizzas are 40% OFF NOW! Come celebrate together 🍕🎉"
+            },
+            {
+                "start": "2025-12-24 21:00:00",
+                "end": "2025-12-25 21:00:00",
+                "tweet": "🎄 CHRISTMAS SALE 🎄 All pizzas are 40% OFF NOW! The sale will end until 12/25 21:00 🍕🎉 DO NOT MISS OUT!"
             },
             {
                 "start": "2025-12-26 09:00:00",
@@ -95,11 +100,11 @@
         "numAgents": 1,
         "inventory": {
             "Yen": 0,
-            "Rice": 50,
-            "Tomatoes": 50,
-            "Soup": 50,
-            "Bread": 50,
-            "Salad": 50
+            "Rice": 20,
+            "Tomatoes": 20,
+            "Soup": 20,
+            "Bread": 20,
+            "Salad": 20
         },
         "provideInfo4CoLocatedAgents": ["inventory"],
         "provideInfo4AllAgents": ["self_pos"],
@@ -111,7 +116,7 @@
         "isHousehold": true,
         "numAgents": 30,
         "inventory": {
-            "Yen": [0, 100000]
+            "Yen": [10000, 100000]
         },
         "svgPath": "../../imgs/human.svg",
         "iconScale": 0.2
@@ -161,7 +166,7 @@
         "other_choice": "openai/gpt-oss-20b, Qwen/Qwen2.5-7B-Instruct, meta-llama/Meta-Llama-3-8B-Instruct, mistralai/Mistral-7B-Instruct-v0.3",
         "vllmPython": "/home/m2023rhashimoto/econsimulacra/.venv-vllm/bin/python",
         "useGpu": true,
-        "gpuIds": [1,2],
+        "gpuIds": [0,1,2],
         "isDataParallel": true,
         "host": "127.0.0.1",
         "port": 8000,
@@ -180,9 +185,9 @@
     },
     "timeTranslator": {
         "type": "TimeTranslator",
-        "numSteps": 228,
+        "numSteps": 216,
         "startDatetime": "2025-12-19 09:00:00",
-        "endDatetime": "2025-12-28 21:00:00"
+        "endDatetime": "2025-12-28 09:00:00"
     },
     "personaBuilder": {
         "type": "ScoredPersonaBuilder",
@@ -202,7 +207,7 @@
     "memoryHandler": {
         "type": "MemoryHandler",
         "memoryLength": 24,
-        "numObs": 23,
+        "numObs": 24,
         "memorySummarizer": {
             "type": "StressAwareSummarizer",
             "relativeThresholdForPriceChange": 0.01,
@@ -212,7 +217,8 @@
                     "sleep_history",
                     "consumption_history",
                     "move_history",
-                    "state_evaluation_history"
+                    "state_evaluation_history",
+                    "obs_history"
                 ],
                 "item2Weight": {
                     "Yen": 0.0,
@@ -227,22 +233,20 @@
                 "maxMagnitude": 100,
                 "targetSleepDuration": 16.0,
                 "windowSizeForSleep": 48,
-                "durationWeightForSleep": 0.6,
-                "regularityWeightForSleep": 0.4,
+                "durationWeightForSleep": 0.5,
+                "regularityWeightForSleep": 0.5,
                 "targetConsumptionQuantity": 10,
-                "windowSizeForConsumption": 40,
-                "timeDecayForConsumption": 0.98,
+                "windowSizeForConsumption": 24,
+                "timeDecayForConsumption": 0.9,
                 "targetMoveDistance": 15.0,
                 "windowSizeForMove": 24,
                 "timeDecayForMove": 0.95,
                 "homeComfortWeight": 0.4,
-                "targetBuyingPower": 20.0,
-                "targetRelativeWealth": -1,
-                "targetWealthGrowth": -0.1,
                 "windowSizeForStateEvaluation": 5,
                 "buyingPowerWeight": 1.5,
                 "relativeWealthWeight": 0.9,
                 "wealthDrawdownWeight": 0.3,
+                "targetNumNearby": 4,
                 "toleranceThresholdForStress": 50
             }
         }
@@ -252,13 +256,13 @@
         "trigger": {
             "every": 24
         },
-        "subsidyAmount": 1000
+        "subsidyAmount": 5000
     },
     "constantSupply": {
         "type": "ConstantSupply",
         "trigger": {
             "with": ["AgentGenerationLog"],
-            "every": 24
+            "every": 6
         },
         "suppliedAgentNames": ["Daily Mart", "Pizza Place"]
     },
