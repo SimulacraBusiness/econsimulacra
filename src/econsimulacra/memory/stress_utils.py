@@ -7,6 +7,7 @@ from typing import Deque, Optional
 from .base import (
     ConsumptionHistoryItem,
     MoveHistoryItem,
+    ObsHistoryItem,
     SleepHistoryItem,
     StateEvaluationHistoryItem,
 )
@@ -908,3 +909,71 @@ def _circular_variance(values: list[float], period: float) -> float:
     resultant_length = sqrt(mean_sin**2 + mean_cos**2)
 
     return 1.0 - resultant_length
+
+
+def calc_stress_from_obs_history(
+    obs_history: Deque[ObsHistoryItem],
+    current_time_step: int,
+    max_stress: int,
+    target_num_nearby: int,
+    tolerance_threshold: float,
+) -> tuple[int, str]:
+    """Calculate stress from the number of nearby agents in the observation history.
+
+    Args:
+        obs_history (Deque[ObsHistoryItem]):
+            A deque of ObsHistoryItem representing the agent's observation history.
+        current_time_step (int): The current time step in the simulation.
+        max_stress (int): The maximum stress level.
+        target_num_nearby (int): The target number of nearby agents.
+        tolerance_threshold (float): The threshold above which stress is reported.
+
+    Returns:
+        tuple[int, str]:
+            A tuple containing:
+            - The calculated stress level (int).
+            - A message describing the stress reason (str).
+
+    Note:
+        The stress level is calculated based on the latest number of nearby agents
+        observed in the history. If the number of nearby agents differs from the target,
+        the stress level increases proportionally to the difference,
+        up to the maximum stress level.
+
+        .. math::
+
+            s(t)
+            =
+            \\min\\left(
+                s_{\\max},
+                \\left\\lfloor
+                \\frac{|N(t) - N^*|}{N^*}
+                s_{\\max}
+                \\right\\rfloor
+            \\right),
+    """
+    nearby_agents_memory: list[ObsHistoryItem] = [
+        item for item in obs_history if item.obs_type == "nearby_agents"
+    ]
+    latest_nearby_agents_item: Optional[ObsHistoryItem] = (
+        nearby_agents_memory[-1] if nearby_agents_memory else None
+    )
+    if latest_nearby_agents_item is None:
+        return 0, "No nearby agents observed recently."
+    num_nearby: int = len(latest_nearby_agents_item.obs)
+    stress_level: int = min(
+        max_stress,
+        int(abs(num_nearby - target_num_nearby) / target_num_nearby * max_stress),
+    )
+    if stress_level < tolerance_threshold:
+        return 0, "Acceptable crowd level."
+    elif num_nearby < target_num_nearby:
+        return (
+            stress_level,
+            f"You feel isolated. (num_nearby: {num_nearby}, target: {target_num_nearby})",
+        )
+    else:
+        return (
+            stress_level,
+            f"You feel too crowded. (num_nearby: {num_nearby}, target: {target_num_nearby})",
+        )

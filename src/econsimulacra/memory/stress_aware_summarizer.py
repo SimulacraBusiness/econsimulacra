@@ -20,6 +20,7 @@ from .memory_items import (
 from .stress_utils import (
     calc_stress_from_consumption_history,
     calc_stress_from_move_history,
+    calc_stress_from_obs_history,
     calc_stress_from_sleep_history,
     calc_stress_from_state_evaluation_history,
 )
@@ -71,6 +72,7 @@ class StressCalculator:
                 buyingPowerWeight: the weight for buying power in stress calculation from state evaluation history.
                 relativeWealthWeight: the weight for relative wealth in stress calculation from state evaluation history.
                 wealthDrawdownWeight: the weight for wealth drawdown in stress calculation from state evaluation history.
+                targetNumNearby: the target number of nearby agents for stress calculation from obs history.
 
             prng (Optional[random.Random]): the pseudo-random number generator to use.
                 If None, a new random.Random instance will be created.
@@ -117,6 +119,7 @@ class StressCalculator:
         self.buying_power_weight: float = config.get("buyingPowerWeight", 1.0)
         self.relative_wealth_weight: float = config.get("relativeWealthWeight", 0.6)
         self.wealth_drawdown_weight: float = config.get("wealthDrawdownWeight", 0.2)
+        self.target_num_nearby: int = config.get("targetNumNearby", 3)
         self._stress_dispatch: dict[
             str,
             Callable[
@@ -432,7 +435,16 @@ class StressCalculator:
         history: Deque[ObsHistoryItem],
     ) -> tuple[Optional[int], str]:
         """Calculate the stress level from the obs history."""
-        return None, ""
+        if "obs_history" in self.stress_types:
+            return calc_stress_from_obs_history(
+                history,
+                current_time_step=self.current_time_step,
+                target_num_nearby=self.target_num_nearby,
+                max_stress=self.max_magnitude,
+                tolerance_threshold=self.tolerance_threshold_for_stress,
+            )
+        else:
+            return None, ""
 
 
 class StressAwareSummarizer(MemorySummarizer):
