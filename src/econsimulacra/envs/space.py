@@ -111,6 +111,34 @@ class GridSpace:
         pos: tuple[int, ...] = self.agent_id2pos[agent_id]
         return self.pos2agent_ids.get(pos, set()) - {agent_id}
 
+    def get_near_agents(self, agent_id: int, max_distance: int = 1) -> set[int]:
+        """Get agent IDs within the given grid distance from the specified agent.
+
+        Args:
+            agent_id (int): The ID of the reference agent.
+            max_distance (int): Maximum Manhattan distance to regard as nearby. Default to 1.
+
+        Returns:
+            set[int]: Agent IDs within ``max_distance`` from the reference agent,
+                excluding the reference agent itself.
+        """
+        if max_distance < 0:
+            raise ValueError("max_distance must be non-negative.")
+        if agent_id not in self.agent_id2pos:
+            raise ValueError(f"Agent ID {agent_id} not found in grid space.")
+        center_pos: tuple[int, ...] = self.agent_id2pos[agent_id]
+        near_agent_ids: set[int] = set()
+        for other_agent_id, other_pos in self.agent_id2pos.items():
+            if other_agent_id == agent_id:
+                continue
+            distance = sum(
+                abs(center_coord - other_coord)
+                for center_coord, other_coord in zip(center_pos, other_pos)
+            )
+            if distance <= max_distance:
+                near_agent_ids.add(other_agent_id)
+        return near_agent_ids
+
     def remove_agent(self, agent_id: int) -> None:
         """Remove the agent with the given ID from the grid space.
 

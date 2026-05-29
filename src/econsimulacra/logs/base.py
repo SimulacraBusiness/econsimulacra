@@ -671,6 +671,8 @@ class StateEvaluationLog(Log):
             "time_step": self.time_step,
             "agent_id": self.agent_id,
             "wealth": self.wealth,
+            "relative_wealth": self.relative_wealth,
+            "buying_power": self.buying_power,
         }
         for item_name, item_amount in self.inventory_dic.items():
             d[f"inventory_{item_name}"] = item_amount

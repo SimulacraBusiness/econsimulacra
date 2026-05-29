@@ -34,6 +34,31 @@ class TestGridSpace:
         with pytest.raises(ValueError):
             grid_space_3d.place_agent(agent_id=1, pos=(5, 2))
 
+    def test_get_colocated_agents(self) -> None:
+        grid_space = GridSpace(config=self.config)
+        grid_space.place_agent(agent_id=0, pos=(2, 3))
+        grid_space.place_agent(agent_id=1, pos=(2, 3))
+        grid_space.place_agent(agent_id=2, pos=(4, 5))
+        assert grid_space.get_colocated_agents(agent_id=0) == {1}
+        assert grid_space.get_colocated_agents(agent_id=1) == {0}
+        assert grid_space.get_colocated_agents(agent_id=2) == set()
+        with pytest.raises(ValueError):
+            grid_space.get_colocated_agents(agent_id=3)
+
+    def test_get_near_agents(self) -> None:
+        grid_space = GridSpace(config=self.config)
+        grid_space.place_agent(agent_id=0, pos=(2, 3))
+        grid_space.place_agent(agent_id=1, pos=(2, 4))
+        grid_space.place_agent(agent_id=2, pos=(3, 4))
+        grid_space.place_agent(agent_id=3, pos=(5, 5))
+        assert grid_space.get_near_agents(agent_id=0, max_distance=1) == {1}
+        assert grid_space.get_near_agents(agent_id=0, max_distance=2) == {1, 2}
+        assert grid_space.get_near_agents(agent_id=1, max_distance=1) == {0, 2}
+        assert grid_space.get_near_agents(agent_id=2, max_distance=1) == {1}
+        assert grid_space.get_near_agents(agent_id=3, max_distance=1) == set()
+        with pytest.raises(ValueError):
+            grid_space.get_near_agents(agent_id=4, max_distance=1)
+
     def test_remove_agent(self) -> None:
         grid_space = GridSpace(config=self.config)
         grid_space.place_agent(agent_id=0, pos=(2, 3))

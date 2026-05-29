@@ -293,6 +293,39 @@ class OthersPosProvider(ObsProvider[list[dict[str, Any]]]):
         return others_pos_infos
 
 
+class NearbyAgentsProvider(ObsProvider[list[dict[str, Any]]]):
+    """Nearby Agents Provider class."""
+
+    def get_obs(self, agent_id: int) -> list[dict[str, Any]]:
+        """Get the nearby agents of the agent.
+
+        Args:
+            agent_id (int): The ID of the agent for which to get the observation.
+
+        Returns:
+            list[dict[str, Any]]: A list of dictionaries containing the nearby agents
+                who are willing to share their information with nearby agents.
+                Each dictionary has the following keys:
+                - "agent_id": The ID of the nearby agent.
+                - "agent_name": The name of the nearby agent.
+                - "pos": The position of the nearby agent as a tuple of coordinates.
+        """
+        nearby_agents_infos: list[dict[str, Any]] = []
+        nearby_agent_ids: set[int] = self.env.grid_space.get_near_agents(
+            agent_id=agent_id, max_distance=1
+        )
+        for nearby_agent_id in nearby_agent_ids:
+            nearby_agent: Agent = self.env.agent_id2agent[nearby_agent_id]
+            nearby_agents_infos.append(
+                {
+                    "agent_id": nearby_agent_id,
+                    "agent_name": nearby_agent.get_self_name(),
+                    "pos": self.env.grid_space.get_pos(agent_id=nearby_agent_id),
+                }
+            )
+        return nearby_agents_infos
+
+
 class SelfInventoryProvider(ObsProvider[dict[str, float | int]]):
     """Self Inventory Provider class."""
 

@@ -42,6 +42,7 @@ from .obs_providers import (
     IncomingSwapProposalsProvider,
     ItemName2PriceProvider,
     MemoryProvider,
+    NearbyAgentsProvider,
     NumFollowersProvider,
     NumFollowsProvider,
     ObsProvider,
@@ -70,11 +71,6 @@ from .space import GridSpace
 from .time_translator import TimeTranslator
 
 ObsT = TypeVar("ObsT")
-
-
-# check sleep_duration, homeじゃなきゃ寝れないように．
-# obs provider追加？
-# LLMAgent用にis_sleepingは入れて，細かい情報はmemoryhandler行き
 
 
 class Environment(Generic[ObsT]):
@@ -2037,6 +2033,7 @@ class Environment(Generic[ObsT]):
             "self_is_moving": SelfIsMovingProvider(env=self),
             "self_destination": SelfDestinationProvider(env=self),
             "others_pos": OthersPosProvider(env=self),
+            "nearby_agents": NearbyAgentsProvider(env=self),
             "self_salary": SelfSalaryProvider(env=self),
             "self_inventory": SelfInventoryProvider(env=self),
             "self_tweet": SelfTweetProvider(env=self),

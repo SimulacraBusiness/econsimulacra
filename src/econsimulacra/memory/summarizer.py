@@ -316,6 +316,7 @@ class MemorySummarizer:
         """
         return {
             "others_pos": self._summarize_others_pos,
+            "nearby_agents": self._summarize_nearby_agents,
             "self_salary": self._summarize_self_salary,
             "self_inventory": self._summarize_self_inventory,
             "self_tweet": self._summarize_self_tweet,
@@ -328,6 +329,9 @@ class MemorySummarizer:
         }
 
     def _summarize_others_pos(self, obs_items: list[ObsHistoryItem]) -> str:
+        return ""
+
+    def _summarize_nearby_agents(self, obs_items: list[ObsHistoryItem]) -> str:
         return ""
 
     def _summarize_self_salary(self, obs_items: list[ObsHistoryItem]) -> str:
