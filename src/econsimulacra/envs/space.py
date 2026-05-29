@@ -111,12 +111,12 @@ class GridSpace:
         pos: tuple[int, ...] = self.agent_id2pos[agent_id]
         return self.pos2agent_ids.get(pos, set()) - {agent_id}
 
-    def get_near_agents(self, agent_id: int, max_distance: int) -> set[int]:
+    def get_near_agents(self, agent_id: int, max_distance: int = 1) -> set[int]:
         """Get agent IDs within the given grid distance from the specified agent.
 
         Args:
             agent_id (int): The ID of the reference agent.
-            max_distance (int): Maximum Manhattan distance to regard as nearby.
+            max_distance (int): Maximum Manhattan distance to regard as nearby. Default to 1.
 
         Returns:
             set[int]: Agent IDs within ``max_distance`` from the reference agent,
