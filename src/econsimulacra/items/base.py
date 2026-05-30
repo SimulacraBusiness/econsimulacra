@@ -21,7 +21,9 @@ class Item:
             item_name (str): The name of the item.
             config (dict[str, Any], optional): Optional config. It may contain
                 "initialPrice": The initial price of the item. Defaults to 0.
-                "weightInBascket": The weight of the item in the consumer price index (CPI) calculation. Defaults to 1.
+                "maxPrice": The maximum price of the item. Defaults to None (no limit).
+                "minPrice": The minimum price of the item. Defaults to None (no limit).
+                "weightInBasket": The weight of the item in the consumer price index (CPI) calculation. Defaults to 1.
                     See also: econsimulacra.memory.stress_utils.calc_stress_from_state_evaluation_history
         """
         self.item_id: int = item_id
@@ -29,9 +31,34 @@ class Item:
         self.price: float
         self.config: dict[str, Any] = config if config is not None else {}
         if "initialPrice" in self.config:
-            self.price = self.config["initialPrice"]
+            self.initial_price = self.config["initialPrice"]
+            self.price = self.initial_price
         else:
-            self.price = 0.0
+            self.initial_price = 0.0
+        self.price = self.initial_price
+        self.max_price: Optional[float]
+        if "maxPrice" in self.config:
+            if "initialPrice" not in self.config:
+                raise ValueError(
+                    "maxPrice is specified but initialPrice is not specified."
+                )
+            self.max_price = self.config["maxPrice"]
+        else:
+            self.max_price = None
+        self.min_price: Optional[float]
+        if "minPrice" in self.config:
+            if "initialPrice" not in self.config:
+                raise ValueError(
+                    "minPrice is specified but initialPrice is not specified."
+                )
+            self.min_price = self.config["minPrice"]
+        else:
+            self.min_price = None
+        if self.max_price is not None and self.min_price is not None:
+            assert self.min_price <= self.initial_price <= self.max_price, (
+                "initialPrice should be between minPrice and maxPrice. "
+            )
+            f"Got initialPrice={self.initial_price}, minPrice={self.min_price}, maxPrice={self.max_price}."
         if "weightInBasket" in self.config:
             self.weight_in_basket = self.config["weightInBasket"]
         else:
@@ -53,6 +80,10 @@ class Item:
             price (float): The new price of the item.
             set_by (int, optional): The agent id who set the price. Defaults to None.
         """
+        if self.max_price is not None and price > self.max_price:
+            price = self.max_price
+        if self.min_price is not None and price < self.min_price:
+            price = self.min_price
         self.price = price
         self.price_set_by = set_by
 
