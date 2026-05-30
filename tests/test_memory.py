@@ -215,12 +215,14 @@ class TestMemoryHandler:
             "Your state evaluations are Wealth: 10000 at time 0; Wealth: 9000 at time 5."
         )
         assert d["state_evaluation_history_stress"] == 29
+        print(d)
         assert (
             d["state_evaluation_history_stress_reason"]
             == "Your stress level from this state evaluation is 29 out of 100. "
-            "You cannot buy enough goods. (buying power: 70.00, target: 80.00) "
+            "You cannot buy enough goods. You should save your cash. (buying power: 70.00, target: 80.00) "
             "You have less wealth than others. (relative wealth: -0.30, target: -0.20) "
-            "Your wealth has recently decreased. (wealth change: -1000.00)"
+            "Your wealth has recently decreased. You had better think carefully about your economic decisions. "
+            "(wealth change: -1000.00)"
         )
         log6 = ObsLog(
             obs_type="others_inventory",

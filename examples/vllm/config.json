@@ -1,17 +1,17 @@
 {
     "simulation": {
         "numSteps": 216,
-        "parallelBatchSize": 32,
+        "parallelBatchSize": 12,
         "events": ["provideSubsidy", "constantSupply"]
     },
     "environment": {
         "space": "gridSpace",
         "socialNetwork": "socialNetwork",
         "cashName": "Yen",
-        "agents": ["Household", "Retailer", "Restaurant"],
+        "agents": ["Household", "Retailer1", "Retailer2", "Restaurant"],
         "items": [
             "Yen", "Rice", "Pizza", "Soda",
-            "Tomatoes", "Soup", "Bread", "Salad"
+            "Soup", "Bread", "Salad"
         ],
         "service": [
             "promptBuilder", "llmClient", "timeTranslator",
@@ -29,7 +29,7 @@
             "type": "TwoHopRecommenderSystem",
             "maxRecommendations": 3,
             "isRandomized": true,
-            "temperature": 0.5
+            "temperature": 1.0
         }
     },
     "Restaurant": {
@@ -37,12 +37,12 @@
         "name": "Pizza Place",
         "isRichInfoAllowed": true,
         "isHousehold": false,
-        "initialCoords": [2, 2],
+        "initialCoords": [1, 1],
         "numAgents": 1,
         "inventory": {
             "Yen": 0,
-            "Pizza": 20,
-            "Soda": 20
+            "Pizza": 30,
+            "Soda": 30
         },
         "discounts": [
             {
@@ -91,20 +91,34 @@
         "svgPath": "../../imgs/store.svg",
         "iconScale": 0.2
     },
-    "Retailer": {
+    "Retailer1": {
         "type": "AutoReactLLMAgent",
         "name": "Daily Mart",
         "isRichInfoAllowed": true,
         "isHousehold": false,
-        "initialCoords": [8, 8],
+        "initialCoords": [4, 3],
         "numAgents": 1,
         "inventory": {
             "Yen": 0,
-            "Rice": 20,
-            "Tomatoes": 20,
-            "Soup": 20,
-            "Bread": 20,
-            "Salad": 20
+            "Rice": 30,
+            "Salad": 30
+        },
+        "provideInfo4CoLocatedAgents": ["inventory"],
+        "provideInfo4AllAgents": ["self_pos"],
+        "svgPath": "../../imgs/store.svg",
+        "iconScale": 0.2
+    },
+    "Retailer2": {
+        "type": "AutoReactLLMAgent",
+        "name": "BestValue Grocery",
+        "isRichInfoAllowed": true,
+        "isHousehold": false,
+        "initialCoords": [8, 1],
+        "numAgents": 1,
+        "inventory": {
+            "Yen": 0,
+            "Soup": 30,
+            "Bread": 30
         },
         "provideInfo4CoLocatedAgents": ["inventory"],
         "provideInfo4AllAgents": ["self_pos"],
@@ -114,9 +128,9 @@
     "Household": {
         "type": "LLMAgent",
         "isHousehold": true,
-        "numAgents": 30,
+        "numAgents": 29,
         "inventory": {
-            "Yen": [10000, 100000]
+            "Yen": {"expon": [200000]}
         },
         "svgPath": "../../imgs/human.svg",
         "iconScale": 0.2
@@ -127,31 +141,39 @@
     },
     "Rice": {
         "type": "Item",
-        "initialPrice": 1000.0
+        "initialPrice": 700.0,
+        "minPrice": 350.0,
+        "maxPrice": 1050.0
     },
     "Pizza": {
         "type": "Item",
-        "initialPrice": 2000.0
+        "initialPrice": 2000.0,
+        "minPrice": 1000.0,
+        "maxPrice": 3000.0
     },
     "Soda": {
         "type": "Item",
-        "initialPrice": 150.0
-    },
-    "Tomatoes": {
-        "type": "Item",
-        "initialPrice": 200.0
+        "initialPrice": 150.0,
+        "minPrice": 75.0,
+        "maxPrice": 225.0
     },
     "Soup": {
         "type": "Item",
-        "initialPrice": 300.0
+        "initialPrice": 300.0,
+        "minPrice": 150.0,
+        "maxPrice": 450.0
     },
     "Bread": {
         "type": "Item",
-        "initialPrice": 400.0
+        "initialPrice": 400.0,
+        "minPrice": 200.0,
+        "maxPrice": 600.0
     },
     "Salad": {
         "type": "Item",
-        "initialPrice": 500.0
+        "initialPrice": 500.0,
+        "minPrice": 250.0,
+        "maxPrice": 750.0
     },
     "promptBuilder": {
         "type": "NameBasedPromptBuilder",
@@ -162,12 +184,12 @@
     },
     "llmClient": {
         "type": "VLLMClient",
-        "modelName": "openai/gpt-oss-20b",
-        "other_choice": "openai/gpt-oss-20b, Qwen/Qwen2.5-7B-Instruct, meta-llama/Meta-Llama-3-8B-Instruct, mistralai/Mistral-7B-Instruct-v0.3",
+        "modelName": "openai/gpt-oss-120b",
+        "other_choice": "hugging-quants/Meta-Llama-3.1-70B-Instruct-AWQ-INT4, Qwen/Qwen3.6-35B-A3B, openai/gpt-oss-20b, Qwen/Qwen2.5-7B-Instruct, meta-llama/Meta-Llama-3-8B-Instruct, mistralai/Mistral-7B-Instruct-v0.3",
         "vllmPython": "/home/m2023rhashimoto/econsimulacra/.venv-vllm/bin/python",
         "useGpu": true,
-        "gpuIds": [0,1,2],
-        "isDataParallel": true,
+        "gpuIds": [0,1],
+        "isDataParallel": false,
         "host": "127.0.0.1",
         "port": 8000,
         "timeOut": 600,
@@ -175,11 +197,12 @@
         "serverStartTimeout": 1200,
         "maxConcurrentGenerations": 32,
         "trustRemoteCode": false,
+	    "maxModelLen": 65536,
         "gpuMemoryUtilization": 0.8,
         "gridSpace": [10, 10],
         "items": [
             "Yen", "Rice", "Pizza", "Soda",
-            "Tomatoes", "Soup", "Bread", "Salad"
+            "Soup", "Bread", "Salad"
         ],
         "numAgents": 32
     },
@@ -188,18 +211,6 @@
         "numSteps": 216,
         "startDatetime": "2025-12-19 09:00:00",
         "endDatetime": "2025-12-28 09:00:00"
-    },
-    "personaBuilder": {
-        "type": "ScoredPersonaBuilder",
-        "attributes": [
-            "Openness",
-            "Conscientiousness",
-            "Extraversion",
-            "Agreeableness",
-            "Neuroticism"
-        ],
-        "maxMagnitude": 3,
-        "personaDescriptionPath": "persona_description.txt"
     },
     "sleepManager": {
         "type": "SleepManager"
@@ -225,7 +236,6 @@
                     "Rice": 3.0,
                     "Soda": 0.1,
                     "Pizza": 3.0,
-                    "Tomatoes": 0.3,
                     "Soup": 1.0,
                     "Bread": 2.0,
                     "Salad": 1.5
@@ -264,7 +274,7 @@
             "with": ["AgentGenerationLog"],
             "every": 6
         },
-        "suppliedAgentNames": ["Daily Mart", "Pizza Place"]
+        "suppliedAgentNames": ["Daily Mart", "BestValue Grocery", "Pizza Place"]
     },
     "animation": {
         "cellSize": 1,

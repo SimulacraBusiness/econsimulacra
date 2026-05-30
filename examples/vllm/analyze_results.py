@@ -28,7 +28,7 @@ if __name__ == "__main__":
             TopicAnalyzer(is_inner_thought=True, exclude_agent_ids=[31]),
             ConsumerClusterAnalyzer(
                 window_size=12,
-                k_candidates=(2, 3, 4, 5, 6, 7),
+                k_candidates=(2, 4, 6, 8, 10, 20, 30),
                 exclude_items=("Yen",),
                 is_consumption=True,
                 normalize=True,
@@ -36,9 +36,9 @@ if __name__ == "__main__":
             MoveDistanceAnalyzer(),
         ]
     )
-    stores = RecordStore(load_from_file("log_gpt-oss-20b_w_sleep.txt"))
+    stores = RecordStore(load_from_file("log_gpt-oss-120b_42.txt"))
     results = manager.run_all(
         stores,
         render_summary=True,
-        figs_save_path="results_w_sleep",
+        figs_save_path="results_gpt-oss-120b_42",
     )

@@ -1,6 +1,5 @@
 import asyncio
 import json
-import os
 import pathlib
 from pathlib import Path
 from random import Random
@@ -12,8 +11,6 @@ from econsimulacra.envs import Environment
 from econsimulacra.events import Event
 from econsimulacra.logs import DictLogger
 from econsimulacra.simulator import SimulationSummarizer, Simulator
-
-# export LOG_TXT_PATH="log_gpt-oss-20b.txt"
 
 
 class SubsidyEvent(Event):
@@ -182,21 +179,23 @@ class DiscountRestaurant(Agent[dict[str, Any]]):
 
 
 def conduct_simulation():
-    config_dic_path: Path = Path(pathlib.Path(__file__).parent, "config.json")
-    logger: DictLogger = DictLogger()
-    simulator: Simulator = Simulator(
-        config=config_dic_path,
-        env_class=Environment,
-        logger=logger,
-        summarizer_class=SimulationSummarizer,
-    )
-    simulator.register_classes([SubsidyEvent, DiscountRestaurant])
-    asyncio.run(simulator.simulate(seed=42))
-    logs: list[dict] = logger.logs
-    log_txt_path: Path = pathlib.Path(os.environ["LOG_TXT_PATH"])
-    with open(log_txt_path, "w", encoding="utf-8") as f:
-        for log in logs:
-            f.write(json.dumps(log, ensure_ascii=False) + "\n")
+    for i in range(5):
+        config_dic_path: Path = Path(pathlib.Path(__file__).parent, "config.json")
+        logger: DictLogger = DictLogger()
+        simulator: Simulator = Simulator(
+            config=config_dic_path,
+            env_class=Environment,
+            logger=logger,
+            summarizer_class=SimulationSummarizer,
+        )
+        simulator.register_classes([SubsidyEvent, DiscountRestaurant])
+        seed = 42 + i
+        asyncio.run(simulator.simulate(seed=seed))
+        logs: list[dict] = logger.logs
+        log_txt_path: Path = pathlib.Path(f"log_gpt-oss-120b_{seed}.txt")
+        with open(log_txt_path, "w", encoding="utf-8") as f:
+            for log in logs:
+                f.write(json.dumps(log, ensure_ascii=False) + "\n")
 
 
 if __name__ == "__main__":
