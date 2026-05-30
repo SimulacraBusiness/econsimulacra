@@ -397,7 +397,7 @@ def calc_stress_from_state_evaluation_history(
         )
         if buying_power_stress > 0.0:
             buying_power_reason = (
-                "You cannot buy enough goods. "
+                "You cannot buy enough goods. You should save your cash. "
                 + f"(buying power: {latest_item.buying_power:.2f}, "
                 + f"target: {target_buying_power:.2f})"
             )
@@ -435,7 +435,7 @@ def calc_stress_from_state_evaluation_history(
     if wealth_drawdown_stress > 0.0:
         if wealth_growth < 0.0:
             wealth_drawdown_reason = (
-                "Your wealth has recently decreased. "
+                "Your wealth has recently decreased. You had better think carefully about your economic decisions. "
                 + f"(wealth change: {wealth_growth:.2f})"
             )
         else:
