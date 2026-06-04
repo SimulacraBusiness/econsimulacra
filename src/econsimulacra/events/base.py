@@ -208,7 +208,7 @@ class EventTrigger:
             if time_step in self.at:
                 return True
         if self.every is not None:
-            if time_step % self.every == 0:
+            if time_step % self.every == (self.every - 1):
                 return True
         if self.between is not None:
             if self.between[0] <= time_step <= self.between[1]:
