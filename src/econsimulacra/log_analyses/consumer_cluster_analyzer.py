@@ -45,7 +45,7 @@ class FitTransform2D(Protocol):
 
 
 @dataclass
-class ConsumerClusterAnalyzer(AnalyzerBase[ConsumerClusterResult]):
+class ConsumerClusterAnalyzer(AnalyzerBase[ConsumerClusterResult, None]):
     """Cluster agents' purchase or consumption behavior over rolling time windows.
 
     This analyzer converts each ``(agent, time-window)`` pair into an item-wise
@@ -263,6 +263,9 @@ class ConsumerClusterAnalyzer(AnalyzerBase[ConsumerClusterResult]):
                 vector.astype(np.float32),
             )
         return result
+
+    def analyze_stores(self, stores: list[RecordStore]) -> None:
+        return None
 
     def draw_figs(self, result: ConsumerClusterResult) -> dict[str, Figure]:
         """Create diagnostic figures for the clustering result.
@@ -512,6 +515,11 @@ class ConsumerClusterAnalyzer(AnalyzerBase[ConsumerClusterResult]):
         )
         figures["cluster_counts"] = fig_cluster_counts
         return figures
+
+    def draw_figs_all(
+        self, individual_results: list[ConsumerClusterResult]
+    ) -> dict[str, Figure]:
+        return {}
 
     def build_summary(self, result: ConsumerClusterResult) -> Panel:
         """Build a Rich summary panel for clustering diagnostics.

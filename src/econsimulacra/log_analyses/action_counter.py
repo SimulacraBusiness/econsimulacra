@@ -10,7 +10,7 @@ from .base import AnalyzerBase
 from .store import RecordStore
 
 
-class ActionCounter(AnalyzerBase[dict[str, int]]):
+class ActionCounter(AnalyzerBase[dict[str, int], dict[str, list[int]]]):
     """Action counter analyzer.
 
     ActionCounter counts the number of each action kinds
@@ -28,15 +28,17 @@ class ActionCounter(AnalyzerBase[dict[str, int]]):
         Returns:
             counts (dict[str, int]): A dictionary mapping action types to counts.
                 Action types are
-                "move", "tweet", "follow", "unfollow", "order", "proposal",
-                "consumption", "order_reaction", "proposal_reaction",
+                "sleep_end", "move", "tweet", "follow", "unfollow", "inner_thought",
+                "order", "proposal", "consumption", "order_reaction", "proposal_reaction",
                 "change_price".
         """
         counts: dict[str, int] = {
+            "sleep_end": 0,
             "move": 0,
             "tweet": 0,
             "follow": 0,
             "unfollow": 0,
+            "inner_thought": 0,
             "order": 0,
             "proposal": 0,
             "consumption": 0,
@@ -47,6 +49,39 @@ class ActionCounter(AnalyzerBase[dict[str, int]]):
         for type in counts.keys():
             counts[type] = len(store.get_by_type(type))
         return counts
+
+    def analyze_stores(self, stores: list[RecordStore]) -> dict[str, list[int]]:
+        """Counts the number of each action kinds across multiple stores.
+
+        Args:
+            stores (list[RecordStore]): A list of record stores to analyze.
+
+        Returns:
+            counts (dict[str, list[int]]): A dictionary mapping action types to lists of counts.
+                Action types are
+                "sleep_end", "move", "tweet", "follow", "unfollow", "inner_thought",
+                "order", "proposal", "consumption", "order_reaction", "proposal_reaction",
+                "change_price".
+        """
+        total_counts: dict[str, list[int]] = {
+            "sleep_end": [],
+            "move": [],
+            "tweet": [],
+            "follow": [],
+            "unfollow": [],
+            "inner_thought": [],
+            "order": [],
+            "proposal": [],
+            "consumption": [],
+            "order_reaction": [],
+            "proposal_reaction": [],
+            "change_price": [],
+        }
+        for store in stores:
+            counts = self.analyze(store)
+            for type in total_counts.keys():
+                total_counts[type].append(counts[type])
+        return total_counts
 
     def draw_figs(
         self,
@@ -65,6 +100,26 @@ class ActionCounter(AnalyzerBase[dict[str, int]]):
             rotation_mode="anchor",
         )
         return {"action_count": fig}
+
+    def draw_figs_all(
+        self, individual_results: list[dict[str, int]]
+    ) -> dict[str, Figure]:
+        fig: Figure = Figure(figsize=(12, 6))
+        ax: Axes = fig.add_subplot(1, 1, 1)
+        action_names: list[str] = list(individual_results[0].keys())
+        data = [
+            [result[action] for result in individual_results] for action in action_names
+        ]
+        ax.boxplot(data, tick_labels=action_names)
+        ax.set_ylabel("Count")
+        ax.set_xticks(range(len(action_names)))
+        ax.set_xticklabels(
+            action_names,
+            rotation=45,
+            ha="right",
+            rotation_mode="anchor",
+        )
+        return {"action_count_all": fig}
 
     def build_summary(
         self,

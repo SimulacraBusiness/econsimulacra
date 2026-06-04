@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, cast
+from typing import Any, TypeAlias, cast
 
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
@@ -10,8 +10,10 @@ from .base import AnalyzerBase
 from .records import ObsRecord
 from .store import RecordStore
 
+StressData: TypeAlias = dict[int, dict[str, dict[int, float]]]
 
-class StressAnalyzer(AnalyzerBase[dict[int, dict[str, dict[int, float]]]]):
+
+class StressAnalyzer(AnalyzerBase[StressData, None]):
     """Stress analyzer.
 
     StressAnalyzer analyzes stress data for each household stress_type "*_history_stress".
@@ -27,7 +29,7 @@ class StressAnalyzer(AnalyzerBase[dict[int, dict[str, dict[int, float]]]]):
         """
         self.exclude_agent_ids = exclude_agent_ids
 
-    def analyze(self, store: RecordStore) -> dict[int, dict[str, dict[int, float]]]:
+    def analyze(self, store: RecordStore) -> StressData:
         """Analyzes stress data for each household stress_type "*_history_stress".
 
         Args:
@@ -72,9 +74,12 @@ class StressAnalyzer(AnalyzerBase[dict[int, dict[str, dict[int, float]]]]):
                     result[agent_id][stress_type][time] = stress_value
         return result
 
+    def analyze_stores(self, stores: list[RecordStore]) -> None:
+        return None
+
     def draw_figs(
         self,
-        result: dict[int, dict[str, dict[int, float]]],
+        result: StressData,
     ) -> dict[str, Figure]:
         fig_dic: dict[str, Figure] = {}
         for agent_id, stress_type2time_stress in result.items():
@@ -98,3 +103,6 @@ class StressAnalyzer(AnalyzerBase[dict[int, dict[str, dict[int, float]]]]):
                 ax.plot(times, stress_values, label=f"Agent {agent_id}")
                 self._apply_time_axis(ax)
         return fig_dic
+
+    def draw_figs_all(self, individual_results: list[StressData]) -> dict[str, Figure]:
+        return {}

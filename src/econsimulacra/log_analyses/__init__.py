@@ -34,6 +34,7 @@ from .store import RecordStore
 from .store_sales_analyzer import StoreSalesAnalyzer
 from .stress_analyzer import StressAnalyzer
 from .topic_analyzer import TopicAnalyzer
+from .topic_sales_analyzer import TopicSalesAnalyzer
 
 __all__ = [
     "ActionCounter",
@@ -71,4 +72,5 @@ __all__ = [
     "PriceAnalyzer",
     "TopicAnalyzer",
     "MoveDistanceAnalyzer",
+    "TopicSalesAnalyzer",
 ]

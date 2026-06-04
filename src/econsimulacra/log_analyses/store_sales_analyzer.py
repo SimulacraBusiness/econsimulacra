@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import TypeAlias
+
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
@@ -14,15 +16,11 @@ from .records import (
 )
 from .store import RecordStore
 
+SalesResult: TypeAlias = dict[str, dict[int, float]]
+SalesAmountResult: TypeAlias = dict[str, dict[int, float]]
 
-class StoreSalesAnalyzer(
-    AnalyzerBase[
-        tuple[
-            dict[str, dict[int, float]],
-            dict[str, dict[int, float]],
-        ]
-    ]
-):
+
+class StoreSalesAnalyzer(AnalyzerBase[tuple[SalesResult, SalesAmountResult], None]):
     """Sales analyzer."""
 
     name = "store_sales"
@@ -30,14 +28,11 @@ class StoreSalesAnalyzer(
     def analyze(
         self,
         store: RecordStore,
-    ) -> tuple[
-        dict[str, dict[int, float]],
-        dict[str, dict[int, float]],
-    ]:
+    ) -> tuple[SalesResult, SalesAmountResult]:
         self._prepare_time_axis(store)
         agent_id2name: dict[int, str] = self.get_agent_id2name(store)
-        sales: dict[str, dict[int, float]] = {}
-        sold_amounts: dict[str, dict[int, float]] = {}
+        sales: SalesResult = {}
+        sold_amounts: SalesAmountResult = {}
 
         order_reactions: list[OrderReactionRecord] = store.typed(OrderReactionRecord)
         proposal_reactions: list[ProposalReactionRecord] = store.typed(
@@ -89,12 +84,12 @@ class StoreSalesAnalyzer(
 
         return sales, sold_amounts
 
+    def analyze_stores(self, stores: list[RecordStore]) -> None:
+        return None
+
     def draw_figs(
         self,
-        result: tuple[
-            dict[str, dict[int, float]],
-            dict[str, dict[int, float]],
-        ],
+        result: tuple[SalesResult, SalesAmountResult],
     ) -> dict[str, Figure]:
         fig_dic: dict[str, Figure] = {}
         sales_by_store, sold_amounts_by_store = result
@@ -140,12 +135,14 @@ class StoreSalesAnalyzer(
 
         return fig_dic
 
+    def draw_figs_all(
+        self, individual_results: list[tuple[SalesResult, SalesAmountResult]]
+    ) -> dict[str, Figure]:
+        return {}
+
     def build_summary(
         self,
-        result: tuple[
-            dict[str, dict[int, float]],
-            dict[str, dict[int, float]],
-        ],
+        result: tuple[SalesResult, SalesAmountResult],
     ) -> RenderableType:
         """Build a rich summary table for total store sales and sold amounts."""
         sales_by_store, sold_amounts_by_store = result

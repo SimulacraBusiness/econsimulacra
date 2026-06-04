@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import TypeAlias
+
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
@@ -11,15 +13,11 @@ from .base import AnalyzerBase
 from .records import OrderReactionRecord
 from .store import RecordStore
 
+SalesResult: TypeAlias = dict[str, dict[int, float]]
+SalesAmountResult: TypeAlias = dict[str, dict[int, float]]
 
-class ItemSalesAnalyzer(
-    AnalyzerBase[
-        tuple[
-            dict[str, dict[int, float]],
-            dict[str, dict[int, float]],
-        ]
-    ]
-):
+
+class ItemSalesAnalyzer(AnalyzerBase[tuple[SalesResult, SalesAmountResult], None]):
     """Item sales analyzer.
 
     ItemSalesAnalyzer analyzes sales data for each item
@@ -28,20 +26,18 @@ class ItemSalesAnalyzer(
 
     name = "item_sales"
 
-    def analyze(
-        self, store: RecordStore
-    ) -> tuple[dict[str, dict[int, float]], dict[str, dict[int, float]]]:
+    def analyze(self, store: RecordStore) -> tuple[SalesResult, SalesAmountResult]:
         """Analyzes sales data for each item.
 
         Args:
             store (RecordStore): The record store containing the records to analyze.
 
         Returns:
-            tuple[dict[str, dict[int, float]], dict[str, dict[int, float]]]: A tuple containing dictionaries mapping item names to their sales data and sold amounts.
+            tuple[SalesResult, SalesAmountResult]: A tuple containing dictionaries mapping item names to their sales data and sold amounts.
         """
         self._prepare_time_axis(store)
-        sales: dict[str, dict[int, float]] = {}
-        sold_amounts: dict[str, dict[int, float]] = {}
+        sales: SalesResult = {}
+        sold_amounts: SalesAmountResult = {}
         order_reactions: list[OrderReactionRecord] = store.typed(OrderReactionRecord)
         time_step: int
         item_name: str
@@ -60,12 +56,12 @@ class ItemSalesAnalyzer(
             sold_amounts[item_name][time_step] += order_reaction.accept_amount
         return sales, sold_amounts
 
+    def analyze_stores(self, stores: list[RecordStore]) -> None:
+        return None
+
     def draw_figs(
         self,
-        result: tuple[
-            dict[str, dict[int, float]],
-            dict[str, dict[int, float]],
-        ],
+        result: tuple[SalesResult, SalesAmountResult],
     ) -> dict[str, Figure]:
         fig_dic: dict[str, Figure] = {}
         sales_by_item, sold_amounts_by_item = result
@@ -109,6 +105,12 @@ class ItemSalesAnalyzer(
             fig_dic[f"item_sold_amount_{item_name}"] = fig_sold_amounts
 
         return fig_dic
+
+    def draw_figs_all(
+        self,
+        individual_results: list[tuple[SalesResult, SalesAmountResult]],
+    ) -> dict[str, Figure]:
+        return {}
 
     def build_summary(
         self,

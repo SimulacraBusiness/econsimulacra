@@ -11,7 +11,7 @@ from .records import FollowRecord, TweetRecord, UnfollowRecord
 from .store import RecordStore
 
 
-class FollowerCounter(AnalyzerBase[dict[str, dict[int, int]]]):
+class FollowerCounter(AnalyzerBase[dict[str, dict[int, int]], None]):
     """Follower counter analyzer.
 
     FollowerCounter counts the number of followers for each agent over time.
@@ -46,6 +46,9 @@ class FollowerCounter(AnalyzerBase[dict[str, dict[int, int]]]):
             follower_counts[agent_name][time] = num_followers
 
         return follower_counts
+
+    def analyze_stores(self, stores: list[RecordStore]) -> None:
+        return None
 
     def draw_figs(
         self,
@@ -82,6 +85,12 @@ class FollowerCounter(AnalyzerBase[dict[str, dict[int, int]]]):
         ax.set_xlabel("Agent Name")
         ax.set_ylabel("Max Number of Followers")
         return {"follower_count": fig}
+
+    def draw_figs_all(
+        self,
+        individual_results: list[dict[str, dict[int, int]]],
+    ) -> dict[str, Figure]:
+        return {}
 
     def build_summary(
         self,

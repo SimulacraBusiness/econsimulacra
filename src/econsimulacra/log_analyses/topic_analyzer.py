@@ -37,7 +37,12 @@ class TopicResult:
     agent_topic_counts: DataFrame
 
 
-class TopicAnalyzer(AnalyzerBase[TopicResult]):
+class TopicAnalyzer(
+    AnalyzerBase[
+        TopicResult,
+        list[TopicResult],
+    ]
+):
     """Analyze tweet logs using BERTopic.
 
     This analyzer:
@@ -89,76 +94,77 @@ class TopicAnalyzer(AnalyzerBase[TopicResult]):
         self.is_inner_thought = is_inner_thought
         self.exclude_agent_ids = exclude_agent_ids
 
-    def analyze(self, store: RecordStore) -> TopicResult:
-        """Analyze tweet topic dynamics."""
+    def analyze(
+        self,
+        store: RecordStore,
+    ) -> TopicResult:
         self._prepare_time_axis(store)
-        tweet_records: list[TweetRecord] | list[InnerThoughtRecord]
-        if self.is_inner_thought:
-            tweet_records = store.typed(InnerThoughtRecord)
-        else:
-            tweet_records = store.typed(TweetRecord)
 
-        if len(tweet_records) == 0:
-            empty = pd.DataFrame()
-            return TopicResult(
-                tweets=empty,
-                topic_counts=empty,
-                topic_shares=empty,
-                topic_summary=empty,
-                agent_topic_counts=empty,
-            )
+        records = (
+            store.typed(InnerThoughtRecord)
+            if self.is_inner_thought
+            else store.typed(TweetRecord)
+        )
 
-        df = self._records_to_dataframe(tweet_records)
+        if len(records) == 0:
+            return self._empty_result()
 
-        docs = df["message"].astype(str).tolist()
+        df = self._records_to_dataframe(records)
+
         topic_model = self._get_topic_model()
 
-        topics: list[int]
-        topics, _ = topic_model.fit_transform(docs)  # type: ignore
-        df["topic"] = topics
-
-        topic_names = self._get_topic_names(topic_model)
-        df["topic_name"] = df["topic"].map(topic_names).fillna("Unknown")
-
-        df["time_window"] = df["time_step"].map(self._to_time_window)
-
-        topic_counts = (
-            df.groupby(["time_window", "topic_name"])
-            .size()
-            .unstack(fill_value=0)
-            .sort_index()
+        df = self._fit_and_assign_topics(
+            df=df,
+            topic_model=topic_model,
         )
 
-        topic_shares = topic_counts.div(topic_counts.sum(axis=1), axis=0).fillna(0.0)
+        return self._build_topic_result(df)
 
-        topic_summary = (
-            df.groupby(["topic", "topic_name"])
-            .agg(
-                num_tweets=("message", "size"),
-                num_agents=("agent_id", "nunique"),
-                first_time_step=("time_step", "min"),
-                last_time_step=("time_step", "max"),
-                avg_followers=("num_followers", "mean"),
-                avg_follows=("num_follows", "mean"),
+    def analyze_stores(
+        self,
+        stores: list[RecordStore],
+    ) -> list[TopicResult]:
+        self._prepare_time_axis(stores[0])
+
+        all_dfs: list[pd.DataFrame] = []
+        all_docs: list[str] = []
+
+        for store in stores:
+            records = (
+                store.typed(InnerThoughtRecord)
+                if self.is_inner_thought
+                else store.typed(TweetRecord)
             )
-            .reset_index()
-            .sort_values("num_tweets", ascending=False)
-        )
 
-        agent_topic_counts = (
-            df.groupby(["agent_id", "topic_name"])
-            .size()
-            .unstack(fill_value=0)
-            .sort_index()
-        )
+            df = self._records_to_dataframe(records)
 
-        return TopicResult(
-            tweets=df,
-            topic_counts=topic_counts,
-            topic_shares=topic_shares,
-            topic_summary=topic_summary,
-            agent_topic_counts=agent_topic_counts,
-        )
+            all_dfs.append(df)
+
+            if not df.empty:
+                all_docs.extend(df["message"].astype(str).tolist())
+
+        if len(all_docs) == 0:
+            return [self._empty_result() for _ in stores]
+
+        topic_model = self._get_topic_model()
+
+        topic_model.fit(all_docs)  # type: ignore
+
+        results: list[TopicResult] = []
+
+        for df in all_dfs:
+            if df.empty:
+                results.append(self._empty_result())
+                continue
+
+            df_with_topics = self._assign_topics(
+                df=df,
+                topic_model=topic_model,
+            )
+
+            results.append(self._build_topic_result(df_with_topics))
+
+        return results
 
     def draw_figs(self, result: TopicResult) -> dict[str, Figure]:
         """Draw topic analysis figures."""
@@ -182,6 +188,12 @@ class TopicAnalyzer(AnalyzerBase[TopicResult]):
         )
 
         return figs
+
+    def draw_figs_all(
+        self,
+        individual_results: list[TopicResult],
+    ) -> dict[str, Figure]:
+        return {}
 
     def build_summary(self, result: TopicResult):
         """Build rich summary."""
@@ -235,6 +247,69 @@ class TopicAnalyzer(AnalyzerBase[TopicResult]):
             border_style="green",
         )
 
+    def _empty_result(self) -> TopicResult:
+        empty = pd.DataFrame()
+
+        return TopicResult(
+            tweets=empty,
+            topic_counts=empty,
+            topic_shares=empty,
+            topic_summary=empty,
+            agent_topic_counts=empty,
+        )
+
+    def _build_topic_result(
+        self,
+        df: pd.DataFrame,
+    ) -> TopicResult:
+        df = df.copy()
+
+        df["time_window"] = df["time_step"].map(self._to_time_window)
+
+        topic_counts = (
+            df.groupby(["time_window", "topic_name"])
+            .size()
+            .unstack(fill_value=0)
+            .sort_index()
+        )
+
+        topic_shares = topic_counts.div(
+            topic_counts.sum(axis=1),
+            axis=0,
+        ).fillna(0.0)
+
+        topic_summary = (
+            df.groupby(["topic", "topic_name"])
+            .agg(
+                num_tweets=("message", "size"),
+                num_agents=("agent_id", "nunique"),
+                first_time_step=("time_step", "min"),
+                last_time_step=("time_step", "max"),
+                avg_followers=("num_followers", "mean"),
+                avg_follows=("num_follows", "mean"),
+            )
+            .reset_index()
+            .sort_values(
+                "num_tweets",
+                ascending=False,
+            )
+        )
+
+        agent_topic_counts = (
+            df.groupby(["agent_id", "topic_name"])
+            .size()
+            .unstack(fill_value=0)
+            .sort_index()
+        )
+
+        return TopicResult(
+            tweets=df,
+            topic_counts=topic_counts,
+            topic_shares=topic_shares,
+            topic_summary=topic_summary,
+            agent_topic_counts=agent_topic_counts,
+        )
+
     def _get_topic_model(self) -> object:
         if self.topic_model is not None:
             return self.topic_model
@@ -250,6 +325,45 @@ class TopicAnalyzer(AnalyzerBase[TopicResult]):
             calculate_probabilities=self.calculate_probabilities,
             verbose=False,
         )
+
+    def _assign_topics(
+        self,
+        df: pd.DataFrame,
+        topic_model,
+    ) -> pd.DataFrame:
+        if df.empty:
+            return df
+
+        docs = df["message"].astype(str).tolist()
+
+        topics, _ = topic_model.transform(docs)
+
+        df = df.copy()
+        df["topic"] = topics
+
+        topic_names = self._get_topic_names(topic_model)
+
+        df["topic_name"] = df["topic"].map(topic_names).fillna("Unknown")
+
+        return df
+
+    def _fit_and_assign_topics(
+        self,
+        df: pd.DataFrame,
+        topic_model,
+    ) -> pd.DataFrame:
+        docs = df["message"].astype(str).tolist()
+
+        topics, _ = topic_model.fit_transform(docs)
+
+        df = df.copy()
+        df["topic"] = topics
+
+        topic_names = self._get_topic_names(topic_model)
+
+        df["topic_name"] = df["topic"].map(topic_names).fillna("Unknown")
+
+        return df
 
     def _records_to_dataframe(
         self,

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from statistics import mean, median, stdev
+from typing import TypeAlias
 
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
@@ -17,8 +18,12 @@ from .records import (
 )
 from .store import RecordStore
 
+AgentBehaviorStats: TypeAlias = dict[str, dict[int, float]]
 
-class AgentBehaviorStatsAnalyzer(AnalyzerBase[dict[str, dict[int, float]]]):
+
+class AgentBehaviorStatsAnalyzer(
+    AnalyzerBase[AgentBehaviorStats, list[AgentBehaviorStats]]
+):
     """Agent behavior stats analyzer.
 
     AgentBehaviorStatsAnalyzer summarizes the behavior of each agent in the log.
@@ -34,14 +39,14 @@ class AgentBehaviorStatsAnalyzer(AnalyzerBase[dict[str, dict[int, float]]]):
         """
         self.exclude_agent_ids = exclude_agent_ids
 
-    def analyze(self, store: RecordStore) -> dict[str, dict[int, float]]:
+    def analyze(self, store: RecordStore) -> AgentBehaviorStats:
         """Summarizes the behavior of each agent in the log.
 
         Args:
             store (RecordStore): The record store containing the records to analyze.
 
         Returns:
-            stats (dict[str, dict[int, float]]]): A dictionary mapping stat names to dictionaries
+            stats (AgentBehaviorStats): A dictionary mapping stat names to dictionaries
                 that map agent IDs to the stat values.
 
         Note:
@@ -51,7 +56,7 @@ class AgentBehaviorStatsAnalyzer(AnalyzerBase[dict[str, dict[int, float]]]):
             "total_move_distance": Total move distance for each agent.
             "total_word_counts": Total word counts in tweets for each agent.
         """
-        stats: dict[str, dict[int, float]] = {
+        stats: AgentBehaviorStats = {
             "total_purchase_price": {},
             "avg_unit_purchase_price": {},
             "total_move_distance": {},
@@ -89,9 +94,24 @@ class AgentBehaviorStatsAnalyzer(AnalyzerBase[dict[str, dict[int, float]]]):
             stats["total_word_counts"][agent_id] = total_word_counts
         return stats
 
+    def analyze_stores(self, stores: list[RecordStore]) -> list[AgentBehaviorStats]:
+        """Summarizes the behavior of each agent across multiple stores.
+
+        Args:
+            stores (list[RecordStore]): A list of record stores to analyze.
+
+        Returns:
+            stats_list (list[AgentBehaviorStats]): A list of AgentBehaviorStats for each store.
+        """
+        stats_list: list[AgentBehaviorStats] = []
+        for store in stores:
+            stats: AgentBehaviorStats = self.analyze(store)
+            stats_list.append(stats)
+        return stats_list
+
     def draw_figs(
         self,
-        result: dict[str, dict[int, float]],
+        result: AgentBehaviorStats,
     ) -> dict[str, Figure]:
         fig_dic: dict[str, Figure] = {}
         for stat_name, agent_id2stat in result.items():
@@ -104,9 +124,29 @@ class AgentBehaviorStatsAnalyzer(AnalyzerBase[dict[str, dict[int, float]]]):
             fig_dic[stat_name] = fig
         return fig_dic
 
+    def draw_figs_all(
+        self, individual_results: list[AgentBehaviorStats]
+    ) -> dict[str, Figure]:
+        stat_names: list[str] = list(individual_results[0].keys())
+        data_for_all_stats: list[list[float]] = []
+        fig: Figure = Figure(figsize=(12, 6))
+        ax: Axes = fig.add_subplot(1, 1, 1)
+        for stat_name in stat_names:
+            data: list[float] = []
+            for result in individual_results:
+                agent_id2stat: dict[int, float] = result[stat_name]
+                stat_values: list[float] = list(agent_id2stat.values())
+                data.extend(stat_values)
+            data_for_all_stats.append(data)
+        ax.boxplot(data_for_all_stats, tick_labels=stat_names)
+        ax.set_xticklabels(stat_names, rotation=45, ha="right", rotation_mode="anchor")
+        return {
+            "all_stats": fig,
+        }
+
     def build_summary(
         self,
-        result: dict[str, dict[int, float]],
+        result: AgentBehaviorStats,
     ) -> RenderableType:
         """Build a rich summary table for agent behavior stats."""
         table = Table(
