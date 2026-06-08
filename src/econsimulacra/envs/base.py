@@ -1763,13 +1763,14 @@ class Environment(Generic[ObsT]):
             item: Item = self.item_name2item[item_name]
             old_price: float = item.get_price()
             item.set_price(price=price, set_by=agent_id)
+            new_price: float = item.get_price()
             change_price_log: ChangePriceLog = ChangePriceLog(
                 time=self.get_time(),
                 time_step=self.get_time_step(),
                 agent_id=agent_id,
                 item_name=item_name,
                 old_price=old_price,
-                new_price=price,
+                new_price=new_price,
             )
             self.remember_log(change_price_log)
             self.event_manager.trigger_events_after_log(log=change_price_log, env=self)

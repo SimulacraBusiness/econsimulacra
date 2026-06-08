@@ -41,7 +41,7 @@ MoveDistanceResult: TypeAlias = dict[int, MoveDistanceWindowStats]
 
 
 @dataclass
-class MoveDistanceAnalyzer(AnalyzerBase[MoveDistanceResult]):
+class MoveDistanceAnalyzer(AnalyzerBase[MoveDistanceResult, None]):
     """Analyze aggregate movement distance over time windows.
 
     This analyzer aggregates :class:`MoveRecord` instances into fixed-size
@@ -157,6 +157,9 @@ class MoveDistanceAnalyzer(AnalyzerBase[MoveDistanceResult]):
 
         return result
 
+    def analyze_stores(self, stores: list[RecordStore]) -> None:
+        return None
+
     def draw_figs(self, result: MoveDistanceResult) -> dict[str, Figure]:
         """Draw movement-distance diagnostic figures.
 
@@ -256,6 +259,11 @@ class MoveDistanceAnalyzer(AnalyzerBase[MoveDistanceResult]):
             figures["top_agent_total_distance"] = fig_agent
 
         return figures
+
+    def draw_figs_all(
+        self, individual_results: list[MoveDistanceResult]
+    ) -> dict[str, Figure]:
+        return {}
 
     def build_summary(self, result: MoveDistanceResult) -> Panel:
         """Build a Rich summary panel for movement-distance analysis.

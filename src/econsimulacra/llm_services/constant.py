@@ -242,7 +242,10 @@ DEFAULT_ACTION_DESCRIPTION: dict[str, str] = {
     + "Your tweet will be visible to agents that are following you and may also be visible to other agents. "
     + "You are not required to tweet at every step. "
     + 'If you do not have a strong opinion, emotional reaction, or relevant information, return an empty string "". '
-    + "Only tweet when you genuinely feel it is worth sharing.",
+    + "Only tweet when you genuinely feel it is worth sharing."
+    + "Occasionally introduce new topics on your own, as real social media users often do. "
+    + "Your tweet does not have to be limited to topics explicitly mentioned in the prompt "
+    + "Avoid making every tweet about the simulation mechanics or your economic decisions.",
     "follow": "The follow action is an integer representing the id of the agent that you want to follow. "
     + "You may refer to the recommended_follows field in the observation for agents that you are not currently following "
     + "but may consider following to connect. "

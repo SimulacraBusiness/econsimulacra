@@ -28,6 +28,8 @@ class TestAnalysisManager:
         stores = RecordStore(load_from_file(self.file_path))
         results = manager.run_all(stores)
         assert results["action_count"] == {
+            "inner_thought": 0,
+            "sleep_start": 0,
             "move": 1,
             "tweet": 1,
             "follow": 1,

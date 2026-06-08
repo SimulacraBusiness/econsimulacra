@@ -12,7 +12,7 @@ from .records import ChangePriceRecord, ItemGenerationRecord
 from .store import RecordStore
 
 
-class PriceAnalyzer(AnalyzerBase[dict[str, dict[int, float]]]):
+class PriceAnalyzer(AnalyzerBase[dict[str, dict[int, float]], None]):
     """Price analyzer.
 
     PriceAnalyzer tracks the prices of items over time.
@@ -48,6 +48,9 @@ class PriceAnalyzer(AnalyzerBase[dict[str, dict[int, float]]]):
             item_prices[item_name][time_step] = price
 
         return item_prices
+
+    def analyze_stores(self, stores: list[RecordStore]) -> None:
+        return None
 
     def draw_figs(
         self,
@@ -97,6 +100,11 @@ class PriceAnalyzer(AnalyzerBase[dict[str, dict[int, float]]]):
             fig_dic[f"price_{item_name}"] = fig
 
         return fig_dic
+
+    def draw_figs_all(
+        self, individual_results: list[dict[str, dict[int, float]]]
+    ) -> dict[str, Figure]:
+        return {}
 
     def build_summary(
         self,
