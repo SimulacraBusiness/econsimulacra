@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, TypeAlias, cast
+from typing import TypeAlias, cast
 
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
@@ -61,7 +61,6 @@ class StressAnalyzer(AnalyzerBase[StressData, None]):
             if agent_id in self.exclude_agent_ids:
                 continue
             memory_key: str
-            memory_value: dict[str, Any]
             for memory_key, memory_value in record.obs.items():
                 if memory_key.endswith("_history_stress"):
                     stress_type = memory_key.removesuffix("_history_stress")
