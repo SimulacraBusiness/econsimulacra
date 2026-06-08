@@ -179,8 +179,8 @@ class DiscountRestaurant(Agent[dict[str, Any]]):
 
 
 def conduct_simulation():
-    for i in range(5):
-        config_dic_path: Path = Path(pathlib.Path(__file__).parent, "config.json")
+    config_dic_path: Path = Path(pathlib.Path(__file__).parent, "config.json")
+    for i in range(10):
         logger: DictLogger = DictLogger()
         simulator: Simulator = Simulator(
             config=config_dic_path,
@@ -192,7 +192,7 @@ def conduct_simulation():
         seed = 42 + i
         asyncio.run(simulator.simulate(seed=seed))
         logs: list[dict] = logger.logs
-        log_txt_path: Path = pathlib.Path(f"log_gpt-oss-120b_{seed}.txt")
+        log_txt_path: Path = pathlib.Path(f"log_gpt-oss-120b/{seed}.txt")
         with open(log_txt_path, "w", encoding="utf-8") as f:
             for log in logs:
                 f.write(json.dumps(log, ensure_ascii=False) + "\n")
