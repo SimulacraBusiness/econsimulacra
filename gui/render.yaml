@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: econsimulacra-demo
+    runtime: docker
+    dockerfilePath: ./gui/Dockerfile
+    dockerContext: ./gui
+    plan: free          # free tier (512 MB RAM, shared CPU)
+    envVars:
+      - key: PORT
+        value: 10000    # Render's default port
+    healthCheckPath: /api/has_default
