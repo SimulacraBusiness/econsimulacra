@@ -33,7 +33,7 @@ class ActionCounter(AnalyzerBase[dict[str, int], dict[str, list[int]]]):
                 "change_price".
         """
         counts: dict[str, int] = {
-            "sleep_end": 0,
+            "sleep_start": 0,
             "move": 0,
             "tweet": 0,
             "follow": 0,
@@ -59,12 +59,12 @@ class ActionCounter(AnalyzerBase[dict[str, int], dict[str, list[int]]]):
         Returns:
             counts (dict[str, list[int]]): A dictionary mapping action types to lists of counts.
                 Action types are
-                "sleep_end", "move", "tweet", "follow", "unfollow", "inner_thought",
+                "sleep_start", "move", "tweet", "follow", "unfollow", "inner_thought",
                 "order", "proposal", "consumption", "order_reaction", "proposal_reaction",
                 "change_price".
         """
         total_counts: dict[str, list[int]] = {
-            "sleep_end": [],
+            "sleep_start": [],
             "move": [],
             "tweet": [],
             "follow": [],
