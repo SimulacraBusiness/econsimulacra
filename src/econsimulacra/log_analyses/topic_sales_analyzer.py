@@ -10,7 +10,7 @@ from numpy.typing import NDArray
 from rich.console import RenderableType
 from rich.panel import Panel
 from rich.table import Table
-from scipy.optimize import curve_fit # type: ignore
+from scipy.optimize import curve_fit  # type: ignore
 
 from .base import AnalyzerBase
 from .records import InnerThoughtRecord, OrderReactionRecord, TweetRecord
