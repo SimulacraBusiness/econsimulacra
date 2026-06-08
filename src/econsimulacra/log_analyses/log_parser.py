@@ -20,7 +20,8 @@ from .records import (
     ProposalExpirationRecord,
     ProposalReactionRecord,
     ProposalRecord,
-    SleepRecord,
+    SleepEndRecord,
+    SleepStartRecord,
     SpaceAssignRecord,
     StateEvaluationRecord,
     TweetRecord,
@@ -97,12 +98,21 @@ def parse_record(record: dict[str, Any]) -> Optional[BaseRecord]:
         )
 
     if record_type == "sleep_end":
-        return SleepRecord(
+        return SleepEndRecord(
             type=record_type,
             time=parse_time(record["time"]),
             time_step=int(record["time_step"]),
             agent_id=int(record["agent_id"]),
             since=parse_time(record["since"]),
+        )
+
+    if record_type == "sleep_start":
+        return SleepStartRecord(
+            type=record_type,
+            time=parse_time(record["time"]),
+            time_step=int(record["time_step"]),
+            agent_id=int(record["agent_id"]),
+            until=parse_time(record["until"]),
         )
 
     if record_type == "move":
@@ -215,6 +225,7 @@ def parse_record(record: dict[str, Any]) -> Optional[BaseRecord]:
             time_step=int(record["time_step"]),
             agent_id=int(record["agent_id"]),
             inner_thought=str(record["inner_thought"]),
+            sentiment=float(record["sentiment"]) if "sentiment" in record else None,
         )
 
     if record_type == "tweet":
@@ -224,6 +235,7 @@ def parse_record(record: dict[str, Any]) -> Optional[BaseRecord]:
             time_step=int(record["time_step"]),
             agent_id=int(record["agent_id"]),
             message=str(record["message"]),
+            sentiment=float(record["sentiment"]) if "sentiment" in record else None,
             num_follows=int(record["num_follows"]),
             num_followers=int(record["num_followers"]),
         )

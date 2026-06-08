@@ -104,10 +104,28 @@ class SpaceAssignRecord(BaseRecord):
 
 
 @dataclass(frozen=True)
-class SleepRecord(TimedRecord):
+class SleepStartRecord(TimedRecord):
     """A record for sleep events.
 
-    Corresponds to econsimulacra.logs.SleepLog.
+    Corresponds to econsimulacra.logs.SleepStartLog.
+
+    Attributes:
+        type (str): must be "sleep".
+        time (int | datetime): The timestamp when the agent went to sleep, as a datetime object or integer.
+        time_step (int): The time step when the agent went to sleep, as an integer.
+        agent_id (int): The ID of the sleeping agent.
+        until (int | datetime): The timestamp when the agent is expected to wake up, as a datetime object or integer.
+    """
+
+    agent_id: int
+    until: int | datetime
+
+
+@dataclass(frozen=True)
+class SleepEndRecord(TimedRecord):
+    """A record for sleep events.
+
+    Corresponds to econsimulacra.logs.SleepEndLog.
 
     Attributes:
         type (str): must be "sleep".
@@ -350,10 +368,12 @@ class InnerThoughtRecord(TimedRecord):
         time_step (int): The time step of the log entry, as an integer.
         agent_id (int): The ID of the agent that had the inner thought.
         inner_thought (str): The content of the inner thought.
+        sentiment (float, optional): The sentiment of the inner thought, if applicable.
     """
 
     agent_id: int
     inner_thought: str
+    sentiment: Optional[float]
 
 
 @dataclass(frozen=True)
@@ -369,12 +389,14 @@ class TweetRecord(TimedRecord):
         time_step (int): The time step of the log entry, as an integer.
         agent_id (int): The ID of the agent that posted the tweet.
         message (str): The content of the tweet.
+        sentiment (float, optional): The sentiment of the tweet, if applicable.
         num_follows (int): The number of accounts the agent follows.
         num_followers (int): The number of followers the agent has.
     """
 
     agent_id: int
     message: str
+    sentiment: Optional[float]
     num_follows: int
     num_followers: int
 
