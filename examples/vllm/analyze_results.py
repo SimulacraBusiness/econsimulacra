@@ -9,8 +9,8 @@ from econsimulacra.log_analyses import (
     PriceAnalyzer,
     RecordStore,
     StoreSalesAnalyzer,
+    StressActionAnalyzer,
     StressAnalyzer,
-    TopicAnalyzer,
     load_from_file,
 )
 
@@ -23,22 +23,21 @@ if __name__ == "__main__":
             StoreSalesAnalyzer(),
             ItemSalesAnalyzer(),
             PriceAnalyzer(),
+            StressActionAnalyzer(exclude_agent_ids=[30, 31]),
             StressAnalyzer(exclude_agent_ids=[30, 31]),
-            TopicAnalyzer(exclude_agent_ids=[31]),
-            TopicAnalyzer(is_inner_thought=True, exclude_agent_ids=[31]),
             ConsumerClusterAnalyzer(
-                window_size=12,
-                k_candidates=(2, 4, 6, 8, 10, 20, 30),
+                window_size=24,
+                k_candidates=(2, 4, 6, 8, 10),
                 exclude_items=("Yen",),
                 is_consumption=True,
                 normalize=True,
             ),
-            MoveDistanceAnalyzer(),
+            MoveDistanceAnalyzer(window_size=4),
         ]
     )
-    stores = RecordStore(load_from_file("log_gpt-oss-120b_42.txt"))
+    store = RecordStore(load_from_file("log_gpt-oss-120b/42.txt"))
     results = manager.run_all(
-        stores,
+        store,
         render_summary=True,
-        figs_save_path="results_gpt-oss-120b_42",
+        figs_save_path="results/gpt-oss-120b/42",
     )
