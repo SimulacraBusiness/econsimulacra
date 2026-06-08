@@ -9,7 +9,14 @@ import uuid
 from pathlib import Path
 from typing import Any
 
-from fastapi import FastAPI, File, HTTPException, UploadFile, WebSocket, WebSocketDisconnect
+from fastapi import (
+    FastAPI,
+    File,
+    HTTPException,
+    UploadFile,
+    WebSocket,
+    WebSocketDisconnect,
+)
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
@@ -30,7 +37,9 @@ SESSION_TTL = 3600  # 1 hour
 
 def _cleanup_sessions() -> None:
     now = time.time()
-    expired = [sid for sid, s in _sessions.items() if now - s["created_at"] > SESSION_TTL]
+    expired = [
+        sid for sid, s in _sessions.items() if now - s["created_at"] > SESSION_TTL
+    ]
     for sid in expired:
         del _sessions[sid]
 
@@ -49,8 +58,7 @@ def _get_steps(session_id: str | None) -> tuple[dict[int, list], int]:
 
 # ── Default log (optional) ───────────────────────────────────────────────────
 _DEFAULT_LOG_PATH = (
-    Path(__file__).parent.parent.parent
-    / "examples/vllm/log_gpt-oss-120b/42.txt"
+    Path(__file__).parent.parent.parent / "examples/vllm/log_gpt-oss-120b/42.txt"
 )
 
 
@@ -77,8 +85,10 @@ if _DEFAULT_LOG_PATH.exists():
     with open(_DEFAULT_LOG_PATH, encoding="utf-8") as _f:
         _DEFAULT_STEPS = _parse_log(_f.read())
     _default_max = max((k for k in _DEFAULT_STEPS if k >= 0), default=0)
-    print(f"Default log: {_default_max + 1} steps, "
-          f"{sum(len(v) for v in _DEFAULT_STEPS.values())} records")
+    print(
+        f"Default log: {_default_max + 1} steps, "
+        f"{sum(len(v) for v in _DEFAULT_STEPS.values())} records"
+    )
 else:
     print("No default log found — upload-only mode.")
 
@@ -99,7 +109,7 @@ def _build_metadata(steps: dict[int, list], max_step: int) -> dict[str, Any]:
                 "is_household": r["agent_type"] == "LLMAgent",
                 "wealth": r.get("wealth", 0),
                 "inventory": {
-                    k[len("inventory_"):]: v
+                    k[len("inventory_") :]: v
                     for k, v in r.items()
                     if k.startswith("inventory_")
                 },
@@ -216,7 +226,9 @@ async def replay(websocket: WebSocket, session_id: str | None = None) -> None:
 
             step = current_step[0]
             if step > max_step:
-                await websocket.send_json({"done": True, "time_step": step, "records": []})
+                await websocket.send_json(
+                    {"done": True, "time_step": step, "records": []}
+                )
                 break
 
             records = steps.get(step, [])
