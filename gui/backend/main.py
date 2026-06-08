@@ -57,9 +57,7 @@ def _get_steps(session_id: str | None) -> tuple[dict[int, list], int]:
 
 
 # ── Default log (optional) ───────────────────────────────────────────────────
-_DEFAULT_LOG_PATH = (
-    Path(__file__).parent.parent.parent / "examples/vllm/log_gpt-oss-120b/42.txt"
-)
+_DEFAULT_LOG_PATH = Path(__file__).parent.parent / "demo_log.txt"
 
 
 def _parse_log(text: str) -> dict[int, list[dict[str, Any]]]:
