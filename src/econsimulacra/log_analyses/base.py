@@ -110,7 +110,8 @@ class AnalyzerBase(ABC, Generic[T, U]):
         console: Optional[Console] = None,
     ) -> None:
         """Summarize results for multiple stores."""
-        pass
+        console = console or Console()
+        console.print(self.build_summary_all(results))
 
     def _prepare_time_axis(
         self,
@@ -431,7 +432,7 @@ class AnalysisManager:
                 if analyzer.name not in individual_results:
                     individual_results[analyzer.name] = []
                 individual_results[analyzer.name].append(result)
-            result: Any = analyzer.analyze_stores(stores)
+            result = analyzer.analyze_stores(stores)
             if render_summary:
                 analyzer.summarize_results_all(result)
             results[analyzer.name] = result
