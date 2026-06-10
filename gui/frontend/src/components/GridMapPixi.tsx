@@ -240,48 +240,63 @@ export function GridMapPixi() {
     }
   }, [agents, selectedAgentId]);
 
-  // order_reaction popup from the store
+  // order_reaction popup: aggregate by (agentId, item_name) per batch
   useEffect(() => {
     const popupLayer = popupLayerRef.current;
     if (!popupLayer) return;
 
+    // Collect newly arrived events
+    const fresh: typeof orderReactions = [];
     for (const ev of orderReactions) {
       if (seenEventsRef.current.has(ev.id)) continue;
       seenEventsRef.current.add(ev.id);
+      if (ev.agentId !== undefined && agents[ev.agentId]) fresh.push(ev);
+    }
+    if (fresh.length === 0) return;
 
-      if (ev.agentId !== undefined && agents[ev.agentId]) {
-        const sprite = spritesRef.current.get(ev.agentId);
-        const base = cellXY(agents[ev.agentId].pos);
-        const px = sprite?.x ?? base.x;
-        const py = (sprite?.y ?? base.y) - 26;
-
-        const amt = ev.raw.accept_amount as number ?? "";
-        const item = String(ev.raw.item_name ?? "?");
-        const label = `${item} x${amt}`;
-
-        const bubble = new PIXI.Container();
-
-        const labelText = new PIXI.Text(label, {
-          fontSize: 11,
-          fill: 0xffffff,
-          fontFamily: "sans-serif",
-        });
-        labelText.anchor.set(0.5, 0.5);
-
-        const bw = labelText.width + 16;
-        const bh = labelText.height + 8;
-        const bgRect = new PIXI.Graphics();
-        bgRect.beginFill(0x0a1628, 0.93);
-        bgRect.lineStyle(1, 0x94a3b8, 0.3);
-        bgRect.drawRoundedRect(-bw / 2, -bh / 2, bw, bh, 8);
-        bgRect.endFill();
-
-        bubble.addChild(bgRect);
-        bubble.addChild(labelText);
-        bubble.x = px;
-        bubble.y = py;
-        popupLayer.addChild(bubble);
+    // Group by (agentId, item_name) and sum accept_amount
+    const groups = new Map<string, { ev: (typeof fresh)[0]; total: number }>();
+    for (const ev of fresh) {
+      const item = String(ev.raw.item_name ?? "?");
+      const key = `${ev.agentId}:${item}`;
+      if (groups.has(key)) {
+        groups.get(key)!.total += (ev.raw.accept_amount as number) || 0;
+      } else {
+        groups.set(key, { ev, total: (ev.raw.accept_amount as number) || 0 });
       }
+    }
+
+    // One popup per group
+    for (const { ev, total } of groups.values()) {
+      const item = String(ev.raw.item_name ?? "?");
+      const label = `${item} x${total}`;
+
+      const sprite = spritesRef.current.get(ev.agentId!);
+      const base = cellXY(agents[ev.agentId!].pos);
+      const px = sprite?.x ?? base.x;
+      const py = (sprite?.y ?? base.y) - 26;
+
+      const bubble = new PIXI.Container();
+      const labelText = new PIXI.Text(label, {
+        fontSize: 11,
+        fill: 0xffffff,
+        fontFamily: "sans-serif",
+      });
+      labelText.anchor.set(0.5, 0.5);
+
+      const bw = labelText.width + 16;
+      const bh = labelText.height + 8;
+      const bgRect = new PIXI.Graphics();
+      bgRect.beginFill(0x0a1628, 0.93);
+      bgRect.lineStyle(1, 0x94a3b8, 0.3);
+      bgRect.drawRoundedRect(-bw / 2, -bh / 2, bw, bh, 8);
+      bgRect.endFill();
+
+      bubble.addChild(bgRect);
+      bubble.addChild(labelText);
+      bubble.x = px;
+      bubble.y = py;
+      popupLayer.addChild(bubble);
     }
   }, [orderReactions, agents]);
 
@@ -330,7 +345,7 @@ export function GridMapPixi() {
         onClick={handleClick}
         style={{ cursor: "pointer" }}
       >
-        <div ref={mountRef} />
+        <div ref={mountRef} style={{ display: "contents" }} />
       </div>
       <div className="flex flex-wrap gap-x-3 gap-y-1 px-3 py-1.5 text-xs text-slate-500 border-t border-white/6">
         <span>😊 calm</span>
