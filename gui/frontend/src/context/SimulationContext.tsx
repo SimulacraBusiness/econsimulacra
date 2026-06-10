@@ -24,6 +24,7 @@ interface SimCtx {
   prices: Record<string, number>;
   events: EventEntry[];
   orderReactions: EventEntry[];
+  tweetEvents: EventEntry[];
   socialEdges: SocialEdge[];
   macroHistory: MacroDataPoint[];
   currentStep: number;
@@ -105,6 +106,7 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
   const [prices, setPrices] = useState<Record<string, number>>({});
   const [events, setEvents] = useState<EventEntry[]>([]);
   const [orderReactions, setOrderReactions] = useState<EventEntry[]>([]);
+  const [tweetEvents, setTweetEvents] = useState<EventEntry[]>([]);
   const [socialEdges, setSocialEdges] = useState<SocialEdge[]>([]);
   const [macroHistory, setMacroHistory] = useState<MacroDataPoint[]>([]);
   const [currentStep, setCurrentStep] = useState(0);
@@ -193,6 +195,7 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
     setPrices({});
     setEvents([]);
     setOrderReactions([]);
+    setTweetEvents([]);
     setSocialEdges([]);
     setMacroHistory([]);
     setCurrentStep(0);
@@ -405,6 +408,10 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
         if (orders.length) {
           setOrderReactions((prev) => [...orders, ...prev].slice(0, 50));
         }
+        const tweets = newEvents.filter((e) => e.type === "tweet");
+        if (tweets.length) {
+          setTweetEvents((prev) => [...tweets, ...prev].slice(0, 100));
+        }
       }
 
       if (edgePatch.add.length || edgePatch.remove.length) {
@@ -467,6 +474,7 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
         prices,
         events,
         orderReactions,
+        tweetEvents,
         socialEdges,
         macroHistory,
         currentStep,
