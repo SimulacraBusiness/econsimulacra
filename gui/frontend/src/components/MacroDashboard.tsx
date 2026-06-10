@@ -96,8 +96,13 @@ export function MacroDashboard() {
   const numSleeping = households.filter((a) => a.isSleeping).length;
   const numActive = households.length - numSleeping;
 
+  const hasCalTime = macroHistory.length > 0 && !!macroHistory[0].time;
+  const xKey = hasCalTime ? "time" : "step";
+  const xFmt = hasCalTime ? (t: string) => t.slice(11, 16) : undefined;
+
   const priceHistory = macroHistory.map((d) => ({
     step: d.step,
+    time: d.time,
     ...items.reduce((acc, item) => {
       acc[item] = d.prices[item] ?? null;
       return acc;
@@ -163,7 +168,7 @@ export function MacroDashboard() {
           <ResponsiveContainer width="100%" height={120}>
             <LineChart data={macroHistory} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
-              <XAxis dataKey="step" tick={{ fill: "#475569", fontSize: 9 }} tickLine={false} axisLine={false} />
+              <XAxis dataKey={xKey} tickFormatter={xFmt} tick={{ fill: "#475569", fontSize: 9 }} tickLine={false} axisLine={false} />
               <YAxis tickFormatter={tickFmt} tick={{ fill: "#475569", fontSize: 9 }} tickLine={false} axisLine={false} width={38} />
               <Tooltip {...TOOLTIP_STYLE} formatter={(v: number) => [`¥${v.toLocaleString()}`, "Avg Wealth"]} />
               <Line
@@ -190,7 +195,7 @@ export function MacroDashboard() {
           <ResponsiveContainer width="100%" height={150}>
             <LineChart data={priceHistory} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
-              <XAxis dataKey="step" tick={{ fill: "#475569", fontSize: 9 }} tickLine={false} axisLine={false} />
+              <XAxis dataKey={xKey} tickFormatter={xFmt} tick={{ fill: "#475569", fontSize: 9 }} tickLine={false} axisLine={false} />
               <YAxis tickFormatter={tickFmt} tick={{ fill: "#475569", fontSize: 9 }} tickLine={false} axisLine={false} width={38} />
               <Tooltip {...TOOLTIP_STYLE} formatter={(v: number, name: string) => [`¥${v?.toLocaleString() ?? "—"}`, name]} />
               <Legend wrapperStyle={{ fontSize: 9, color: "#64748b" }} />
@@ -215,7 +220,7 @@ export function MacroDashboard() {
         <ChartSection title="Activity per Step (last 40)">
           <ResponsiveContainer width="100%" height={100}>
             <BarChart data={macroHistory.slice(-40)} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
-              <XAxis dataKey="step" tick={{ fill: "#475569", fontSize: 9 }} tickLine={false} axisLine={false} />
+              <XAxis dataKey={xKey} tickFormatter={xFmt} tick={{ fill: "#475569", fontSize: 9 }} tickLine={false} axisLine={false} />
               <YAxis tick={{ fill: "#475569", fontSize: 9 }} tickLine={false} axisLine={false} width={24} />
               <Tooltip {...TOOLTIP_STYLE} />
               <defs>

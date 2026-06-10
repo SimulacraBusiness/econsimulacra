@@ -1,10 +1,29 @@
 import { useEffect, useRef, useCallback } from "react";
+import type { AgentState } from "../types";
 import { useSimulation } from "../context/SimulationContext";
 
-const W = 320;
-const H = 320;
-const NODE_R = 6;
-const STORE_R = 10;
+const W = 520;
+const H = 520;
+const NODE_R = 10;
+const STORE_R = 14;
+const MARGIN = 18;
+const EMOJI_FONT = "Apple Color Emoji,Segoe UI Emoji,Noto Color Emoji,sans-serif";
+
+function avgStress(agent: AgentState): number {
+  const vals = Object.values(agent.stress).map((s) => s.value);
+  return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
+}
+
+function nodeEmoji(agent: AgentState): string {
+  if (!agent.is_household)
+    return agent.agent_type === "DiscountRestaurant" ? "🍕" : "🏪";
+  if (agent.isSleeping) return "😴";
+  const s = avgStress(agent);
+  if (s <= 25) return "😊";
+  if (s <= 50) return "😐";
+  if (s <= 75) return "😟";
+  return "😫";
+}
 
 interface Vec { x: number; y: number }
 
@@ -14,9 +33,9 @@ function applyForces(
   agentIds: number[],
   alpha: number
 ) {
-  const REPEL = 2400;
-  const ATTRACT = 0.11;
-  const CENTER = 0.025;
+  const REPEL = 6500;
+  const ATTRACT = 0.09;
+  const CENTER = 0.02;
   const cx = W / 2, cy = H / 2;
 
   for (let i = 0; i < agentIds.length; i++) {
@@ -45,8 +64,8 @@ function applyForces(
     const p = positions.get(id)!;
     p.x += (cx - p.x) * CENTER * alpha;
     p.y += (cy - p.y) * CENTER * alpha;
-    p.x = Math.max(NODE_R + 4, Math.min(W - NODE_R - 4, p.x));
-    p.y = Math.max(NODE_R + 4, Math.min(H - NODE_R - 4, p.y));
+    p.x = Math.max(MARGIN, Math.min(W - MARGIN, p.x));
+    p.y = Math.max(MARGIN, Math.min(H - MARGIN, p.y));
   }
 }
 
@@ -81,10 +100,10 @@ export function SocialNetwork() {
 
     ctx.clearRect(0, 0, W, H);
 
-    // Background gradient matching overall theme
+    // Background
     const bg = ctx.createLinearGradient(0, 0, W, H);
-    bg.addColorStop(0, "#07101f");
-    bg.addColorStop(1, "#050d1a");
+    bg.addColorStop(0, "#111e33");
+    bg.addColorStop(1, "#0c1829");
     ctx.fillStyle = bg;
     ctx.fillRect(0, 0, W, H);
 
@@ -107,76 +126,55 @@ export function SocialNetwork() {
       const ty = b.y - (dy / d) * (NODE_R + 4);
 
       const grad = ctx.createLinearGradient(a.x, a.y, tx, ty);
-      grad.addColorStop(0, "rgba(99,102,241,0.15)");
-      grad.addColorStop(1, "rgba(6,182,212,0.3)");
+      grad.addColorStop(0, "rgba(129,140,248,0.5)");
+      grad.addColorStop(1, "rgba(6,182,212,0.75)");
       ctx.beginPath();
       ctx.moveTo(a.x, a.y);
       ctx.lineTo(tx, ty);
       ctx.strokeStyle = grad;
-      ctx.lineWidth = 1;
+      ctx.lineWidth = 1.3;
       ctx.stroke();
 
       // Arrowhead
       const angle = Math.atan2(dy, dx);
       ctx.beginPath();
       ctx.moveTo(tx, ty);
-      ctx.lineTo(tx - 5 * Math.cos(angle - 0.4), ty - 5 * Math.sin(angle - 0.4));
-      ctx.lineTo(tx - 5 * Math.cos(angle + 0.4), ty - 5 * Math.sin(angle + 0.4));
+      ctx.lineTo(tx - 7 * Math.cos(angle - 0.4), ty - 7 * Math.sin(angle - 0.4));
+      ctx.lineTo(tx - 7 * Math.cos(angle + 0.4), ty - 7 * Math.sin(angle + 0.4));
       ctx.closePath();
-      ctx.fillStyle = "rgba(6,182,212,0.4)";
+      ctx.fillStyle = "rgba(6,182,212,0.85)";
       ctx.fill();
     }
 
-    // Nodes
+    // Nodes — emoji icons
     for (const id of agentIds) {
       const p = posRef.current.get(id);
       if (!p) continue;
       const a = agents[id];
       if (!a) continue;
-      const r = a.is_household ? NODE_R : STORE_R;
       const isSelected = id === selectedAgentId;
+      const fontSize = a.is_household ? 20 : 26;
 
       // Selection halo
       if (isSelected) {
         ctx.save();
         ctx.shadowColor = "#fbbf24";
-        ctx.shadowBlur = 14;
+        ctx.shadowBlur = 20;
         ctx.beginPath();
-        ctx.arc(p.x, p.y, r + 5, 0, Math.PI * 2);
-        ctx.strokeStyle = "rgba(251,191,36,0.6)";
-        ctx.lineWidth = 2;
+        ctx.arc(p.x, p.y, fontSize / 2 + 7, 0, Math.PI * 2);
+        ctx.strokeStyle = "rgba(251,191,36,0.85)";
+        ctx.lineWidth = 2.5;
         ctx.stroke();
         ctx.restore();
       }
 
-      // Node body
+      // Emoji
       ctx.save();
-      if (a.is_household) {
-        const hue = (id * 67) % 360;
-        ctx.shadowColor = `hsla(${hue},80%,60%,0.6)`;
-        ctx.shadowBlur = 8;
-        const grad = ctx.createRadialGradient(p.x - 1, p.y - 1, 0, p.x, p.y, r);
-        grad.addColorStop(0, `hsla(${hue},80%,78%,1)`);
-        grad.addColorStop(1, `hsla(${hue},65%,50%,1)`);
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
-        ctx.fillStyle = grad;
-        ctx.fill();
-      } else {
-        const isRest = a.agent_type === "DiscountRestaurant";
-        ctx.shadowColor = isRest ? "#f97316" : "#22c55e";
-        ctx.shadowBlur = 10;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
-        const grad = ctx.createRadialGradient(p.x - 2, p.y - 2, 0, p.x, p.y, r);
-        if (isRest) {
-          grad.addColorStop(0, "#fb923c"); grad.addColorStop(1, "#dc2626");
-        } else {
-          grad.addColorStop(0, "#4ade80"); grad.addColorStop(1, "#16a34a");
-        }
-        ctx.fillStyle = grad;
-        ctx.fill();
-      }
+      ctx.font = `${fontSize}px ${EMOJI_FONT}`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.globalAlpha = a.isSleeping ? 0.4 : 1.0;
+      ctx.fillText(nodeEmoji(a), p.x, p.y);
       ctx.restore();
     }
 
@@ -202,7 +200,7 @@ export function SocialNetwork() {
       if (!p) continue;
       const d = Math.hypot(mx - p.x, my - p.y);
       const a = agents[id];
-      const r = (a?.is_household ? NODE_R : STORE_R) + 5;
+      const r = a?.is_household ? 15 : 18;
       if (d < r && d < minDist) { minDist = d; closest = id; }
     }
     setSelectedAgentId(closest);
@@ -231,6 +229,17 @@ export function SocialNetwork() {
           className="cursor-pointer rounded-lg"
           style={{ maxWidth: "100%", maxHeight: "100%" }}
         />
+      </div>
+      <div className="flex flex-wrap gap-x-3 gap-y-1 px-3 py-1.5 text-xs text-slate-500 border-t border-white/6">
+        <span>😊 calm</span>
+        <span>😐 normal</span>
+        <span>😟 stressed</span>
+        <span>😫 max</span>
+        <span>😴 sleeping</span>
+        <span className="ml-auto flex gap-3">
+          <span>🏪 Retailer</span>
+          <span>🍕 Restaurant</span>
+        </span>
       </div>
     </div>
   );

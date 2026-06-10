@@ -12,7 +12,7 @@ const STATUS_STYLES: Record<string, string> = {
 export function Toolbar() {
   const {
     isPlaying, play, pause, speed, setSpeed,
-    currentStep, totalSteps, seek, status, reset,
+    currentStep, currentTime, totalSteps, seek, status, reset,
   } = useSimulation();
 
   const progress = totalSteps > 0 ? (currentStep / totalSteps) * 100 : 0;
@@ -89,7 +89,9 @@ export function Toolbar() {
           style={{ accentColor: "#818cf8" }}
         />
         <span className="text-xs text-slate-500 whitespace-nowrap font-mono">
-          {String(currentStep).padStart(3, " ")} / {totalSteps}
+          {currentTime
+            ? currentTime.slice(0, 16)
+            : `${String(currentStep).padStart(3, " ")} / ${totalSteps}`}
         </span>
       </div>
 
