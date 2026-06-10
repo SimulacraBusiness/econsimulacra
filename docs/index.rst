@@ -27,6 +27,7 @@ of agents.
    guide/quickstart
    guide/configuration
    guide/architecture
+   guide/demo
 
 .. toctree::
    :maxdepth: 2

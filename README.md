@@ -30,6 +30,20 @@ By combining agent-based modeling with LLM reasoning, EconSimulacra allows resea
 - ⚡ Parallel simulation execution
 - 🧩 Modular architecture for extensibility
 
+# Live Demo
+
+An interactive demo is available at **https://econsimulacra.onrender.com** — no installation or API key required.
+
+The demo replays a pre-recorded simulation log in your browser.  You can also upload your own `.txt` log file to visualize any simulation you have run locally.
+
+| Panel | Description |
+|-------|-------------|
+| 🗺 Grid Map | Agents move on a 10 × 10 grid. Emoji icons reflect stress level (😊😐😟😫) or sleep state (😴). Transaction popups appear above stores when orders are completed. |
+| 🕸 Social Network | Force-directed graph of follow relationships between agents. |
+| 📊 Macro Dashboard | Time-series charts of average wealth, item prices, and activity per step. |
+| Agent Inspector | Detailed state of the selected agent (wealth, inventory, stress, last thought/tweet). |
+| Event Feed | Scrolling stream of simulation events. |
+
 # Documentations & User Guides
 
 Documentations are available on [GitHub Pages](https://simulacrabusiness.github.io/econsimulacra/).
