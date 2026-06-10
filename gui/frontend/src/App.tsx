@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { SimulationProvider, useSimulation } from "./context/SimulationContext";
 import { Toolbar } from "./components/Toolbar";
-import { GridMap } from "./components/GridMap";
+import { GridMapPixi } from "./components/GridMapPixi";
 import { EventFeed } from "./components/EventFeed";
 import { AgentInspector } from "./components/AgentInspector";
 import { MacroDashboard } from "./components/MacroDashboard";
@@ -53,7 +53,7 @@ function SimulationView() {
             <TabButton active={tab === "dashboard"} onClick={() => setTab("dashboard")}>📊 Macro Dashboard</TabButton>
           </div>
           <div className="flex-1 min-h-0 rounded-xl glass overflow-hidden">
-            {tab === "map" && <GridMap />}
+            {tab === "map" && <GridMapPixi />}
             {tab === "network" && <SocialNetwork />}
             {tab === "dashboard" && <MacroDashboard />}
           </div>

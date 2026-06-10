@@ -23,9 +23,11 @@ interface SimCtx {
   agents: Record<number, AgentState>;
   prices: Record<string, number>;
   events: EventEntry[];
+  orderReactions: EventEntry[];
   socialEdges: SocialEdge[];
   macroHistory: MacroDataPoint[];
   currentStep: number;
+  currentTime: string;
   totalSteps: number;
   isPlaying: boolean;
   speed: number;
@@ -102,9 +104,11 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
   const [agents, setAgents] = useState<Record<number, AgentState>>({});
   const [prices, setPrices] = useState<Record<string, number>>({});
   const [events, setEvents] = useState<EventEntry[]>([]);
+  const [orderReactions, setOrderReactions] = useState<EventEntry[]>([]);
   const [socialEdges, setSocialEdges] = useState<SocialEdge[]>([]);
   const [macroHistory, setMacroHistory] = useState<MacroDataPoint[]>([]);
   const [currentStep, setCurrentStep] = useState(0);
+  const [currentTime, setCurrentTime] = useState<string>("");
   const [totalSteps, setTotalSteps] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [speed, setSpeedState] = useState(3);
@@ -126,6 +130,8 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
   agentsRef.current = agents;
   const pricesRef = useRef(prices);
   pricesRef.current = prices;
+  const statusRef = useRef(status);
+  statusRef.current = status;
 
   const send = useCallback((msg: object) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
@@ -155,6 +161,11 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
     (step: number) => {
       setCurrentStep(step);
       send({ action: "seek", step });
+      // done 状態からシークで復帰
+      if (statusRef.current === "done") {
+        setStatus("connected");
+        setIsPlaying(true);
+      }
     },
     [send]
   );
@@ -181,9 +192,11 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
     setAgents({});
     setPrices({});
     setEvents([]);
+    setOrderReactions([]);
     setSocialEdges([]);
     setMacroHistory([]);
     setCurrentStep(0);
+    setCurrentTime("");
     setTotalSteps(0);
     setIsPlaying(false);
     setSelectedAgentId(null);
@@ -367,6 +380,8 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
         }
       }
 
+      if (timeLabel) setCurrentTime(timeLabel);
+
       // Apply patches
       setAgents((prev) => {
         const next = { ...prev };
@@ -386,6 +401,10 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
           const combined = [...newEvents, ...prev];
           return combined.slice(0, MAX_EVENTS);
         });
+        const orders = newEvents.filter((e) => e.type === "order_reaction");
+        if (orders.length) {
+          setOrderReactions((prev) => [...orders, ...prev].slice(0, 50));
+        }
       }
 
       if (edgePatch.add.length || edgePatch.remove.length) {
@@ -447,9 +466,11 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
         agents,
         prices,
         events,
+        orderReactions,
         socialEdges,
         macroHistory,
         currentStep,
+        currentTime,
         totalSteps,
         isPlaying,
         speed,

@@ -206,6 +206,7 @@ async def replay(websocket: WebSocket, session_id: str | None = None) -> None:
                     paused = False
                 elif action == "seek":
                     current_step[0] = int(msg.get("step", current_step[0]))
+                    paused = False  # seek は常に再生再開
                 elif action == "set_speed":
                     speed = max(0.1, float(msg.get("speed", speed)))
             except Exception:
@@ -217,6 +218,8 @@ async def replay(websocket: WebSocket, session_id: str | None = None) -> None:
     try:
         await websocket.send_json({"time_step": -1, "records": steps.get(-1, [])})
 
+        done_notified = False
+
         while not stop_event.is_set():
             if paused:
                 await asyncio.sleep(0.05)
@@ -224,11 +227,15 @@ async def replay(websocket: WebSocket, session_id: str | None = None) -> None:
 
             step = current_step[0]
             if step > max_step:
-                await websocket.send_json(
-                    {"done": True, "time_step": step, "records": []}
-                )
-                break
+                if not done_notified:
+                    await websocket.send_json(
+                        {"done": True, "time_step": step, "records": []}
+                    )
+                    done_notified = True
+                paused = True  # seek が来るまで待機（ループは維持）
+                continue
 
+            done_notified = False  # シーク後に再生再開したらリセット
             records = steps.get(step, [])
             await websocket.send_json({"time_step": step, "records": records})
             current_step[0] += 1
