@@ -35,6 +35,7 @@ function TabButton({
 
 function SimulationView() {
   const [tab, setTab] = useState<Tab>("map");
+  const [showFeed, setShowFeed] = useState(true);
 
   return (
     <>
@@ -61,11 +62,25 @@ function SimulationView() {
 
         {/* Right sidebar */}
         <div className="flex flex-col w-72 flex-none min-h-0 gap-2">
-          <div className="flex-1 min-h-0 rounded-xl glass overflow-hidden">
+          <div className={`min-h-0 rounded-xl glass overflow-hidden ${showFeed ? "flex-1" : "flex-none"}`}>
             <AgentInspector />
           </div>
-          <div className="flex-1 min-h-0 rounded-xl glass overflow-hidden">
-            <EventFeed />
+          <div className={`rounded-xl glass overflow-hidden transition-all duration-200 ${showFeed ? "flex-1 min-h-0" : "flex-none"}`}>
+            <div className="flex items-center justify-between px-3 py-2 border-b border-white/8">
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Event Feed</span>
+              <button
+                onClick={() => setShowFeed((v) => !v)}
+                className="text-xs text-slate-500 hover:text-slate-300 px-1.5 py-0.5 rounded hover:bg-white/8 transition-all"
+                title={showFeed ? "Hide Event Feed" : "Show Event Feed"}
+              >
+                {showFeed ? "▾ hide" : "▸ show"}
+              </button>
+            </div>
+            {showFeed && (
+              <div className="h-[calc(100%-33px)] overflow-hidden">
+                <EventFeed hideHeader />
+              </div>
+            )}
           </div>
         </div>
       </div>
