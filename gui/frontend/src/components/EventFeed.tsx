@@ -17,7 +17,7 @@ const TYPE_META: Record<string, { icon: string; color: string; bg: string }> = {
   proposal_reaction:{ icon: "📋",color: "text-rose-300",   bg: "" },
 };
 
-export function EventFeed() {
+export function EventFeed({ hideHeader }: { hideHeader?: boolean }) {
   const { events, setSelectedAgentId, selectedAgentId } = useSimulation();
   const bottomRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -42,18 +42,20 @@ export function EventFeed() {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="text-xs text-slate-500 px-3 py-2 border-b border-white/8 font-semibold uppercase tracking-wider flex items-center justify-between">
-        <span className="flex items-center gap-2">
-          <span
-            className="w-1.5 h-1.5 rounded-full animate-pulse"
-            style={{ background: "linear-gradient(135deg,#818cf8,#06b6d4)" }}
-          />
-          Event Feed
-        </span>
-        <span className="text-slate-600 font-normal normal-case tracking-normal">
-          {events.length} recent
-        </span>
-      </div>
+      {!hideHeader && (
+        <div className="text-xs text-slate-500 px-3 py-2 border-b border-white/8 font-semibold uppercase tracking-wider flex items-center justify-between">
+          <span className="flex items-center gap-2">
+            <span
+              className="w-1.5 h-1.5 rounded-full animate-pulse"
+              style={{ background: "linear-gradient(135deg,#818cf8,#06b6d4)" }}
+            />
+            Event Feed
+          </span>
+          <span className="text-slate-600 font-normal normal-case tracking-normal">
+            {events.length} recent
+          </span>
+        </div>
+      )}
       <div
         ref={containerRef}
         className="flex-1 overflow-y-auto text-xs min-h-0"
