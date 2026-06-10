@@ -730,16 +730,6 @@ class Environment(Generic[ObsT]):
             is_sleeping: bool = sleep_manager.get_sleep_status(agent_id=agent_id)
             if is_sleeping:
                 return
-        where_to_move: Optional[tuple[int, ...] | str] = action_dic.get("move", None)
-        move_allowed: bool = self._check_move(where_to_move=where_to_move)
-        if not move_allowed:
-            self.invalid_action_dic["move"] += 1
-            where_to_move = None
-        if agent_id in self.household_ids:
-            self._move(
-                agent_id=agent_id,
-                where_to_move=where_to_move,
-            )
         consumptions: list[dict[str, Any]] = action_dic.get("consumptions", [])
         valid_consumptions: list[dict[str, Any]] = self._check_consumptions(
             agent_id=agent_id, consumptions=consumptions
@@ -809,6 +799,16 @@ class Environment(Generic[ObsT]):
             follow_agent_id=valid_follow_agent_id,
             unfollow_agent_id=valid_unfollow_agent_id,
         )
+        where_to_move: Optional[tuple[int, ...] | str] = action_dic.get("move", None)
+        move_allowed: bool = self._check_move(where_to_move=where_to_move)
+        if not move_allowed:
+            self.invalid_action_dic["move"] += 1
+            where_to_move = None
+        if agent_id in self.household_ids:
+            self._move(
+                agent_id=agent_id,
+                where_to_move=where_to_move,
+            )
 
     def _check_sleep_duration(
         self, agent_id: int, sleep_duration: Optional[str | int]
@@ -1109,6 +1109,7 @@ class Environment(Generic[ObsT]):
             - item_name in each order cannot be the cash.
             - item_amount in each order must be positive
             - The agent must have enough cash to buy all of the items.
+            - The agent must be located in the same cell as the counterparty agent to place the order.
         """
         valid_orders: list[dict[str, Any]] = []
         agent: Agent = self.agent_id2agent[agent_id]
@@ -1129,6 +1130,10 @@ class Environment(Generic[ObsT]):
             if item_name not in self.item_name2item:
                 continue
             if item_name == self.cash_name:
+                continue
+            if agent_id not in self.grid_space.get_colocated_agents(
+                agent_id=counterparty_id
+            ):
                 continue
             item_amount: float | int = order_dic.get("item_amount", 0)
             if item_amount <= 0:

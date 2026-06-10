@@ -411,6 +411,9 @@ class TestEnvironment:
         retailer_yen_amount: int = env.agent_id2agent[retailer_id].inventory_dic["Yen"]
         household1: Agent = env.agent_id2agent[household_id1]
         retailer: Agent = env.agent_id2agent[retailer_id]
+        move_action_dic: dict[str, Any] = {"move": "DummyRetailer"}
+        for _ in range(10):
+            env.apply_action_to_env(agent_id=household_id0, action_dic=move_action_dic)
         action_dic0: dict[str, Any] = {
             "move": "DummyRetailer",
             "consumptions": [{"item_name": "Rice", "item_amount": 2}],
@@ -421,6 +424,8 @@ class TestEnvironment:
             "follow": household_id1,
         }
         env.apply_action_to_env(agent_id=household_id0, action_dic=action_dic0)
+        for _ in range(10):
+            env.apply_action_to_env(agent_id=household_id1, action_dic=move_action_dic)
         action_dic1: dict[str, Any] = {
             "move": "DummyRetailer",
             "consumptions": [{"item_name": "Rice", "item_amount": 2}],
