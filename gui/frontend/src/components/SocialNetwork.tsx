@@ -69,14 +69,76 @@ function applyForces(
   }
 }
 
+interface Bubble { text: string; alpha: number }
+
+function drawTweetBubble(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  text: string,
+  alpha: number
+) {
+  const label = text.length > 28 ? text.slice(0, 27) + "…" : text;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.font = "10px sans-serif";
+  const tw = ctx.measureText(label).width;
+  const bw = tw + 16;
+  const bh = 20;
+  const bx = x - bw / 2;
+  const by = y - bh - 16;
+
+  // Rounded rect background
+  ctx.fillStyle = "rgba(255,255,255,0.95)";
+  ctx.strokeStyle = "rgba(99,102,241,0.7)";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.roundRect(bx, by, bw, bh, 5);
+  ctx.fill();
+  ctx.stroke();
+
+  // Tail
+  ctx.beginPath();
+  ctx.moveTo(x - 5, by + bh);
+  ctx.lineTo(x + 5, by + bh);
+  ctx.lineTo(x, by + bh + 7);
+  ctx.closePath();
+  ctx.fillStyle = "rgba(255,255,255,0.95)";
+  ctx.fill();
+  ctx.strokeStyle = "rgba(99,102,241,0.7)";
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // Text
+  ctx.fillStyle = "#1e293b";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(label, x, by + bh / 2);
+  ctx.restore();
+}
+
 export function SocialNetwork() {
-  const { agents, socialEdges, selectedAgentId, setSelectedAgentId } = useSimulation();
+  const { agents, socialEdges, selectedAgentId, setSelectedAgentId, tweetEvents } = useSimulation();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const posRef = useRef<Map<number, Vec>>(new Map());
   const rafRef = useRef<number>(0);
   const alphaRef = useRef(1.0);
+  const bubblesRef = useRef<Map<number, Bubble>>(new Map());
+  const seenTweetIdsRef = useRef<Set<number>>(new Set());
 
   const agentIds = Object.keys(agents).map(Number);
+
+  // Register tweet bubbles
+  useEffect(() => {
+    for (const ev of tweetEvents) {
+      if (seenTweetIdsRef.current.has(ev.id)) continue;
+      seenTweetIdsRef.current.add(ev.id);
+      if (ev.agentId !== undefined) {
+        const text = String(ev.raw.message ?? "");
+        bubblesRef.current.set(ev.agentId, { text, alpha: 1.0 });
+      }
+    }
+  }, [tweetEvents]);
 
   useEffect(() => {
     for (const id of agentIds) {
@@ -176,6 +238,15 @@ export function SocialNetwork() {
       ctx.globalAlpha = a.isSleeping ? 0.4 : 1.0;
       ctx.fillText(nodeEmoji(a), p.x, p.y);
       ctx.restore();
+    }
+
+    // Tweet bubbles — fade over time
+    for (const [id, bubble] of bubblesRef.current) {
+      const p = posRef.current.get(id);
+      if (!p) continue;
+      if (bubble.alpha <= 0) { bubblesRef.current.delete(id); continue; }
+      drawTweetBubble(ctx, p.x, p.y, bubble.text, bubble.alpha);
+      bubble.alpha -= 0.004;
     }
 
     rafRef.current = requestAnimationFrame(draw);

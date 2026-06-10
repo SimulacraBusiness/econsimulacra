@@ -138,8 +138,8 @@ export function GridMapPixi() {
       if (popupLayerRef.current) {
         for (let i = popupLayerRef.current.children.length - 1; i >= 0; i--) {
           const p = popupLayerRef.current.children[i] as PIXI.Container;
-          p.y -= 0.55;
-          p.alpha -= 0.007;
+          p.y -= 1.2;
+          p.alpha -= 0.022;
           if (p.alpha <= 0) popupLayerRef.current.removeChildAt(i);
         }
       }
