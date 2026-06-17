@@ -76,31 +76,34 @@ class OpenAIClient(LLMClient):
             dict[str, Any]: The parsed JSON response from the OpenAI API.
         """
         schema: dict[str, Any] = copy.deepcopy(self.json_schema)
+        use_temperature: bool = True
         for _ in range(self.max_retries):
             try:
+                # reasoning models (e.g. o-series, gpt-5.x) only accept the
+                # default temperature, so drop it after a temperature rejection
+                request: dict[str, Any] = {
+                    "model": self.model_name,
+                    "messages": [{"role": "user", "content": prompt}],
+                    "response_format": {
+                        "type": "json_schema",
+                        "json_schema": {
+                            "name": "agent_action",
+                            "strict": True,
+                            "schema": schema,
+                        },
+                    },
+                }
+                if use_temperature:
+                    request["temperature"] = self.temperature
                 async with self._sem:
                     response: ChatCompletion = (
-                        await self.client.chat.completions.create(
-                            model=self.model_name,
-                            temperature=self.temperature,
-                            messages=[
-                                {
-                                    "role": "user",
-                                    "content": prompt,
-                                }
-                            ],
-                            response_format={
-                                "type": "json_schema",
-                                "json_schema": {
-                                    "name": "agent_action",
-                                    "strict": True,
-                                    "schema": schema,
-                                },
-                            },
-                        )
+                        await self.client.chat.completions.create(**request)
                     )
                 break
             except BadRequestError as e:
+                if use_temperature:
+                    use_temperature = False
+                    continue
                 print(f"[BadRequestError] {e}")
                 return {}
             except RateLimitError as e:
