@@ -111,5 +111,5 @@ def save_response_record_from_chat_completion(
             record["prompt"] = prompt
             content: Optional[str] = response.choices[0].message.content
             record["response"] = content
-        with open(record_config.save_path, "w", encoding="utf-8") as f:
+        with open(record_config.save_path, "a", encoding="utf-8") as f:
             f.write(json.dumps(record, ensure_ascii=False) + "\n")
