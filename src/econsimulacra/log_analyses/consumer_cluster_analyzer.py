@@ -486,7 +486,7 @@ class ConsumerClusterAnalyzer(AnalyzerBase[ConsumerClusterResult, None]):
         )
         fig_cluster_counts: Figure
         ax_cluster_counts: Axes
-        fig_cluster_counts, ax_cluster_counts = plt.subplots(figsize=(12, 6))
+        fig_cluster_counts, ax_cluster_counts = plt.subplots(figsize=(8, 6))
         x = np.arange(len(times))
         bottom = np.zeros(len(times), dtype=float)
         for cluster_id in cluster_ids:
