@@ -6,9 +6,9 @@
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/SimulacraBusiness/econsimulacra/main/imgs/SimpleGridAnimator.gif" width="48%" />
-  <img src="https://raw.githubusercontent.com/SimulacraBusiness/econsimulacra/main/imgs/SimpleSocialAnimator.gif" width="48%" />
+  <img src="https://raw.githubusercontent.com/SimulacraBusiness/econsimulacra/main/imgs/econsimulacra_logo.png" width="80%" />
 </p>
+
 
 
 EconSimulacra is a simulation platform for studying complex socio-economic systems with large language model (LLM) agents. The framework enables researchers and practitioners to simulate:
