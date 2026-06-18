@@ -4,10 +4,21 @@ import json
 import pathlib
 import random
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Optional, Type
 
 from ..constant import DEFAULT_ACTION_JSON_SCHEMA
+from .llm_client_utils import modify_schema
+
+
+@dataclass
+class LLMRecordConfig:
+    """Configuration for recording LLM prompts and responses."""
+
+    save_path: Optional[str] = None
+    save_num_tokens: bool = False
+    save_prompt_response_pair: bool = False
 
 
 class LLMClient(ABC):
@@ -41,6 +52,9 @@ class LLMClient(ABC):
                 - "gridSpace": a list of two integers representing the dimensions of the grid space (optional, may be provided if modifySchema is True).
                 - "items": a list of item names available in the environment (optional, may be provided if modifySchema is True).
                 - "numAgents": the number of agents in the environment (optional, may be provided if modifySchema is True).
+                - "llmRecordSavePath": path to save the generated prompts (optional, for debugging purposes).
+                - "saveNumTokens": whether to save the number of tokens in the generated response (optional, default is False).
+                - "savePromptResponsePair": whether to save the prompt-response pair (optional, default is False).
                 - other model-specific parameters (e.g., for TransformersClient, "device", "dtype", "maxConcurrentGenerations", etc.).
             prng (random.Random, optional): An optional instance of random.Random for reproducible randomness.
                 If not provided, a new instance will be created.
@@ -108,60 +122,41 @@ class LLMClient(ABC):
             This method restricts the action space defined in the JSON schema
             based on the environment configuration.
         """
-        assert "properties" in json_schema
-        if "gridSpace" in config:
-            dim: int = len(config["gridSpace"])
-            max_coordinate: int = max(config["gridSpace"])
-            if "move" in json_schema["properties"]:
-                json_schema["properties"]["move"]["anyOf"][0]["items"]["minimum"] = 0
-                json_schema["properties"]["move"]["anyOf"][0]["items"]["maximum"] = (
-                    max_coordinate
+        return modify_schema(json_schema, config)
+
+    def _get_llm_record_config(self) -> LLMRecordConfig:
+        """Extract LLM record configuration from the main config.
+
+        Returns:
+            An instance of LLMRecordConfig containing the recording configuration.
+        """
+        save_path_str: Optional[str] = self.config.get("llmRecordSavePath")
+        if save_path_str is not None:
+            save_path: Path = pathlib.Path(save_path_str).resolve()
+            if not save_path.parent.exists():
+                save_path.parent.mkdir(parents=True, exist_ok=True)
+        save_num_tokens: bool = self.config.get("saveNumTokens", False)
+        if save_num_tokens and save_path_str is None:
+            raise ValueError(
+                "LLMClient: 'saveNumTokens' is set to True, "
+                "but 'llmRecordSavePath' is not provided."
+            )
+        save_prompt_response_pair: bool = self.config.get(
+            "savePromptResponsePair", False
+        )
+        if save_prompt_response_pair and save_path_str is None:
+            raise ValueError(
+                "LLMClient: 'savePromptResponsePair' is set to True, "
+                "but 'llmRecordSavePath' is not provided."
+            )
+        if save_path_str is not None:
+            if not save_num_tokens and not save_prompt_response_pair:
+                raise ValueError(
+                    "LLMClient: 'llmRecordSavePath' is provided, "
+                    "but neither 'saveNumTokens' nor 'savePromptResponsePair' is set to True."
                 )
-                json_schema["properties"]["move"]["anyOf"][0]["minItems"] = dim
-                json_schema["properties"]["move"]["anyOf"][0]["maxItems"] = dim
-        if "items" in config:
-            item_names: list[str] = list(config["items"])
-            if "consumptions" in json_schema["properties"]:
-                json_schema["properties"]["consumptions"]["items"]["properties"][
-                    "item_name"
-                ]["enum"] = item_names
-            if "orders" in json_schema["properties"]:
-                json_schema["properties"]["orders"]["items"]["properties"]["item_name"][
-                    "enum"
-                ] = item_names
-            if "proposals" in json_schema["properties"]:
-                json_schema["properties"]["proposals"]["items"]["properties"][
-                    "give_item_name"
-                ]["enum"] = item_names
-                json_schema["properties"]["proposals"]["items"]["properties"][
-                    "get_item_name"
-                ]["enum"] = item_names
-            if "set_prices" in json_schema["properties"]:
-                json_schema["properties"]["set_prices"]["items"]["properties"][
-                    "item_name"
-                ]["enum"] = item_names
-        if "numAgents" in config:
-            num_agents: int = config["numAgents"]
-            if "orders" in json_schema["properties"]:
-                json_schema["properties"]["orders"]["items"]["properties"][
-                    "counterparty_id"
-                ]["minimum"] = 0
-                json_schema["properties"]["orders"]["items"]["properties"][
-                    "counterparty_id"
-                ]["maximum"] = num_agents - 1
-            if "proposals" in json_schema["properties"]:
-                json_schema["properties"]["proposals"]["items"]["properties"][
-                    "responder_agent_id"
-                ]["minimum"] = 0
-                json_schema["properties"]["proposals"]["items"]["properties"][
-                    "responder_agent_id"
-                ]["maximum"] = num_agents - 1
-            if "follow" in json_schema["properties"]:
-                json_schema["properties"]["follow"]["anyOf"][0]["maximum"] = (
-                    num_agents - 1
-                )
-            if "unfollow" in json_schema["properties"]:
-                json_schema["properties"]["unfollow"]["anyOf"][0]["maximum"] = (
-                    num_agents - 1
-                )
-        return json_schema
+        return LLMRecordConfig(
+            save_path=save_path_str,
+            save_num_tokens=save_num_tokens,
+            save_prompt_response_pair=save_prompt_response_pair,
+        )
