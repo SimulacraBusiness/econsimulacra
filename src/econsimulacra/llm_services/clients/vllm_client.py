@@ -23,6 +23,7 @@ from openai import (
 from openai.types.chat import ChatCompletion
 
 from .base import LLMClient
+from .llm_client_utils import save_response_record_from_chat_completion
 
 
 class VLLMClient(LLMClient):
@@ -94,6 +95,10 @@ class VLLMClient(LLMClient):
                     Python module used to launch the vLLM server.
                 - vllmArgs (list[str]):
                     Additional command-line arguments passed directly to vLLM.
+                # Client-side configuration
+                - "llmRecordSavePath": path to save the generated prompts (optional, for debugging purposes).
+                - "saveNumTokens": whether to save the number of tokens in the generated response (optional, default is False).
+                - "savePromptResponsePair": whether to save the prompt-response pair (optional, default is False).
             prng: Optional pseudo-random number generator (not used in this client).
         """
         super().__init__(config, prng, registered_classes)
@@ -298,6 +303,11 @@ class VLLMClient(LLMClient):
                     raise ValueError(
                         f"VLLMClient: Expected JSON object in response, got: {parsed}"
                     )
+                save_response_record_from_chat_completion(
+                    response=response,
+                    prompt=prompt,
+                    record_config=self._get_llm_record_config(),
+                )
                 return cast(dict[str, Any], parsed)
 
             except BadRequestError as e:

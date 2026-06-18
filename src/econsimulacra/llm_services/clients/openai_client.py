@@ -16,7 +16,8 @@ from openai import (
 )
 from openai.types.chat import ChatCompletion
 
-from .base import LLMClient
+from .base import LLMClient, LLMRecordConfig
+from .llm_client_utils import save_response_record_from_chat_completion
 
 
 class OpenAIClient(LLMClient):
@@ -42,6 +43,9 @@ class OpenAIClient(LLMClient):
                 - "numAgents": the number of agents in the environment (optional, may be provided if modifySchema is True).
                 - "timeOut": timeout for API calls in seconds (optional, default is 30).
                 - "maxRetries": max retries for transient failures (optional, default is 3).
+                - "llmRecordSavePath": path to save the generated prompts (optional, for debugging purposes).
+                - "saveNumTokens": whether to save the number of tokens in the generated response (optional, default is False).
+                - "savePromptResponsePair": whether to save the prompt-response pair (optional, default is False).
 
         Note:
             config example::
@@ -65,6 +69,7 @@ class OpenAIClient(LLMClient):
             api_key=api_key, timeout=time_out, max_retries=self.max_retries
         )
         self.json_schema: dict[str, Any] = json.loads(self._get_json_schema())
+        self.record_config: LLMRecordConfig = self._get_llm_record_config()
 
     async def generate_response(self, prompt: str) -> dict[str, Any]:
         """Generate a response from the OpenAI API based on the given prompt.
@@ -128,4 +133,9 @@ class OpenAIClient(LLMClient):
             raise ValueError(
                 f"OpenAIClient: Expected JSON object in response, got: {parsed}"
             )
+        save_response_record_from_chat_completion(
+            response=response,
+            prompt=prompt,
+            record_config=self.record_config,
+        )
         return cast(dict[str, Any], parsed)
