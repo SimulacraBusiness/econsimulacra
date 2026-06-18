@@ -98,9 +98,7 @@ def save_response_record_from_chat_completion(
     """
     if record_config.save_path is not None:
         record: dict[str, Optional[str | int]] = {
-            "wall_clock_time": datetime.fromtimestamp(
-                response.created
-            ).isoformat()
+            "wall_clock_time": datetime.fromtimestamp(response.created).isoformat()
         }
         if record_config.save_num_tokens:
             if response.usage is not None and response.usage.prompt_tokens is not None:
