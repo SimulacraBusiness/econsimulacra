@@ -24,9 +24,41 @@ AgentBehaviorStats: TypeAlias = dict[str, dict[int, float]]
 class AgentBehaviorStatsAnalyzer(
     AnalyzerBase[AgentBehaviorStats, list[AgentBehaviorStats]]
 ):
-    """Agent behavior stats analyzer.
+    """Summarise each agent's economic and social behaviour over a simulation run.
 
-    AgentBehaviorStatsAnalyzer summarizes the behavior of each agent in the log.
+    :class:`AgentBehaviorStatsAnalyzer` computes four scalar statistics for
+    every agent across the entire simulation:
+
+    **Total purchase price**
+        Total monetary value of all goods bought via order reactions:
+
+        .. math::
+
+            S_{\\text{total}} =
+            \\sum_{i} \\text{accept\\_amount}_i \\times \\text{price}_i
+
+    **Average unit purchase price**
+        Mean price paid per transaction:
+
+        .. math::
+
+            \\bar{p} = \\frac{1}{n} \\sum_{i=1}^{n} \\text{price}_i
+
+    **Total move distance**
+        Cumulative Euclidean displacement over all move events:
+
+        .. math::
+
+            L = \\sum_{j} \\sqrt{\\sum_{k}
+            (\\text{new\\_pos}_{j,k} - \\text{old\\_pos}_{j,k})^2}
+
+    **Total word count**
+        Sum of word counts (whitespace-split) across all tweets.
+
+    These statistics are useful for identifying behavioural heterogeneity:
+    e.g., high-spending consumers, highly mobile agents, or unusually
+    prolific tweeters. :meth:`draw_figs` plots a histogram for each
+    statistic across all agents.
     """
 
     name = "agent_behavior_stats"
@@ -40,21 +72,33 @@ class AgentBehaviorStatsAnalyzer(
         self.exclude_agent_ids = exclude_agent_ids
 
     def analyze(self, store: RecordStore) -> AgentBehaviorStats:
-        """Summarizes the behavior of each agent in the log.
+        """Compute per-agent behaviour statistics from *store*.
+
+        Iterates over all agents found in
+        :class:`~econsimulacra.log_analyses.records.AgentGenerationRecord`
+        entries. For each agent, scans the corresponding records and
+        accumulates:
+
+        * ``"total_purchase_price"``:
+          :math:`\\sum_i \\text{accept\\_amount}_i \\times \\text{price}_i`
+          from :class:`~econsimulacra.log_analyses.records.OrderReactionRecord`.
+        * ``"avg_unit_purchase_price"``: mean price per order-reaction record.
+        * ``"total_move_distance"``: Euclidean distance summed over
+          :class:`~econsimulacra.log_analyses.records.MoveRecord` entries.
+        * ``"total_word_counts"``: word count summed over
+          :class:`~econsimulacra.log_analyses.records.TweetRecord` entries.
+
+        Agents in ``exclude_agent_ids`` are skipped.
 
         Args:
-            store (RecordStore): The record store containing the records to analyze.
+            store (RecordStore): Record store containing the simulation log.
 
         Returns:
-            stats (AgentBehaviorStats): A dictionary mapping stat names to dictionaries
-                that map agent IDs to the stat values.
-
-        Note:
-            The stat names are:
-            "total_purchase_price": Total purchase price for each agent.
-            "avg_unit_purchase_price": Average unit purchase price for each agent.
-            "total_move_distance": Total move distance for each agent.
-            "total_word_counts": Total word counts in tweets for each agent.
+            AgentBehaviorStats: Outer keys are stat names
+            (``"total_purchase_price"``, ``"avg_unit_purchase_price"``,
+            ``"total_move_distance"``, ``"total_word_counts"``). Inner keys
+            are agent IDs (int) and values are the corresponding scalar
+            statistics (float).
         """
         stats: AgentBehaviorStats = {
             "total_purchase_price": {},
@@ -95,13 +139,18 @@ class AgentBehaviorStatsAnalyzer(
         return stats
 
     def analyze_stores(self, stores: list[RecordStore]) -> list[AgentBehaviorStats]:
-        """Summarizes the behavior of each agent across multiple stores.
+        """Compute per-agent behaviour statistics for multiple stores.
+
+        Calls :meth:`analyze` independently for each store. The resulting
+        list preserves the order of *stores*.
 
         Args:
-            stores (list[RecordStore]): A list of record stores to analyze.
+            stores (list[RecordStore]): One record store per simulation run.
 
         Returns:
-            stats_list (list[AgentBehaviorStats]): A list of AgentBehaviorStats for each store.
+            list[AgentBehaviorStats]: One :class:`AgentBehaviorStats` dict
+            per store. Use :meth:`draw_figs_all` to produce a box plot
+            comparing stat distributions across runs.
         """
         stats_list: list[AgentBehaviorStats] = []
         for store in stores:

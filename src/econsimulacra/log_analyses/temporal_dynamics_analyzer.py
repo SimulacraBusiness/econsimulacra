@@ -42,21 +42,67 @@ DEFAULT_ACTION_TYPES: tuple[type[TimedRecord], ...] = (
 class TemporalDynamicsResult:
     """Temporal-dynamics statistics for one simulation run.
 
+    These statistics characterise the temporal *texture* of agent activity.
+    All scalar metrics are averaged across agents unless otherwise noted.
+
     Attributes:
-        mean_burstiness: Mean across agents of the burstiness parameter
-            ``B = (sigma - mu) / (sigma + mu)`` of inter-event times. ``B`` is
-            ``1`` for maximally bursty activity, ``0`` for Poisson, and ``-1``
-            for perfectly regular activity (Goh & Barabási, 2008).
-        mean_memory: Mean across agents of the memory coefficient ``M``, the
-            lag-1 correlation between consecutive inter-event times.
-        inter_event_times: Pooled inter-event times (in steps) across agents.
-        activity_by_hour: Count of action events per clock-hour (0-23).
-        meals_by_hour: Count of consumption events per clock-hour (0-23).
-        sleep_onsets_by_hour: Count of sleep-start events per clock-hour (0-23).
-        circadian_autocorr: Autocorrelation of per-step activity at a lag of
-            ``period_steps``. ``None`` if the run is shorter than one period.
-        n_agents: Number of agents with at least one action event.
-        n_events: Total number of action events.
+        mean_burstiness (float, optional): Mean across agents of the
+            burstiness parameter :math:`B` (Goh & Barabási, 2008):
+
+            .. math::
+
+                B = \\frac{\\sigma_\\tau - \\mu_\\tau}{\\sigma_\\tau + \\mu_\\tau}
+
+            where :math:`\\mu_\\tau` and :math:`\\sigma_\\tau` are the mean
+            and standard deviation of inter-event times for the agent.
+            :math:`B = 1` for maximally bursty activity, :math:`B = 0`
+            for Poisson-random activity, and :math:`B = -1` for perfectly
+            regular (clock-like) activity. ``None`` if no agent had at
+            least 2 inter-event intervals.
+
+        mean_memory (float, optional): Mean across agents of the memory
+            coefficient :math:`M`, the Pearson correlation between
+            consecutive inter-event times:
+
+            .. math::
+
+                M = \\text{corr}(\\tau_i,\\, \\tau_{i+1})
+
+            :math:`M > 0` means long pauses cluster together (positive
+            memory); :math:`M < 0` means activity alternates between short
+            and long gaps. ``None`` if no agent had at least 3 intervals.
+
+        inter_event_times (list[int]): Pooled inter-event times (in
+            simulation steps) across all agents.
+
+        activity_by_hour (dict[int, int]): Count of action events per
+            clock-hour (0–23). The "hour" is taken from the ``datetime``
+            field of the record when available; otherwise
+            ``time_step mod period_steps`` is used.
+
+        meals_by_hour (dict[int, int]): Count of
+            :class:`~econsimulacra.log_analyses.records.ConsumptionRecord`
+            events per clock-hour (0–23).
+
+        sleep_onsets_by_hour (dict[int, int]): Count of
+            :class:`~econsimulacra.log_analyses.records.SleepStartRecord`
+            events per clock-hour (0–23).
+
+        circadian_autocorr (float, optional): Autocorrelation of the
+            per-step action-count series at lag ``period_steps``:
+
+            .. math::
+
+                R(\\ell) = \\frac{\\sum_t (x_t - \\bar{x})
+                                         (x_{t+\\ell} - \\bar{x})}
+                                {\\sum_t (x_t - \\bar{x})^2}
+
+            where :math:`\\ell` = ``period_steps``. A value close to 1
+            indicates a strong daily activity rhythm. ``None`` if the run
+            is shorter than two periods.
+
+        n_agents (int): Number of agents with at least one recorded action.
+        n_events (int): Total number of action events across all agents.
     """
 
     mean_burstiness: Optional[float]
@@ -72,24 +118,68 @@ class TemporalDynamicsResult:
 
 @dataclass
 class TemporalDynamicsAnalyzer(AnalyzerBase[TemporalDynamicsResult, None]):
-    """Analyze the temporal structure of agent activity.
+    """Quantify the temporal structure of agent activity in a simulation run.
 
-    This analyzer quantifies the human "stylized facts" of activity timing from
-    a simulation log: burstiness and memory of inter-event times, the
-    distribution of activity / meals / sleep onsets across the 24-hour clock,
-    and the autocorrelation of activity at a daily lag (a circadian signature).
+    This analyzer measures whether agent activity is bursty or regular,
+    whether inactive periods cluster together (memory), and whether there is
+    a circadian rhythm. These properties mirror the empirical "stylized facts"
+    of human activity timing (Barabási, 2005; Goh & Barabási, 2008).
 
-    It complements the spatial view of :class:`MoveDistanceAnalyzer`: rather than
-    asking how far agents move, it asks *when* they act, and whether that timing
-    is bursty and rhythmic rather than uniform.
+    **Burstiness** :math:`B`
+        Measured per agent as the normalised difference between standard
+        deviation and mean of that agent's inter-event times:
+
+        .. math::
+
+            B = \\frac{\\sigma_\\tau - \\mu_\\tau}{\\sigma_\\tau + \\mu_\\tau}
+            \\in [-1,\\; 1]
+
+        LLM-driven agents often show :math:`B > 0` due to reasoning and
+        API latency introducing bursty idle periods.
+
+    **Memory** :math:`M`
+        The lag-1 Pearson correlation of inter-event times:
+
+        .. math::
+
+            M = \\text{corr}(\\tau_i,\\, \\tau_{i+1})
+
+        :math:`M > 0` indicates that short active periods follow other
+        short active periods; :math:`M < 0` indicates alternating active
+        and quiet phases.
+
+    **Circadian autocorrelation**
+        The normalised autocorrelation of the per-step event count at lag
+        ``period_steps``:
+
+        .. math::
+
+            R(\\ell) = \\frac{\\sum_t (x_t - \\bar{x})(x_{t+\\ell} - \\bar{x})}
+                            {\\sum_t (x_t - \\bar{x})^2}
+
+        A value near 1 means the activity pattern repeats every
+        ``period_steps`` steps — a sign of a functioning day–night cycle.
+
+    **Hourly histograms**
+        Activity, meal, and sleep-onset counts are binned by clock-hour
+        (0–23). If records carry a ``datetime`` timestamp, the hour is
+        extracted directly; otherwise ``time_step mod period_steps`` is used.
+
+    This analyzer complements :class:`MoveDistanceAnalyzer`: rather than
+    asking *how far* agents move, it asks *when* they act and whether that
+    timing is rhythmic.
 
     Attributes:
-        name: Analyzer name used for organizing outputs.
-        action_types: Record types treated as overt agent actions.
-        period_steps: Number of steps per day, used for the circadian-lag
-            autocorrelation.
-        agent_type: If set, restrict the analysis to agents of this type (e.g.
-            ``"LLMAgent"``); otherwise all agents with action records are used.
+        name (str): Analyzer name used for organizing outputs.
+        action_types (tuple): Record types treated as overt agent actions.
+            Defaults to move, consumption, order, tweet, follow, unfollow,
+            and sleep-start events.
+        period_steps (int): Number of simulation steps per day, used both
+            as the circadian autocorrelation lag and the fallback for
+            clock-hour binning when records lack datetime timestamps.
+        agent_type (str, optional): If set, restrict the analysis to agents
+            of this type (e.g. ``"LLMAgent"``); otherwise all agents with
+            action records are used.
     """
 
     name: str = "temporal_dynamics"
@@ -101,15 +191,28 @@ class TemporalDynamicsAnalyzer(AnalyzerBase[TemporalDynamicsResult, None]):
     def analyze(self, store: RecordStore) -> TemporalDynamicsResult:
         """Compute temporal-dynamics statistics from a record store.
 
+        **Algorithm**
+
+        1. Optionally filter agents by ``agent_type`` using
+           :class:`~econsimulacra.log_analyses.records.AgentGenerationRecord`
+           entries.
+        2. Collect all action events for qualifying agents.
+        3. Per agent, sort event steps and compute inter-event intervals
+           :math:`\\tau_i = t_{i+1} - t_i`. Compute :math:`B` and :math:`M`
+           from the interval sequence.
+        4. Build hourly histograms for action events, consumption events,
+           and sleep-onset events.
+        5. Compute the circadian autocorrelation at lag ``period_steps``.
+
         Args:
-            store: Record store containing the run's records.
+            store (RecordStore): Record store containing the simulation log.
 
         Returns:
-            The aggregated :class:`TemporalDynamicsResult`.
+            TemporalDynamicsResult: Aggregated temporal statistics.
 
         Raises:
-            ValueError: If ``period_steps`` is not positive or no action records
-                are found.
+            ValueError: If ``period_steps`` is not positive, or if no action
+                records are found.
         """
         if self.period_steps <= 0:
             raise ValueError("period_steps must be positive.")
@@ -291,7 +394,28 @@ class TemporalDynamicsAnalyzer(AnalyzerBase[TemporalDynamicsResult, None]):
     def _burstiness_and_memory(
         self, intervals: list[int]
     ) -> tuple[Optional[float], Optional[float]]:
-        """Compute burstiness B and memory coefficient M for one agent."""
+        """Compute burstiness :math:`B` and memory coefficient :math:`M`.
+
+        Given the sequence of inter-event intervals
+        :math:`(\\tau_1, \\tau_2, \\ldots, \\tau_n)`:
+
+        .. math::
+
+            B = \\frac{\\sigma_\\tau - \\mu_\\tau}{\\sigma_\\tau + \\mu_\\tau},
+            \\qquad
+            M = \\text{corr}(\\tau_i,\\, \\tau_{i+1})
+
+        :math:`B` requires :math:`n \\geq 2`. :math:`M` requires
+        :math:`n \\geq 3` and non-zero variance in both the earlier and
+        later sub-sequences.
+
+        Args:
+            intervals (list[int]): Sequence of inter-event times in steps.
+
+        Returns:
+            tuple[Optional[float], Optional[float]]: ``(B, M)``. Either
+            value is ``None`` when the corresponding requirement is not met.
+        """
         if len(intervals) < 2:
             return None, None
         values: np.ndarray = np.asarray(intervals, dtype=float)

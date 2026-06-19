@@ -23,12 +23,27 @@ DistanceMetric: TypeAlias = Literal["euclidean", "manhattan", "chebyshev"]
 class MoveDistanceWindowStats:
     """Aggregated movement statistics for a single time window.
 
+    All distances are computed with the metric specified in
+    :attr:`MoveDistanceAnalyzer.distance_metric`.
+
     Attributes:
-        total_distance: Sum of movement distances in the window.
-        mean_distance: Average distance per move in the window. This value is
-            zero when ``move_count`` is zero.
-        move_count: Number of movement records in the window.
-        moving_agent_count: Number of distinct agents that moved in the window.
+        total_distance (float): Sum of all movement distances in this window:
+
+            .. math::
+
+                D_{\\text{total}} = \\sum_{i \\in \\text{window}} d_i
+
+        mean_distance (float): Average distance per move event. Zero when
+            ``move_count`` is zero:
+
+            .. math::
+
+                \\bar{d} = \\frac{D_{\\text{total}}}{N_{\\text{moves}}}
+
+        move_count (int): Number of :class:`~econsimulacra.log_analyses.records.MoveRecord`
+            entries falling in this window.
+        moving_agent_count (int): Number of distinct agents that moved at
+            least once during this window.
     """
 
     total_distance: float
@@ -42,34 +57,58 @@ MoveDistanceResult: TypeAlias = dict[int, MoveDistanceWindowStats]
 
 @dataclass
 class MoveDistanceAnalyzer(AnalyzerBase[MoveDistanceResult, None]):
-    """Analyze aggregate movement distance over time windows.
+    """Analyse agent spatial mobility over fixed-size time windows.
 
-    This analyzer aggregates :class:`MoveRecord` instances into fixed-size
-    windows based on ``time_step``. For each window, it computes the total
-    movement distance, average movement distance, number of move events, and
-    number of distinct moving agents.
+    Each :class:`~econsimulacra.log_analyses.records.MoveRecord` carries
+    an ``old_pos`` and a ``new_pos`` coordinate tuple. This analyzer
+    computes the distance of each move under one of three metrics, then
+    aggregates moves into non-overlapping windows of ``window_size`` steps.
 
-    The primary purpose is to diagnose how much spatial movement occurs over
-    simulation time. This is useful for evaluating whether spatial constraints,
-    local demand, congestion, or location-dependent incentives affect agent
-    behavior.
+    **Distance metrics**
 
-    Distances are computed from ``old_pos`` and ``new_pos`` using one of three
-    metrics:
+    Euclidean distance (default):
 
-    - ``"euclidean"``: square-root of squared coordinate differences.
-    - ``"manhattan"``: sum of absolute coordinate differences.
-    - ``"chebyshev"``: maximum absolute coordinate difference.
+    .. math::
+
+        d(\\mathbf{p}, \\mathbf{q})
+        = \\sqrt{\\sum_{k} (q_k - p_k)^2}
+
+    Manhattan distance:
+
+    .. math::
+
+        d(\\mathbf{p}, \\mathbf{q})
+        = \\sum_{k} |q_k - p_k|
+
+    Chebyshev distance:
+
+    .. math::
+
+        d(\\mathbf{p}, \\mathbf{q})
+        = \\max_{k} |q_k - p_k|
+
+    **Typical use**
+
+    High ``total_distance`` suggests agents are exploring or relocating
+    frequently; low values indicate agents remain close to their initial
+    positions. Combine with :class:`ConsumerClusterAnalyzer` to understand
+    *what* agents are doing while they move.
+
+    After :meth:`analyze` returns, the fitted attributes ``agent_distance_``
+    and ``agent_move_count_`` are populated and used by :meth:`draw_figs`
+    (top-:math:`k` agent bar chart) and :meth:`build_summary`.
 
     Attributes:
-        name: Analyzer name used for organizing outputs.
-        window_size: Number of simulation steps in one aggregation window.
-        total_time_steps: Total number of simulation steps. If ``None``, this is
-            inferred from the maximum ``time_step`` in movement records.
-        distance_metric: Distance metric used to compute movement length.
-        include_zero_distance: Whether to include records where
-            ``old_pos == new_pos``.
-        top_k_agents: Number of high-mobility agents shown in the summary.
+        name (str): Analyzer name used for organizing outputs.
+        window_size (int): Number of simulation steps per aggregation window.
+        total_time_steps (int, optional): Total simulation steps. Inferred
+            from the data if ``None``.
+        distance_metric (str): One of ``"euclidean"``, ``"manhattan"``,
+            or ``"chebyshev"``.
+        include_zero_distance (bool): Whether to include records where
+            ``old_pos == new_pos``. Default ``False``.
+        top_k_agents (int): Number of highest-mobility agents shown in
+            the summary and bar chart.
     """
 
     name: str = "move_distance"
@@ -84,18 +123,39 @@ class MoveDistanceAnalyzer(AnalyzerBase[MoveDistanceResult, None]):
     agent_move_count_: Optional[dict[int, int]] = None
 
     def analyze(self, store: RecordStore) -> MoveDistanceResult:
-        """Aggregate movement distances over fixed-size time windows.
+        """Aggregate movement distances into fixed-size time windows.
+
+        Each :class:`~econsimulacra.log_analyses.records.MoveRecord` is
+        assigned to the window:
+
+        .. math::
+
+            w = \\left\\lfloor \\frac{t}{\\text{window\\_size}}
+            \\right\\rfloor \\times \\text{window\\_size}
+
+        where :math:`t` is ``time_step``. Within each window the total
+        distance :math:`D_{\\text{total}}`, mean distance :math:`\\bar{d}`,
+        move count, and moving-agent count are computed.
+
+        After the call, the per-agent totals ``agent_distance_`` and
+        ``agent_move_count_`` are populated for use by :meth:`draw_figs`
+        and :meth:`build_summary`.
 
         Args:
-            store: Record store containing :class:`MoveRecord` instances.
+            store (RecordStore): Record store containing
+                :class:`~econsimulacra.log_analyses.records.MoveRecord`
+                instances.
 
         Returns:
-            Mapping from window start time to movement statistics.
+            MoveDistanceResult: Mapping from window-start step to a
+            :class:`MoveDistanceWindowStats` for each window in
+            ``range(0, total_time_steps, window_size)``. Windows with no
+            moves have all-zero statistics.
 
         Raises:
-            ValueError: If no valid movement records are available, if
-                ``window_size`` is not positive, or if position dimensionalities
-                are inconsistent.
+            ValueError: If no valid movement records are found, if
+                ``window_size`` is not positive, or if position vectors have
+                inconsistent dimensionalities.
         """
         self._prepare_time_axis(store)
         if self.window_size <= 0:
@@ -338,18 +398,27 @@ class MoveDistanceAnalyzer(AnalyzerBase[MoveDistanceResult, None]):
         return Panel.fit(table, title="Analysis Summary", border_style="cyan")
 
     def _distance(self, old_pos: tuple[int, ...], new_pos: tuple[int, ...]) -> float:
-        """Compute movement distance between two positions.
+        """Compute the distance between two positions under ``distance_metric``.
+
+        The metric is applied component-wise to integer coordinate vectors:
+
+        * ``"euclidean"``:
+          :math:`d = \\sqrt{\\sum_k (\\text{new}_k - \\text{old}_k)^2}`
+        * ``"manhattan"``:
+          :math:`d = \\sum_k |\\text{new}_k - \\text{old}_k|`
+        * ``"chebyshev"``:
+          :math:`d = \\max_k |\\text{new}_k - \\text{old}_k|`
 
         Args:
-            old_pos: Source position.
-            new_pos: Destination position.
+            old_pos (tuple[int, ...]): Source position coordinates.
+            new_pos (tuple[int, ...]): Destination position coordinates.
 
         Returns:
-            Distance between ``old_pos`` and ``new_pos``.
+            float: Distance between the two positions.
 
         Raises:
-            ValueError: If the two positions have different dimensionalities or
-                if ``distance_metric`` is unsupported.
+            ValueError: If ``old_pos`` and ``new_pos`` have different lengths,
+                or if ``distance_metric`` is not a recognised value.
         """
         if len(old_pos) != len(new_pos):
             raise ValueError(

@@ -28,7 +28,33 @@ TimeKey = int | datetime
 
 @dataclass(frozen=True)
 class TopicResult:
-    """Result of tweet topic analysis."""
+    """Result of tweet (or inner-thought) topic analysis with BERTopic.
+
+    Attributes:
+        tweets (DataFrame): Raw message table with columns ``time``,
+            ``time_step``, ``agent_id``, ``message``, ``num_follows``,
+            ``num_followers``, ``topic``, ``topic_name``, ``time_window``.
+            One row per message.
+        topic_counts (DataFrame): Message count per
+            ``(time_window, topic_name)`` pivot table. Index is
+            ``time_window``; columns are topic name strings.
+        topic_shares (DataFrame): Row-normalised version of
+            ``topic_counts`` representing the share of each topic at each
+            time window:
+
+            .. math::
+
+                \\text{share}_{t, k} =
+                \\frac{\\text{count}_{t, k}}{\\sum_{k'} \\text{count}_{t, k'}}
+
+        topic_summary (DataFrame): One row per topic. Columns include
+            ``topic``, ``topic_name``, ``num_tweets``, ``num_agents``,
+            ``first_time_step``, ``last_time_step``, ``avg_followers``,
+            ``avg_follows``. Sorted descending by ``num_tweets``.
+        agent_topic_counts (DataFrame): Message count per
+            ``(agent_id, topic_name)`` pivot table showing which agents
+            discuss which topics.
+    """
 
     tweets: DataFrame
     topic_counts: DataFrame
@@ -43,13 +69,47 @@ class TopicAnalyzer(
         list[TopicResult],
     ]
 ):
-    """Analyze tweet logs using BERTopic.
+    """Discover and track discussion topics in agent tweets or inner thoughts.
 
-    This analyzer:
-    - extracts TweetRecord from RecordStore,
-    - assigns a topic to each tweet using BERTopic,
-    - aggregates topic dynamics over time windows,
-    - summarizes topic frequencies and agent-topic distributions.
+    This analyzer extracts
+    :class:`~econsimulacra.log_analyses.records.TweetRecord` (or
+    :class:`~econsimulacra.log_analyses.records.InnerThoughtRecord` when
+    ``is_inner_thought=True``) from a :class:`RecordStore`, runs
+    `BERTopic <https://maartengr.github.io/BERTopic/>`_ to assign a topic
+    to each message, and then aggregates topic assignments over time windows
+    to capture how the *topic mix* of agent discourse evolves.
+
+    **Processing pipeline**
+
+    1. Extract records → build a message DataFrame.
+    2. Fit (or transform) a BERTopic model to assign integer topic IDs.
+    3. Map topic IDs to human-readable names via
+       ``BERTopic.get_topic_info()``.
+    4. Aggregate into:
+
+       * ``topic_counts`` – message count per ``(time_window, topic_name)``
+       * ``topic_shares`` – row-normalised counts (see :class:`TopicResult`)
+       * ``topic_summary`` – per-topic statistics across the whole run
+       * ``agent_topic_counts`` – per-agent topic distribution
+
+    **Time windowing**
+
+    Messages are grouped into windows of ``time_window_size`` steps:
+
+    .. math::
+
+        w(t) = \\left\\lfloor \\frac{t}{\\text{time\\_window\\_size}}
+               \\right\\rfloor \\times \\text{time\\_window\\_size}
+
+    **Multi-store mode**
+
+    :meth:`analyze_stores` fits a single BERTopic model on the pooled
+    corpus from all stores, then transforms each store's messages
+    independently. This guarantees that topic IDs are comparable across runs.
+
+    Note:
+        Topic ``-1`` is BERTopic's built-in outlier/noise cluster. It is
+        included in all DataFrames but excluded from top-topic charts.
     """
 
     name = "tweet_topic"
@@ -98,6 +158,22 @@ class TopicAnalyzer(
         self,
         store: RecordStore,
     ) -> TopicResult:
+        """Fit BERTopic and assign topics to all messages in *store*.
+
+        Calls ``BERTopic.fit_transform`` on all messages from this store.
+        If ``topic_model`` was supplied at construction time, that model is
+        used directly; otherwise a new BERTopic model is created with
+        ``min_topic_size``.
+
+        Args:
+            store (RecordStore): Record store containing tweet or inner-
+                thought records.
+
+        Returns:
+            TopicResult: Aggregated topic analysis result. Returns an empty
+            :class:`TopicResult` (all DataFrames empty) if no relevant
+            records are found.
+        """
         self._prepare_time_axis(store)
 
         records = (
@@ -167,7 +243,25 @@ class TopicAnalyzer(
         return results
 
     def draw_figs(self, result: TopicResult) -> dict[str, Figure]:
-        """Draw topic analysis figures."""
+        """Draw topic analysis figures for a single run.
+
+        Produces up to three figures (keyed by ``inner_str`` suffix where
+        ``inner_str`` is ``"inner_thought"`` or ``"tweet"``):
+
+        * ``topic_counts_over_time_{inner_str}`` – line chart of message
+          count per topic over time windows (top :attr:`top_n_topics`).
+        * ``topic_shares_over_time_{inner_str}`` – stacked area chart of
+          topic share over time.
+        * ``top_topic_counts_{inner_str}`` – horizontal bar chart of total
+          message counts for the top :attr:`top_n_topics` topics.
+
+        Args:
+            result (TopicResult): Output of :meth:`analyze`.
+
+        Returns:
+            dict[str, Figure]: Figure name → Matplotlib figure. Empty if
+            *result* contains no tweets.
+        """
         figs: dict[str, Figure] = {}
 
         if result.tweets.empty:
@@ -194,6 +288,82 @@ class TopicAnalyzer(
         individual_results: list[TopicResult],
     ) -> dict[str, Figure]:
         return {}
+
+    def build_summary_all(self, results: list[TopicResult]):
+        """Build rich summary aggregated across multiple stores."""
+        non_empty = [r for r in results if not r.tweets.empty]
+
+        if not non_empty:
+            inner_str = "Inner thought" if self.is_inner_thought else "Tweet"
+            return Panel.fit(
+                "No tweet records found in any store.",
+                title=f"{inner_str} Topic Analysis (Multi-Store)",
+                border_style="yellow",
+            )
+
+        total_tweets = sum(len(r.tweets) for r in non_empty)
+        total_agents = sum(r.tweets["agent_id"].nunique() for r in non_empty)
+        total_topics = len(
+            {
+                t
+                for r in non_empty
+                for t in r.tweets.loc[r.tweets["topic"] != -1, "topic"].unique()
+            }
+        )
+        noise_tweets = sum(int((r.tweets["topic"] == -1).sum()) for r in non_empty)
+
+        overview = Table(title=f"Overview ({len(non_empty)} stores)")
+        overview.add_column("Metric")
+        overview.add_column("Value", justify="right")
+        overview.add_row("Total tweets", str(total_tweets))
+        overview.add_row("Tweeting agents (sum)", str(total_agents))
+        overview.add_row("Unique topics", str(total_topics))
+        overview.add_row("Noise tweets", str(noise_tweets))
+
+        all_summaries = pd.concat(
+            [r.topic_summary for r in non_empty if not r.topic_summary.empty],
+            ignore_index=True,
+        )
+
+        agg_summary = (
+            all_summaries.groupby(["topic", "topic_name"])
+            .agg(
+                num_tweets=("num_tweets", "sum"),
+                num_agents=("num_agents", "sum"),
+                first_time_step=("first_time_step", "min"),
+                last_time_step=("last_time_step", "max"),
+            )
+            .reset_index()
+            .sort_values("num_tweets", ascending=False)
+        )
+
+        top_table = Table(title=f"Top {self.top_n_topics} Topics (Aggregated)")
+        top_table.add_column("Topic")
+        top_table.add_column("#Tweets", justify="right")
+        top_table.add_column("#Agents", justify="right")
+        top_table.add_column("First step", justify="right")
+        top_table.add_column("Last step", justify="right")
+
+        for _, row in agg_summary.head(self.top_n_topics).iterrows():
+            top_table.add_row(
+                str(row["topic_name"]),
+                str(int(row["num_tweets"])),
+                str(int(row["num_agents"])),
+                str(int(row["first_time_step"])),
+                str(int(row["last_time_step"])),
+            )
+
+        note = Text(
+            "Topic -1 is BERTopic's outlier/noise topic.",
+            style="dim",
+        )
+        inner_str = "Inner thought" if self.is_inner_thought else "Tweet"
+
+        return Panel.fit(
+            Group(overview, top_table, note),
+            title=f"{inner_str} Topic Analysis (Multi-Store)",
+            border_style="green",
+        )
 
     def build_summary(self, result: TopicResult):
         """Build rich summary."""

@@ -41,6 +41,11 @@ from .temporal_dynamics_analyzer import (
 )
 from .topic_analyzer import TopicAnalyzer
 from .topic_sales_analyzer import TopicSalesAnalyzer
+from .topic_sentiment_analyzer import (
+    TopicSentimentAnalyzer,
+    TopicSentimentCorrelationResult,
+    TopicSentimentWindowStats,
+)
 
 __all__ = [
     "ActionCounter",
@@ -81,6 +86,9 @@ __all__ = [
     "TopicAnalyzer",
     "MoveDistanceAnalyzer",
     "TopicSalesAnalyzer",
+    "TopicSentimentAnalyzer",
+    "TopicSentimentCorrelationResult",
+    "TopicSentimentWindowStats",
     "TemporalDynamicsAnalyzer",
     "TemporalDynamicsResult",
 ]

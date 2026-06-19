@@ -18,22 +18,58 @@ SalesAmountResult: TypeAlias = dict[str, dict[int, float]]
 
 
 class ItemSalesAnalyzer(AnalyzerBase[tuple[SalesResult, SalesAmountResult], None]):
-    """Item sales analyzer.
+    """Analyse revenue and unit sales aggregated by item type.
 
-    ItemSalesAnalyzer analyzes sales data for each item
-    based on OrderReactionRecord and ProposalReactionRecord.
+    Unlike :class:`StoreSalesAnalyzer`, which groups transactions by the
+    selling agent, :class:`ItemSalesAnalyzer` groups them by the *item*
+    being traded. For each item it computes two time series:
+
+    **Revenue (sales)**
+
+        .. math::
+
+            \\text{sales}_{\\text{item},t} =
+            \\sum_{\\substack{i \\,:\\, \\text{item}_i = \\text{item} \\\\ t_i = t}}
+            \\text{accept\\_amount}_i \\times \\text{price}_i
+
+    **Unit sales (sold amount)**
+
+        .. math::
+
+            \\text{sold\\_amount}_{\\text{item},t} =
+            \\sum_{\\substack{i \\,:\\, \\text{item}_i = \\text{item} \\\\ t_i = t}}
+            \\text{accept\\_amount}_i
+
+    Only :class:`~econsimulacra.log_analyses.records.OrderReactionRecord`
+    entries are considered; barter proposals
+    (:class:`~econsimulacra.log_analyses.records.ProposalReactionRecord`)
+    are excluded because they do not carry a monetary price.
+
+    Both quantities are plotted as bar charts over time by :meth:`draw_figs`.
+    :meth:`build_summary` ranks items by total revenue.
     """
 
     name = "item_sales"
 
     def analyze(self, store: RecordStore) -> tuple[SalesResult, SalesAmountResult]:
-        """Analyzes sales data for each item.
+        """Aggregate per-item revenue and unit sales from order-reaction records.
+
+        Iterates over all
+        :class:`~econsimulacra.log_analyses.records.OrderReactionRecord`
+        entries in *store* and accumulates
+        ``accept_amount * price`` (revenue) and ``accept_amount`` (units)
+        into per-item, per-step buckets.
 
         Args:
-            store (RecordStore): The record store containing the records to analyze.
+            store (RecordStore): Record store containing order-reaction
+                records.
 
         Returns:
-            tuple[SalesResult, SalesAmountResult]: A tuple containing dictionaries mapping item names to their sales data and sold amounts.
+            tuple[SalesResult, SalesAmountResult]: A 2-tuple where
+
+            * ``sales`` maps item names to ``{time_step: total_revenue}``.
+            * ``sold_amounts`` maps item names to
+              ``{time_step: total_units_sold}``.
         """
         self._prepare_time_axis(store)
         sales: SalesResult = {}

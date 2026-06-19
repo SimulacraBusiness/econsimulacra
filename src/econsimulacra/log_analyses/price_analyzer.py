@@ -13,21 +13,49 @@ from .store import RecordStore
 
 
 class PriceAnalyzer(AnalyzerBase[dict[str, dict[int, float]], None]):
-    """Price analyzer.
+    """Track the listed price of each item over simulation time.
 
-    PriceAnalyzer tracks the prices of items over time.
+    Price changes in EconSimulacra are triggered by two event types:
+
+    * :class:`~econsimulacra.log_analyses.records.ItemGenerationRecord` –
+      sets the initial price when an item is introduced.
+    * :class:`~econsimulacra.log_analyses.records.ChangePriceRecord` –
+      records every subsequent price update by a seller agent.
+
+    :class:`PriceAnalyzer` collects all such events and returns a step
+    function :math:`p_{\\text{item}}(t)` for each item, where :math:`t`
+    is the simulation step at which the price was last set.
+
+    :meth:`draw_figs` renders each item's price trajectory using a
+    step-wise line plot (``where="post"``), faithfully representing that
+    prices remain constant between updates.
+
+    :meth:`build_summary` reports for each item: initial price, final price,
+    absolute change, relative change :math:`(p_{\\text{final}} - p_{\\text{init}}) / p_{\\text{init}}`,
+    and the total number of update events.
     """
 
     name = "price"
 
     def analyze(self, store: RecordStore) -> dict[str, dict[int, float]]:
-        """Tracks the prices of items over time.
+        """Collect the price history for every item in *store*.
+
+        Combines
+        :class:`~econsimulacra.log_analyses.records.ItemGenerationRecord`
+        (initial prices) and
+        :class:`~econsimulacra.log_analyses.records.ChangePriceRecord`
+        (subsequent updates). When multiple events occur at the same
+        ``time_step`` for the same item, the last one processed overwrites
+        earlier ones.
 
         Args:
-            store (RecordStore): The record store containing the records to analyze.
+            store (RecordStore): Record store containing item-generation and
+                price-change records.
 
         Returns:
-            A dictionary mapping item names to a dictionary of timestamps and prices.
+            dict[str, dict[int, float]]: Mapping from item name to a
+            ``{time_step: price}`` dict representing the step function
+            :math:`p_{\\text{item}}(t)`.
         """
         self._prepare_time_axis(store)
         item_prices: dict[str, dict[int, float]] = {}

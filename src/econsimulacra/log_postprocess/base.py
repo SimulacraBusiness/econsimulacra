@@ -83,6 +83,8 @@ class LogPostProcessor:
         """
         input_path = Path(input_file)
         output_path = Path(output_file)
+        if output_path.parent and not output_path.parent.exists():
+            output_path.parent.mkdir(parents=True, exist_ok=True)
         with (
             input_path.open("r", encoding="utf-8") as infile,
             output_path.open("w", encoding="utf-8") as outfile,
