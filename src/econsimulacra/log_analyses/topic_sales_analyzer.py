@@ -21,21 +21,36 @@ TopicSalesResult: TypeAlias = dict[int, dict[str, float]]
 
 @dataclass
 class QuadraticFitResult:
-    """Quadratic regression result (y = a * x^2 + b * x + c) for a single store.
+    """Quadratic regression result for a single store.
+
+    Stores the fitted coefficients of the model:
+
+    .. math::
+
+        \\hat{y}_{\\text{norm}} =
+        a \\cdot x_{\\text{norm}}^2 + b \\cdot x_{\\text{norm}} + c
+
+    where :math:`x` and :math:`y` are z-scored word count and sales:
+
+    .. math::
+
+        x_{\\text{norm}} = \\frac{x - \\bar{x}}{\\sigma_x},
+        \\qquad
+        y_{\\text{norm}} = \\frac{y - \\bar{y}}{\\sigma_y}
 
     Attributes:
-        store_name (str): The name of the store.
-        a (float): Coefficient of the quadratic term.
-        b (float): Coefficient of the linear term.
-        c (float): Coefficient of the constant term.
-        r2 (float): R-squared value of the fit.
-        mse (float): Mean squared error of the fit.
-        rmse (float): Root mean squared error of the fit.
-        n_samples (int): Number of samples used in the fit.
-        x_mean (float): Mean of the x values (word counts).
-        x_std (float): Standard deviation of the x values (word counts).
-        y_mean (float): Mean of the y values (sales).
-        y_std (float): Standard deviation of the y values (sales).
+        store_name (str): Name of the store.
+        a (float): Coefficient of the quadratic term :math:`x^2`.
+        b (float): Coefficient of the linear term :math:`x`.
+        c (float): Constant term (intercept).
+        r2 (float): Coefficient of determination :math:`R^2`.
+        mse (float): Mean squared error on the normalised scale.
+        rmse (float): Root mean squared error on the normalised scale.
+        n_samples (int): Number of ``(word_count, sales)`` data points.
+        x_mean (float): Sample mean of the raw word-count values.
+        x_std (float): Sample standard deviation of the raw word-count values.
+        y_mean (float): Sample mean of the raw sales values.
+        y_std (float): Sample standard deviation of the raw sales values.
     """
 
     store_name: str
@@ -53,18 +68,37 @@ class QuadraticFitResult:
 
 
 class TopicSalesAnalyzer(AnalyzerBase[TopicSalesResult, dict[str, QuadraticFitResult]]):
-    """Topic sales analyzer.
+    """Estimate the relationship between topic word count and store sales.
 
-    TopicSalesAnalyzer records the word count of specified topic words
-    and the sales of each store within a certain time window,
-    and analyzes the relationship between them using the formula:
+    :class:`TopicSalesAnalyzer` counts how often a set of *topic words*
+    appear in agent tweets (or inner thoughts) within each time window, and
+    cross-references those counts with the concurrent sales of each store.
+    Across multiple runs, :meth:`analyze_stores` pools
+    ``(word_count, sales)`` data points and fits the quadratic model on the
+    z-scored variables:
 
-    ``math``:
-        sales = a \\cdot \\text{word count}^2 + b \\cdot \\text{word count} + c
+    .. math::
+
+        \\hat{y}_{\\text{norm}} =
+        a \\cdot x_{\\text{norm}}^2 + b \\cdot x_{\\text{norm}} + c
+
+    **Interpretation of curvature**
+
+    * :math:`a > 0` (convex ↑): sales accelerate with topic buzz — a
+      super-linear amplification effect.
+    * :math:`a < 0` (concave ∩): the relationship saturates or reverses at
+      high word counts — possible over-saturation.
+    * :math:`a \\approx 0` (linear): a proportional relationship, well
+      captured by the linear term :math:`b`.
+
+    Goodness of fit is reported via :math:`R^2` and RMSE. A low
+    :math:`R^2` suggests store sales are driven by factors beyond topic
+    word count alone.
 
     Note:
-        This analyzer estimates the relationship between topic word count and sales
-        via analyze_stores() method, which aggregates the results of multiple stores and fits a quadratic regression.
+        The single-run :meth:`analyze` method collects the raw
+        ``(word_count, sales)`` data and is intended as a building block
+        for :meth:`analyze_stores`.
     """
 
     name = "topic_sales"
@@ -98,32 +132,33 @@ class TopicSalesAnalyzer(AnalyzerBase[TopicSalesResult, dict[str, QuadraticFitRe
         self.exclude_agent_ids = exclude_agent_ids
 
     def analyze(self, store: RecordStore) -> TopicSalesResult:
-        """Analyze the relationship between topic word count and sales.
+        """Collect word-count and sales data per time window from *store*.
+
+        Groups :class:`~econsimulacra.log_analyses.records.TweetRecord` (or
+        :class:`~econsimulacra.log_analyses.records.InnerThoughtRecord`) and
+        :class:`~econsimulacra.log_analyses.records.OrderReactionRecord`
+        entries into non-overlapping windows of ``window_size`` steps:
+
+        .. math::
+
+            w(t) = \\left\\lfloor \\frac{t}{\\text{window\\_size}}
+                   \\right\\rfloor \\times \\text{window\\_size}
+
+        For each window, the total occurrence count of ``topic_words`` in
+        agent messages is accumulated as ``"word_count"``, and the revenue
+        of each store is accumulated as ``"sales_{firm_name}"`` (or
+        ``"sales_amount_{firm_name}"`` when ``use_amount=True``).
 
         Args:
-            store (RecordStore): The record store to analyze.
+            store (RecordStore): Record store to analyse.
 
         Returns:
-            TopicSalesResult:
-                A dictionary mapping store names to another dictionary that maps time steps to a dictionary containing 'word_count' and 'sales'.
-                Ex)
+            TopicSalesResult: Dict mapping window-start step to a nested
+            dict. Example::
+
                 {
-                    0: {
-                        "word_count": 0,
-                        "sales_Pizza Place": 100.5,
-                        "sales_amount_Pizza Place": 5.0,
-                        "sales_Burger Joint": 200.0,
-                        "sales_amount_Burger Joint": 10.0,
-                        ...
-                    },
-                    0+window_size: {
-                        "word_count": 5,
-                        "sales_Pizza Place": 50.0,
-                        "sales_Burger Joint": 150.0,
-                        "sales_amount_Pizza Place": 2.0,
-                        "sales_amount_Burger Joint": 7.0,
-                        ...
-                    },
+                    0:  {"word_count": 0,  "sales_Pizza Place": 100.5, ...},
+                    24: {"word_count": 5,  "sales_Pizza Place": 50.0,  ...},
                     ...
                 }
         """
@@ -184,10 +219,17 @@ class TopicSalesAnalyzer(AnalyzerBase[TopicSalesResult, dict[str, QuadraticFitRe
         return result
 
     def draw_figs(self, result: TopicSalesResult) -> dict[str, Figure]:
-        """Draw scatter plots to visualize the relationship between topic word count and sales.
+        """Draw scatter plots of topic word count vs sales for each store.
+
+        Produces one scatter plot per store found in *result*, with the raw
+        (non-normalised) word-count on the x-axis and revenue (or accepted
+        amount when ``use_amount=True``) on the y-axis.
 
         Args:
-            result (TopicSalesResult): The analysis result to visualize.
+            result (TopicSalesResult): Output of :meth:`analyze`.
+
+        Returns:
+            dict[str, Figure]: Mapping from firm name to Matplotlib figure.
         """
         figures: dict[str, Figure] = {}
         for key in result[next(iter(result))].keys():
@@ -209,15 +251,19 @@ class TopicSalesAnalyzer(AnalyzerBase[TopicSalesResult, dict[str, QuadraticFitRe
     def draw_figs_all(
         self, individual_results: list[TopicSalesResult]
     ) -> dict[str, Figure]:
-        """Draw figures for multiple analysis results.
+        """Draw pooled scatter plots across multiple runs.
 
-        This method aggregates the data from multiple TopicSalesResult instances and draws a single scatter plot for each firm, showing all data points across the results.
+        Aggregates the data from all :class:`TopicSalesResult` instances and
+        draws one scatter plot per firm showing all ``(word_count, sales)``
+        data points from all runs on the same axes. Both axes are z-scored
+        (standardised) to make cross-firm comparison easier.
 
         Args:
-            results (list[TopicSalesResult]): A list of analysis results to visualize.
+            individual_results (list[TopicSalesResult]): One result per
+                simulation run, each produced by :meth:`analyze`.
 
         Returns:
-            dict[str, Figure]: A dictionary mapping firm names to their respective scatter plot figures.
+            dict[str, Figure]: Mapping from firm name to Matplotlib figure.
         """
         figures: dict[str, Figure] = {}
         firm_names: set[str] = set()
@@ -253,13 +299,29 @@ class TopicSalesAnalyzer(AnalyzerBase[TopicSalesResult, dict[str, QuadraticFitRe
     def analyze_stores(
         self, stores: list[RecordStore]
     ) -> dict[str, QuadraticFitResult]:
-        """Analyze multiple stores and aggregate the results.
+        """Fit a quadratic model to pooled (word_count, sales) data.
+
+        Calls :meth:`analyze` on each store, pools the resulting data
+        points per firm, z-scores both variables, and fits the quadratic
+        model:
+
+        .. math::
+
+            \\hat{y}_{\\text{norm}} =
+            a \\cdot x_{\\text{norm}}^2 + b \\cdot x_{\\text{norm}} + c
+
+        using :func:`scipy.optimize.curve_fit`. Stores with fewer than
+        2 data points or zero variance in :math:`x` or :math:`y` are
+        skipped silently.
 
         Args:
-            stores (list[RecordStore]): A list of record stores to analyze.
+            stores (list[RecordStore]): One record store per simulation
+                run.
 
         Returns:
-            dict[str, QuadraticFitResult]: A dictionary mapping store names to their respective quadratic fit results.
+            dict[str, QuadraticFitResult]: Mapping from firm name to the
+            corresponding :class:`QuadraticFitResult`. Firms for which a
+            fit could not be obtained are absent from the dict.
         """
         topic_sales_results: list[TopicSalesResult] = [
             self.analyze(store) for store in stores
@@ -332,16 +394,23 @@ class TopicSalesAnalyzer(AnalyzerBase[TopicSalesResult, dict[str, QuadraticFitRe
         self,
         results: dict[str, QuadraticFitResult],
     ) -> RenderableType:
-        """
-        Summarize quadratic regression results using rich tables.
+        """Summarise quadratic regression results in a Rich table.
 
-        Parameters
-        ----------
-        results :
-            Mapping from store name to regression result.
+        Displays one row per store, ranked by :math:`R^2` descending, with
+        columns for :math:`a`, :math:`b`, :math:`c`, :math:`R^2`, RMSE,
+        sample count, and a trend label:
 
-        console :
-            Rich console instance. If None, a new Console is created.
+        * *Convex ↑* when :math:`a > 0` (accelerating returns with buzz)
+        * *Concave ∩* when :math:`a < 0` (diminishing / saturating returns)
+        * *Linear* when :math:`a \\approx 0`
+
+        Args:
+            results (dict[str, QuadraticFitResult]): Mapping from store
+                name to regression result, as returned by
+                :meth:`analyze_stores`.
+
+        Returns:
+            RenderableType: Rich panel containing the summary table.
         """
 
         table = Table(

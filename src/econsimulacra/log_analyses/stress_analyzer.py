@@ -14,9 +14,37 @@ StressData: TypeAlias = dict[int, dict[str, dict[int, float]]]
 
 
 class StressAnalyzer(AnalyzerBase[StressData, None]):
-    """Stress analyzer.
+    """Analyse per-agent stress levels over simulation time.
 
-    StressAnalyzer analyzes stress data for each household stress_type "*_history_stress".
+    EconSimulacra agents maintain internal stress values for different life
+    domains (e.g., consumption, movement, economic condition, sleep). These
+    values are periodically written to agent memory and recorded as
+    :class:`~econsimulacra.log_analyses.records.ObsRecord` entries with
+    ``obs_type == "memory"``.
+
+    :class:`StressAnalyzer` extracts memory keys that end in
+    ``"_history_stress"`` and returns a three-level dict::
+
+        {
+            agent_id: {
+                stress_type: {time_step: stress_value, ...},
+                ...
+            },
+            ...
+        }
+
+    where ``stress_type`` is the prefix before ``"_history_stress"``
+    (e.g., ``"consumption"``, ``"movement"``, ``"economic"``, ``"sleep"``).
+    Higher stress values indicate that an agent is further from its target
+    state for that domain.
+
+    :meth:`draw_figs` plots each stress type as a time-series overlay
+    across all agents, allowing quick identification of agents under
+    sustained stress and the time periods where stress peaks.
+
+    Note:
+        Agents listed in ``exclude_agent_ids`` (e.g., firm agents that do
+        not have stress models) are silently skipped.
     """
 
     name = "stress"
@@ -30,27 +58,34 @@ class StressAnalyzer(AnalyzerBase[StressData, None]):
         self.exclude_agent_ids = exclude_agent_ids
 
     def analyze(self, store: RecordStore) -> StressData:
-        """Analyzes stress data for each household stress_type "*_history_stress".
+        """Extract per-agent, per-domain stress time series from *store*.
+
+        Scans all :class:`~econsimulacra.log_analyses.records.ObsRecord`
+        entries whose ``obs_type`` is ``"memory"``. For each record the
+        observation dict is searched for keys ending in
+        ``"_history_stress"``; the suffix is stripped to obtain the
+        ``stress_type`` label and the numeric value is recorded at the
+        corresponding ``time_step``.
 
         Args:
-            store (RecordStore): The record store containing the records to analyze.
+            store (RecordStore): Record store containing memory observation
+                records.
 
         Returns:
-            A dictionary mapping agent IDs to a dictionary mapping stress types to
-            a dictionary of timestamps and stress values.
+            StressData: Three-level dict of the form::
 
-        Note:
-            Returned dictionary structure:
-            {
-                agent_id: {
-                    stress_type: {
-                        timestamp: stress_value,
+                {
+                    agent_id: {
+                        stress_type: {
+                            time_step: stress_value,
+                            ...
+                        },
                         ...
                     },
                     ...
-                },
-                ...
-            }
+                }
+
+            Agents listed in ``exclude_agent_ids`` are omitted.
         """
         self._prepare_time_axis(store)
         result: dict[int, dict[str, dict[int, float]]] = {}

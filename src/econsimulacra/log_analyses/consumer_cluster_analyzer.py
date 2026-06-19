@@ -46,36 +46,66 @@ class FitTransform2D(Protocol):
 
 @dataclass
 class ConsumerClusterAnalyzer(AnalyzerBase[ConsumerClusterResult, None]):
-    """Cluster agents' purchase or consumption behavior over rolling time windows.
+    """Cluster agents by their purchase or consumption behaviour over rolling windows.
 
-    This analyzer converts each ``(agent, time-window)`` pair into an item-wise
-    behavior vector, where each vector element represents the total amount of a
-    specific item consumed or ordered during that window. The resulting vectors
-    are clustered with :class:`sklearn.cluster.KMeans`.
+    For each ``(agent, time-window)`` pair a behaviour vector is constructed:
 
-    The number of clusters is selected from ``k_candidates`` by maximizing
-    clustering stability, measured as the mean pairwise Adjusted Rand Index
-    across multiple KMeans runs with different random seeds. Silhouette scores
-    are also computed for diagnostics, but are not used for model selection.
+    .. math::
 
-    The analyzer stores intermediate fitted attributes, such as vectors, labels,
-    cluster centers, selected ``k``, and diagnostic scores. These attributes are
-    used by :meth:`draw_figs` and :meth:`build_summary`, so those methods must be
-    called only after :meth:`analyze`.
+        \\mathbf{v}_{a,w} \\in \\mathbb{R}^{|\\mathcal{I}|},
+        \\quad
+        v_{a,w,i} = \\sum_{t \\in w} \\text{amount}_{a,t,i}
+
+    where :math:`\\mathcal{I}` is the set of tracked items and
+    :math:`\\text{amount}_{a,t,i}` is the quantity of item :math:`i`
+    consumed (or ordered) by agent :math:`a` at step :math:`t`.
+
+    The resulting matrix of vectors is clustered with
+    :class:`~sklearn.cluster.KMeans`. The number of clusters :math:`k` is
+    selected automatically from ``k_candidates`` by maximising *clustering
+    stability*: the mean pairwise Adjusted Rand Index (ARI) across
+    ``n_stability_runs`` independent KMeans runs:
+
+    .. math::
+
+        k^* = \\operatorname*{arg\\,max}_{k \\in K}
+        \\left\\langle \\text{ARI}\\bigl(
+            \\mathbf{z}^{(r)}, \\mathbf{z}^{(s)}\\bigr)
+        \\right\\rangle_{r < s}
+
+    where :math:`\\mathbf{z}^{(r)}` is the cluster-label vector from the
+    :math:`r`-th run. Ties are broken by preferring a smaller :math:`k`.
+    Silhouette scores are computed for diagnostics but are not used for
+    model selection.
+
+    After :meth:`analyze` returns, the following fitted attributes are
+    available for :meth:`draw_figs` and :meth:`build_summary`:
+
+    * ``vectors_`` – the :math:`(N_{\\text{samples}},\\, |\\mathcal{I}|)`
+      behaviour matrix.
+    * ``labels_`` – cluster assignment for each sample.
+    * ``cluster_centers_`` – the actual sample closest to each centroid.
+    * ``selected_k`` – the chosen number of clusters :math:`k^*`.
+    * ``stability_scores_`` – mean pairwise ARI per candidate :math:`k`.
+    * ``silhouette_scores_`` – silhouette score per candidate :math:`k`.
 
     Attributes:
-        name: Name of this analyzer.
-        window_size: Number of simulation time steps included in each window.
-        total_time_steps: Total number of simulation steps. If ``None``, this is
-            inferred from the maximum ``time_step`` in the target records.
-        k_candidates: Candidate numbers of clusters.
-        exclude_items: Item names excluded from vectorization.
-        is_consumption: If ``True``, cluster consumption records. If ``False``,
-            cluster order records.
-        random_state: Base random seed used for KMeans and dimensionality
-            reduction.
-        n_stability_runs: Number of KMeans runs used for stability estimation.
-        normalize: If ``True``, normalize each non-zero vector to sum to one.
+        name (str): Analyzer name.
+        window_size (int): Number of steps in each rolling window.
+        total_time_steps (int, optional): Total simulation steps. Inferred
+            from the data if ``None``.
+        k_candidates (tuple[int, ...]): Candidate values of :math:`k`.
+        exclude_items (tuple[str, ...]): Items excluded from vectorisation
+            (e.g. currency tokens such as ``"Yen"``).
+        is_consumption (bool): If ``True``, use
+            :class:`~econsimulacra.log_analyses.records.ConsumptionRecord`;
+            otherwise use
+            :class:`~econsimulacra.log_analyses.records.OrderRecord`.
+        random_state (int): Base random seed for KMeans and UMAP/PCA.
+        n_stability_runs (int): Number of KMeans fits per :math:`k` for
+            stability estimation.
+        normalize (bool): If ``True``, normalise each non-zero vector to
+            sum to 1 before clustering.
     """
 
     name: str = "consumer_cluster"
@@ -99,19 +129,33 @@ class ConsumerClusterAnalyzer(AnalyzerBase[ConsumerClusterResult, None]):
     silhouette_scores_: Optional[dict[int, float]] = None
 
     def analyze(self, store: RecordStore) -> ConsumerClusterResult:
-        """Analyze agent-level behavior and return cluster assignments.
+        """Cluster agents by behavioural vectors and return per-window assignments.
+
+        **Steps**
+
+        1. Build item vocabulary :math:`\\mathcal{I}` from
+           :class:`~econsimulacra.log_analyses.records.ItemGenerationRecord`
+           entries (minus ``exclude_items``).
+        2. Construct behaviour vectors :math:`\\mathbf{v}_{a,w}` for every
+           ``(agent, window)`` pair.
+        3. For each :math:`k \\in` ``k_candidates``, run KMeans
+           ``n_stability_runs`` times and compute mean pairwise ARI.
+        4. Select :math:`k^* = \\operatorname{argmax}` ARI (ties → smaller
+           :math:`k`).
+        5. Refit KMeans with :math:`k^*` and ``random_state``.
+        6. Map cluster labels back to ``(agent_id, window_start)`` pairs.
 
         Args:
-            store: Record store containing item generation records and either
-                consumption records or order records.
+            store (RecordStore): Record store containing item-generation
+                records and either consumption or order records.
 
         Returns:
-            Nested dictionary mapping ``agent_id`` to ``window_start`` to a pair
-            of ``(cluster_label, behavior_vector)``.
+            ConsumerClusterResult: Nested dict
+            ``{agent_id: {window_start: (cluster_label, behavior_vector)}}``.
 
         Raises:
-            ValueError: If no valid target items, records, vectors, or cluster
-                candidates are available.
+            ValueError: If no valid items, records, or vectors are found, or
+                if no valid :math:`k` candidates remain after filtering.
         """
         exclude_items: set[str] = set(self.exclude_items)
         item_names: set[str] = {
@@ -270,14 +314,30 @@ class ConsumerClusterAnalyzer(AnalyzerBase[ConsumerClusterResult, None]):
     def draw_figs(self, result: ConsumerClusterResult) -> dict[str, Figure]:
         """Create diagnostic figures for the clustering result.
 
+        Produces four figures:
+
+        * ``embedding_by_agent`` – 2-D scatter plot (UMAP or PCA fallback)
+          coloured by agent ID.
+        * ``embedding_by_time`` – same scatter plot coloured by window start
+          time, showing temporal drift in behaviour space.
+        * ``cluster_transition_network`` – directed graph where node size is
+          proportional to cluster membership and edge width is proportional
+          to the number of agents transitioning between clusters across
+          consecutive windows.
+        * ``cluster_representatives`` – bar charts of the representative
+          item-consumption profile for each cluster.
+        * ``cluster_counts`` – stacked bar chart of the number of agents in
+          each cluster at each time window.
+
         Args:
-            result: Output returned by :meth:`analyze`.
+            result (ConsumerClusterResult): Output returned by
+                :meth:`analyze`.
 
         Returns:
-            Dictionary from figure names to Matplotlib figures.
+            dict[str, Figure]: Figure name → Matplotlib figure.
 
         Raises:
-            RuntimeError: If this method is called before :meth:`analyze`.
+            RuntimeError: If called before :meth:`analyze`.
         """
         if (
             self.vectors_ is None

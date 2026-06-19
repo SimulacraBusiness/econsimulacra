@@ -38,9 +38,40 @@ STRESS_REASON_CATEGORIES = {
 
 @dataclass
 class StressActionAnalyzer(AnalyzerBase[StressActionData, list[StressActionData]]):
-    """Stress action analyzer.
+    """Analyse how agent actions relate to the reasons behind their stress.
 
-    StressActionAnalyzer analyzes stress action data for each household stress_type "*_history_stress_action".
+    EconSimulacra's stress model assigns a numeric stress level and a set
+    of *reason codes* to each stress domain at every time step. Reason
+    codes identify *why* an agent is stressed (e.g., ``"You have not
+    consumed enough items"``). :class:`StressActionAnalyzer` cross-
+    references these stress reasons with the actions the agent actually
+    performed in the same time step, producing an *action-rate-by-reason*
+    table.
+
+    For each ``(stress_type, action_type, reason_id)`` triple the
+    *action rate* is:
+
+    .. math::
+
+        r(\\text{stress\\_type},\\; \\text{action\\_type},\\; \\text{reason}) =
+        \\frac{\\text{# steps where reason is active AND action was taken}}
+              {\\text{# steps where reason is active}}
+
+    This reveals which stress reasons actually trigger which actions.
+    For example, if agents with ``consumption_history_stress_reason == 2``
+    ("You have not consumed enough items") almost always perform a
+    ``consumption`` action, that confirms the stress-action loop is
+    functioning as designed.
+
+    Attributes:
+        name (str): Analyzer name.
+        action_types (list[str]): Action types included in the analysis.
+        stress_threshold (int): Informational threshold stored for
+            reference; not used for filtering in the main pipeline.
+        exclude_agent_ids (list[int]): Agent IDs excluded from the
+            analysis.
+        stress_reasons (dict[int, str]): Mapping from reason-code integer
+            to human-readable description.
     """
 
     name = "stress_action"
@@ -63,13 +94,32 @@ class StressActionAnalyzer(AnalyzerBase[StressActionData, list[StressActionData]
     )
 
     def analyze(self, store: RecordStore) -> StressActionData:
-        """Analyzes stress action data for each household stress_type "*_history_stress_action".
+        """Build a per-step stress-and-action snapshot for all agents.
+
+        For every ``(agent_id, time_step)`` pair found in the store, the
+        method collects:
+
+        * Stress levels and reason-code lists from memory observations
+          (:class:`~econsimulacra.log_analyses.records.ObsRecord` with
+          ``obs_type == "memory"``).
+        * Boolean flags indicating whether each action type was performed.
 
         Args:
-            store (RecordStore): The record store containing the records to analyze.
+            store (RecordStore): Record store to analyse.
 
         Returns:
-            A list of dictionaries containing agent ID, timestamp, stress type, and stress action value.
+            StressActionData: A list of dicts, one per observed
+            ``(agent_id, time_step)`` pair. Each dict contains:
+
+            * ``"agent_id"`` (int)
+            * ``"time_step"`` (int)
+            * ``"{domain}_history_stress"`` (int) – stress level per domain
+            * ``"{domain}_history_stress_reason"`` (list[int]) – active
+              reason codes for the domain
+            * ``"{action_type}"`` (bool) – whether the action was performed
+
+            Entries with fewer than 3 populated keys are excluded (i.e.,
+            time steps where no relevant records were found).
         """
         self._prepare_time_axis(store)
         if self._time_axis_config is not None:
@@ -89,33 +139,32 @@ class StressActionAnalyzer(AnalyzerBase[StressActionData, list[StressActionData]
     def _generate_agent_time_stress_action_value(
         self, records: list[BaseRecord]
     ) -> Optional[dict[str, int | bool | list[int]]]:
-        """Generates a dictionary containing stress action value for a specific agent at a specific time step.
+        """Build the stress-action snapshot dict for a single agent–step.
+
+        Scans the supplied records for the agent's memory observation and
+        action records at one time step, then returns a unified dict.
 
         Args:
-            records (list[BaseRecord]): A list of records for a specific agent at a specific time step.
+            records (list[BaseRecord]): All records for one agent at one
+                time step.
 
         Returns:
-            A dictionary containing agent ID, time step, stress type, and stress action value, or None if no stress action record is found.
+            dict or None: A dict of the form::
 
-        Note:
-            Example of returned dictionary:
-            {
-                "agent_id": 0,
-                "time_step": 10,
-                "consumption_history_stress": 100,
-                "consumption_history_stress_reason": [3],
-                "..._history_stress": 50,
-                "..._history_stress_reason": [1, 5, 7],
-                ...,
-                "sleep_start": True,
-                "move": False,
-                "consumption": True,
-                "order": False,
-                "proposal": False,
-                "tweet": False,
-                "follow": False,
-                "unfollow": False,
-            }
+                {
+                    "agent_id": 0,
+                    "time_step": 10,
+                    "consumption_history_stress": 100,
+                    "consumption_history_stress_reason": [3],
+                    "sleep_start": True,
+                    "move": False,
+                    "consumption": True,
+                    ...
+                }
+
+            Returns ``None`` if the agent is in ``exclude_agent_ids`` or
+            if fewer than 3 keys were populated (e.g., no memory
+            observation was found).
         """
         stress_action_value: dict[str, int | bool | list[int]] = {}
         for record in records:

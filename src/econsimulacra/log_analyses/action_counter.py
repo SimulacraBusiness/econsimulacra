@@ -11,26 +11,55 @@ from .store import RecordStore
 
 
 class ActionCounter(AnalyzerBase[dict[str, int], dict[str, list[int]]]):
-    """Action counter analyzer.
+    """Count the occurrences of each action type across a simulation log.
 
-    ActionCounter counts the number of each action kinds
-    of all records in the log.
+    EconSimulacra records twelve distinct action types that agents can
+    perform. :class:`ActionCounter` scans a :class:`RecordStore` and
+    tallies the number of log entries of each type. The result is a flat
+    ``dict[str, int]``, where each key is an action-type string and the
+    value is the total count across all agents and time steps.
+
+    **Action types counted**
+
+    * ``sleep_start`` – agent begins a sleep period
+    * ``move`` – agent changes its spatial position
+    * ``tweet`` – agent posts a message on the social network
+    * ``follow`` – agent follows another agent
+    * ``unfollow`` – agent unfollows another agent
+    * ``inner_thought`` – agent records an internal monologue
+    * ``order`` – agent places a market order
+    * ``proposal`` – agent proposes a barter trade
+    * ``consumption`` – agent consumes an item from its inventory
+    * ``order_reaction`` – agent accepts or rejects an incoming order
+    * ``proposal_reaction`` – agent accepts or rejects an incoming proposal
+    * ``change_price`` – agent updates the listed price of an item
+
+    The bar chart produced by :meth:`draw_figs` provides a quick visual
+    overview of the activity mix in a simulation run. Use
+    :meth:`draw_figs_all` with multiple stores to compare the distribution
+    of action counts across runs via a box plot.
     """
 
     name = "action_count"
 
     def analyze(self, store: RecordStore) -> dict[str, int]:
-        """Counts the number of each action kinds.
+        """Count the occurrences of each action type in *store*.
+
+        Iterates over the twelve predefined action types and calls
+        :meth:`~RecordStore.get_by_type` for each. Zero counts are always
+        preserved so that the output dict has a fixed set of keys regardless
+        of which actions actually occurred in this run.
 
         Args:
-            store (RecordStore): The record store containing the records to analyze.
+            store (RecordStore): The record store to analyse.
 
         Returns:
-            counts (dict[str, int]): A dictionary mapping action types to counts.
-                Action types are
-                "sleep_end", "move", "tweet", "follow", "unfollow", "inner_thought",
-                "order", "proposal", "consumption", "order_reaction", "proposal_reaction",
-                "change_price".
+            dict[str, int]: Mapping from action-type string to its total
+            occurrence count. Keys are always exactly:
+            ``"sleep_start"``, ``"move"``, ``"tweet"``, ``"follow"``,
+            ``"unfollow"``, ``"inner_thought"``, ``"order"``,
+            ``"proposal"``, ``"consumption"``, ``"order_reaction"``,
+            ``"proposal_reaction"``, ``"change_price"``.
         """
         counts: dict[str, int] = {
             "sleep_start": 0,
@@ -51,17 +80,20 @@ class ActionCounter(AnalyzerBase[dict[str, int], dict[str, list[int]]]):
         return counts
 
     def analyze_stores(self, stores: list[RecordStore]) -> dict[str, list[int]]:
-        """Counts the number of each action kinds across multiple stores.
+        """Count action occurrences across a collection of stores.
+
+        Calls :meth:`analyze` independently for each store and collects the
+        per-action counts into lists, enabling cross-run comparison. The box
+        plot produced by :meth:`draw_figs_all` shows the distribution of
+        counts across runs.
 
         Args:
-            stores (list[RecordStore]): A list of record stores to analyze.
+            stores (list[RecordStore]): One record store per simulation run.
 
         Returns:
-            counts (dict[str, list[int]]): A dictionary mapping action types to lists of counts.
-                Action types are
-                "sleep_start", "move", "tweet", "follow", "unfollow", "inner_thought",
-                "order", "proposal", "consumption", "order_reaction", "proposal_reaction",
-                "change_price".
+            dict[str, list[int]]: Mapping from action-type string to a list
+            of counts where ``result[action][i]`` is the count in
+            ``stores[i]``. Each inner list has the same length as *stores*.
         """
         total_counts: dict[str, list[int]] = {
             "sleep_start": [],

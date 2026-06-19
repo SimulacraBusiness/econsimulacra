@@ -12,22 +12,54 @@ from .store import RecordStore
 
 
 class FollowerCounter(AnalyzerBase[dict[str, dict[int, int]], None]):
-    """Follower counter analyzer.
+    """Track the number of followers for each agent over simulation time.
 
-    FollowerCounter counts the number of followers for each agent over time.
+    Social-network dynamics in EconSimulacra are captured by
+    :class:`~econsimulacra.log_analyses.records.FollowRecord`,
+    :class:`~econsimulacra.log_analyses.records.UnfollowRecord`, and
+    :class:`~econsimulacra.log_analyses.records.TweetRecord`, all of which
+    carry a ``num_followers`` snapshot at the moment the event occurred.
+    :class:`FollowerCounter` collects the most recently observed follower
+    count for each ``(agent_name, time_step)`` pair.
+
+    The primary output of :meth:`analyze` is a two-level dict::
+
+        {
+            agent_name: {time_step: num_followers, ...},
+            ...
+        }
+
+    :meth:`draw_figs` visualises the *maximum* follower count reached by
+    each agent as a ranked bar chart, making it easy to identify the most
+    influential agents (influencers) in a run.
+
+    Note:
+        Because follower counts are recorded only on social events (follow,
+        unfollow, tweet), the time resolution of the resulting series depends
+        on how frequently agents interact socially. Agents with no social
+        events will be absent from the result.
     """
 
     name = "follower_count"
 
     def analyze(self, store: RecordStore) -> dict[str, dict[int, int]]:
-        """Counts the number of followers for each agent over time.
+        """Collect per-agent follower counts from social-network records.
+
+        Scans :class:`~econsimulacra.log_analyses.records.FollowRecord`,
+        :class:`~econsimulacra.log_analyses.records.UnfollowRecord`, and
+        :class:`~econsimulacra.log_analyses.records.TweetRecord` entries in
+        *store*. For each record the ``num_followers`` value at ``time_step``
+        is stored, overwriting any earlier value for the same
+        ``(agent_name, time_step)`` pair.
 
         Args:
-            store (RecordStore): The record store containing the records to analyze.
+            store (RecordStore): Record store containing social-network
+                records to analyse.
 
         Returns:
-            A dictionary mapping agent names to
-            a dictionary of timestamps and follower counts.
+            dict[str, dict[int, int]]: Nested dict mapping agent names to
+            a ``{time_step: num_followers}`` mapping. Agents with no social
+            events are absent from the result.
         """
         agent_id2name: dict[int, str] = self.get_agent_id2name(store)
         follower_counts: dict[str, dict[int, int]] = {}

@@ -21,7 +21,35 @@ SalesAmountResult: TypeAlias = dict[str, dict[int, float]]
 
 
 class StoreSalesAnalyzer(AnalyzerBase[tuple[SalesResult, SalesAmountResult], None]):
-    """Sales analyzer."""
+    """Analyse revenue and unit sales for each store over simulation time.
+
+    A "store" is any agent that acts as the counterparty in an
+    :class:`~econsimulacra.log_analyses.records.OrderReactionRecord` or as
+    the responder in an accepted
+    :class:`~econsimulacra.log_analyses.records.ProposalReactionRecord`.
+    For each such store this analyzer aggregates two quantities per time step:
+
+    **Revenue (sales)**
+        The total monetary value of goods sold:
+
+        .. math::
+
+            \\text{sales}_{\\text{store},t} =
+            \\sum_{i \\,:\\, t_i = t}
+            \\text{accept\\_amount}_i \\times \\text{price}_i
+
+    **Unit sales (sold amount)**
+        The total physical quantity of goods sold:
+
+        .. math::
+
+            \\text{sold\\_amount}_{\\text{store},t} =
+            \\sum_{i \\,:\\, t_i = t} \\text{accept\\_amount}_i
+
+    Both quantities are plotted as bar charts over time by :meth:`draw_figs`.
+    :meth:`build_summary` prints a revenue ranking across all stores,
+    excluding household agents.
+    """
 
     name = "store_sales"
 
@@ -29,6 +57,36 @@ class StoreSalesAnalyzer(AnalyzerBase[tuple[SalesResult, SalesAmountResult], Non
         self,
         store: RecordStore,
     ) -> tuple[SalesResult, SalesAmountResult]:
+        """Aggregate per-store revenue and unit sales from transaction records.
+
+        Processes :class:`~econsimulacra.log_analyses.records.OrderReactionRecord`
+        and accepted
+        :class:`~econsimulacra.log_analyses.records.ProposalReactionRecord`
+        entries. For order reactions the store is identified as
+        ``counterparty_id``; for accepted proposals it is
+        ``responder_agent_id``.
+
+        Revenue per time step is accumulated as:
+
+        .. math::
+
+            \\text{sales}_{t} = \\sum_{i \\,:\\, t_i = t}
+            \\text{accept\\_amount}_i \\times \\text{price}_i
+
+        Args:
+            store (RecordStore): Record store containing transaction records.
+
+        Returns:
+            tuple[SalesResult, SalesAmountResult]: A 2-tuple where
+
+            * ``sales`` maps store names to ``{time_step: total_revenue}``.
+            * ``sold_amounts`` maps store names to
+              ``{time_step: total_units_sold}``.
+
+        Raises:
+            ValueError: If a transaction references an agent ID that is not
+                present in :class:`~econsimulacra.log_analyses.records.AgentGenerationRecord`.
+        """
         self._prepare_time_axis(store)
         agent_id2name: dict[int, str] = self.get_agent_id2name(store)
         sales: SalesResult = {}
