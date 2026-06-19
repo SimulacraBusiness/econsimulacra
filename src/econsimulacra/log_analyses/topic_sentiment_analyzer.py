@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional, TypeAlias
+from typing import Optional, TypeAlias, cast
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -10,8 +10,6 @@ from matplotlib.figure import Figure
 from rich.console import RenderableType
 from rich.panel import Panel
 from rich.table import Table
-
-from typing import cast
 
 from .base import AnalyzerBase
 from .records import InnerThoughtRecord, TweetRecord
@@ -546,13 +544,9 @@ class TopicSentimentAnalyzer(
 
         if results.r is not None:
             if results.r > 0:
-                interpretation = (
-                    "Positive: higher buzz → higher sentiment variance"
-                )
+                interpretation = "Positive: higher buzz → higher sentiment variance"
             elif results.r < 0:
-                interpretation = (
-                    "Negative: higher buzz → lower sentiment variance"
-                )
+                interpretation = "Negative: higher buzz → lower sentiment variance"
             else:
                 interpretation = "No linear correlation detected"
             table.add_row("Interpretation", interpretation)
