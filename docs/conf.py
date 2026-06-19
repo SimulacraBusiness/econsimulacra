@@ -52,6 +52,9 @@ autodoc_mock_imports = [
     "typing_extensions",
     "bertopic",
     "umap",
+    "sklearn",
+    "pandas",
+    "scipy",
 ]
 
 intersphinx_mapping = {

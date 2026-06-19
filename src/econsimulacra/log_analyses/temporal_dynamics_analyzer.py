@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import Counter, defaultdict
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Optional
 
@@ -187,6 +187,7 @@ class TemporalDynamicsAnalyzer(AnalyzerBase[TemporalDynamicsResult, None]):
     action_types: tuple[type[TimedRecord], ...] = DEFAULT_ACTION_TYPES
     period_steps: int = 24
     agent_type: Optional[str] = None
+    exclude_agent_ids: list[int] = field(default_factory=list)
 
     def analyze(self, store: RecordStore) -> TemporalDynamicsResult:
         """Compute temporal-dynamics statistics from a record store.
@@ -224,6 +225,8 @@ class TemporalDynamicsAnalyzer(AnalyzerBase[TemporalDynamicsResult, None]):
             for record in store.typed(action_type):
                 agent_id: Optional[int] = getattr(record, "agent_id", None)
                 if agent_id is None:
+                    continue
+                if agent_id in self.exclude_agent_ids:
                     continue
                 if allowed_agents is None or agent_id in allowed_agents:
                     actions.append((int(agent_id), record))
