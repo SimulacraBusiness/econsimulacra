@@ -244,11 +244,12 @@ class Environment(Generic[ObsT]):
 
         Note:
             If a TimeTranslator service provider is available, use it to convert the internal time step
-            to a datetime string; otherwise, return the internal time step as an integer.
+            to the agent-facing time (a datetime string, or the step index when
+            ``revealTimeOfDay`` is disabled); otherwise, return the internal time step as an integer.
         """
         time_translator: Optional[TimeTranslator] = self.get_time_translator()
         if time_translator is not None:
-            return time_translator.step_to_datetime(self._time)
+            return time_translator.step_to_display_time(self._time)
         return self._time
 
     def get_time_step(self) -> int:

@@ -49,6 +49,10 @@ class TimeTranslator:
         self.prng: random.Random = prng if prng is not None else random.Random()
         self.registered_classes: list[Type] = registered_classes
 
+        # when disabled, agents are shown the step index instead of a wall-clock
+        # time, so they cannot anchor behaviour to the time of day
+        self.reveal_time_of_day: bool = config.get("revealTimeOfDay", True)
+
         self.active_time_ranges: list[tuple[time, time]] = (
             self._parse_active_time_ranges(config.get("activeTimeRanges", []))
         )
@@ -198,6 +202,18 @@ class TimeTranslator:
             return self.start_datetime.strftime("%Y-%m-%d %H:%M:%S")
 
         return self.step_datetimes[step].strftime("%Y-%m-%d %H:%M:%S")
+
+    def step_to_display_time(self, step: int) -> int | str:
+        """Convert a step to the time shown to agents.
+
+        Returns the wall-clock datetime when ``revealTimeOfDay`` is set (the
+        default), otherwise the integer step index. Hiding the time of day lets
+        one test whether temporal patterns arise from the agents' internal
+        dynamics rather than from reading the clock.
+        """
+        if self.reveal_time_of_day:
+            return self.step_to_datetime(step)
+        return step
 
     def get_timedelta(self) -> str:
         """Get the mimimum time delta for each simulation step.
