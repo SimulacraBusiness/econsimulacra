@@ -8,6 +8,7 @@ from .memory_items import (
     ConsumptionHistoryItem,
     ExchangeHistoryItem,
     InnerThoughtHistoryItem,
+    InvalidActionHistoryItem,
     MoveHistoryItem,
     ObsHistoryItem,
     PurchaseHistoryItem,
@@ -125,7 +126,8 @@ class StressCalculator:
             Callable[
                 [
                     Deque[
-                        ConsumptionHistoryItem
+                        InvalidActionHistoryItem
+                        | ConsumptionHistoryItem
                         | MoveHistoryItem
                         | PurchaseHistoryItem
                         | SaleHistoryItem
@@ -141,6 +143,7 @@ class StressCalculator:
                 tuple[Optional[int], str],
             ],
         ] = {
+            "invalid_action_history": self._calc_stress_from_invalid_action_history_dispatch,
             "consumption_history": self._calc_stress_from_consumption_history_dispatch,
             "move_history": self._calc_stress_from_move_history_dispatch,
             "purchase_history": self._calc_stress_from_purchase_history_dispatch,
@@ -167,7 +170,8 @@ class StressCalculator:
         self,
         field_name: str,
         history: Deque[
-            ConsumptionHistoryItem
+            InvalidActionHistoryItem
+            | ConsumptionHistoryItem
             | MoveHistoryItem
             | PurchaseHistoryItem
             | SaleHistoryItem
@@ -221,6 +225,14 @@ class StressCalculator:
         return (
             f"Your stress level from this {readable_field_name} is "
             f"{stress_level} out of {self.max_magnitude}. {stress_description}"
+        )
+
+    def _calc_stress_from_invalid_action_history_dispatch(
+        self,
+        history: Deque[Any],
+    ) -> tuple[Optional[int], str]:
+        return self._calc_stress_from_invalid_action_history(
+            cast(Deque[InvalidActionHistoryItem], history)
         )
 
     def _calc_stress_from_consumption_history_dispatch(
@@ -308,6 +320,13 @@ class StressCalculator:
         return self._calc_stress_from_state_evaluation_history(
             cast(Deque[StateEvaluationHistoryItem], history)
         )
+
+    def _calc_stress_from_invalid_action_history(
+        self,
+        history: Deque[InvalidActionHistoryItem],
+    ) -> tuple[Optional[int], str]:
+        """Calculate the stress level from the invalid action history."""
+        return None, ""
 
     def _calc_stress_from_consumption_history(
         self,
@@ -502,7 +521,8 @@ class StressAwareSummarizer(MemorySummarizer):
         self,
         field_name: str,
         history: Deque[
-            ConsumptionHistoryItem
+            InvalidActionHistoryItem
+            | ConsumptionHistoryItem
             | MoveHistoryItem
             | PurchaseHistoryItem
             | SaleHistoryItem
