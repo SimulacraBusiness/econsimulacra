@@ -39,11 +39,8 @@ DEFAULT_ACTION_TYPES: tuple[type[TimedRecord], ...] = (
 
 
 @dataclass(frozen=True)
-class TemporalDynamicsResult:
-    """Temporal-dynamics statistics for one simulation run.
-
-    These statistics characterise the temporal *texture* of agent activity.
-    All scalar metrics are averaged across agents unless otherwise noted.
+class ActionTypeStats:
+    """Temporal statistics for a single action type.
 
     Attributes:
         mean_burstiness (float, optional): Mean across agents of the
@@ -53,43 +50,101 @@ class TemporalDynamicsResult:
 
                 B = \\frac{\\sigma_\\tau - \\mu_\\tau}{\\sigma_\\tau + \\mu_\\tau}
 
-            where :math:`\\mu_\\tau` and :math:`\\sigma_\\tau` are the mean
-            and standard deviation of inter-event times for the agent.
-            :math:`B = 1` for maximally bursty activity, :math:`B = 0`
-            for Poisson-random activity, and :math:`B = -1` for perfectly
-            regular (clock-like) activity. ``None`` if no agent had at
-            least 2 inter-event intervals.
+            ``None`` if no agent had at least 2 inter-event intervals.
 
         mean_memory (float, optional): Mean across agents of the memory
             coefficient :math:`M`, the Pearson correlation between
-            consecutive inter-event times:
-
-            .. math::
-
-                M = \\text{corr}(\\tau_i,\\, \\tau_{i+1})
-
-            :math:`M > 0` means long pauses cluster together (positive
-            memory); :math:`M < 0` means activity alternates between short
-            and long gaps. ``None`` if no agent had at least 3 intervals.
+            consecutive inter-event times. ``None`` if no agent had at
+            least 3 intervals.
 
         inter_event_times (list[int]): Pooled inter-event times (in
-            simulation steps) across all agents.
+            simulation steps) across all agents for this action type.
 
-        activity_by_hour (dict[int, int]): Count of action events per
-            clock-hour (0–23). The "hour" is taken from the ``datetime``
-            field of the record when available; otherwise
-            ``time_step mod period_steps`` is used.
+        activity_by_hour (dict[int, int]): Count of events per clock-hour
+            (0–23) for this action type.
 
-        meals_by_hour (dict[int, int]): Count of
-            :class:`~econsimulacra.log_analyses.records.ConsumptionRecord`
-            events per clock-hour (0–23).
+        n_events (int): Total number of events of this action type.
+    """
 
-        sleep_onsets_by_hour (dict[int, int]): Count of
-            :class:`~econsimulacra.log_analyses.records.SleepStartRecord`
-            events per clock-hour (0–23).
+    mean_burstiness: Optional[float]
+    mean_memory: Optional[float]
+    inter_event_times: list[int]
+    activity_by_hour: dict[int, int]
+    n_events: int
+
+
+@dataclass(frozen=True)
+class ActionTypeAggregateStats:
+    """Aggregated temporal statistics for one action type across multiple runs.
+
+    Attributes:
+        mean_burstiness_mean (float, optional): Mean of per-run burstiness values.
+        mean_burstiness_std (float, optional): Std of per-run burstiness values.
+            ``None`` when fewer than 2 runs contributed a value.
+        mean_memory_mean (float, optional): Mean of per-run memory coefficients.
+        mean_memory_std (float, optional): Std of per-run memory coefficients.
+            ``None`` when fewer than 2 runs contributed a value.
+        mean_iet_mean (float, optional): Mean of per-run mean inter-event times.
+        mean_iet_std (float, optional): Std of per-run mean inter-event times.
+            ``None`` when fewer than 2 runs contributed a value.
+        mean_n_events (float): Mean event count across runs.
+        std_n_events (float, optional): Std of event counts across runs.
+            ``None`` when fewer than 2 runs contributed.
+        pooled_inter_event_times (list[int]): All inter-event times pooled
+            across every run for this action type.
+        mean_activity_by_hour (dict[int, float]): Mean activity count per
+            clock-hour averaged across runs.
+    """
+
+    mean_burstiness_mean: Optional[float]
+    mean_burstiness_std: Optional[float]
+    mean_memory_mean: Optional[float]
+    mean_memory_std: Optional[float]
+    mean_iet_mean: Optional[float]
+    mean_iet_std: Optional[float]
+    mean_n_events: float
+    std_n_events: Optional[float]
+    pooled_inter_event_times: list[int]
+    mean_activity_by_hour: dict[int, float]
+
+
+@dataclass(frozen=True)
+class TemporalDynamicsAggregateResult:
+    """Aggregated temporal-dynamics statistics across multiple simulation runs.
+
+    Attributes:
+        by_action_type (dict[str, ActionTypeAggregateStats]): Per-action-type
+            aggregate statistics.
+        circadian_autocorr_mean (float, optional): Mean circadian autocorrelation
+            across runs.
+        circadian_autocorr_std (float, optional): Std of circadian autocorrelation.
+            ``None`` when fewer than 2 runs produced a value.
+        n_runs (int): Number of simulation runs included in the aggregate.
+    """
+
+    by_action_type: dict[str, ActionTypeAggregateStats]
+    circadian_autocorr_mean: Optional[float]
+    circadian_autocorr_std: Optional[float]
+    n_runs: int
+
+
+@dataclass(frozen=True)
+class TemporalDynamicsResult:
+    """Temporal-dynamics statistics for one simulation run.
+
+    Statistics are computed **per action type** so that, for example,
+    the burstiness of movement can be compared against the burstiness of
+    consumption independently.
+
+    Attributes:
+        by_action_type (dict[str, ActionTypeStats]): Mapping from action-type
+            name (e.g. ``"Move"``, ``"Consumption"``) to its temporal
+            statistics.  Only action types that produced at least one event
+            are included.
 
         circadian_autocorr (float, optional): Autocorrelation of the
-            per-step action-count series at lag ``period_steps``:
+            per-step action-count series (pooled over all action types) at
+            lag ``period_steps``:
 
             .. math::
 
@@ -97,45 +152,43 @@ class TemporalDynamicsResult:
                                          (x_{t+\\ell} - \\bar{x})}
                                 {\\sum_t (x_t - \\bar{x})^2}
 
-            where :math:`\\ell` = ``period_steps``. A value close to 1
-            indicates a strong daily activity rhythm. ``None`` if the run
-            is shorter than two periods.
+            ``None`` if the run is shorter than two periods.
 
         n_agents (int): Number of agents with at least one recorded action.
-        n_events (int): Total number of action events across all agents.
+        n_events (int): Total number of action events across all agents and
+            all action types.
     """
 
-    mean_burstiness: Optional[float]
-    mean_memory: Optional[float]
-    inter_event_times: list[int]
-    activity_by_hour: dict[int, int]
-    meals_by_hour: dict[int, int]
-    sleep_onsets_by_hour: dict[int, int]
+    by_action_type: dict[str, ActionTypeStats]
     circadian_autocorr: Optional[float]
     n_agents: int
     n_events: int
 
 
 @dataclass
-class TemporalDynamicsAnalyzer(AnalyzerBase[TemporalDynamicsResult, None]):
+class TemporalDynamicsAnalyzer(
+    AnalyzerBase[TemporalDynamicsResult, TemporalDynamicsAggregateResult]
+):
     """Quantify the temporal structure of agent activity in a simulation run.
 
     This analyzer measures whether agent activity is bursty or regular,
     whether inactive periods cluster together (memory), and whether there is
-    a circadian rhythm. These properties mirror the empirical "stylized facts"
-    of human activity timing (Barabási, 2005; Goh & Barabási, 2008).
+    a circadian rhythm. Statistics are computed **per action type**: burstiness
+    of movement, burstiness of consumption, etc. are reported independently.
 
     **Burstiness** :math:`B`
         Measured per agent as the normalised difference between standard
-        deviation and mean of that agent's inter-event times:
+        deviation and mean of that agent's inter-event times for the given
+        action type:
 
         .. math::
 
             B = \\frac{\\sigma_\\tau - \\mu_\\tau}{\\sigma_\\tau + \\mu_\\tau}
             \\in [-1,\\; 1]
 
-        LLM-driven agents often show :math:`B > 0` due to reasoning and
-        API latency introducing bursty idle periods.
+        :math:`B > 0` indicates bursty activity with many short intervals and
+        a few long intervals; :math:`B < 0` indicates regular activity with
+        similar-length intervals.
 
     **Memory** :math:`M`
         The lag-1 Pearson correlation of inter-event times:
@@ -149,8 +202,8 @@ class TemporalDynamicsAnalyzer(AnalyzerBase[TemporalDynamicsResult, None]):
         and quiet phases.
 
     **Circadian autocorrelation**
-        The normalised autocorrelation of the per-step event count at lag
-        ``period_steps``:
+        The normalised autocorrelation of the per-step event count (pooled
+        across all action types) at lag ``period_steps``:
 
         .. math::
 
@@ -161,13 +214,9 @@ class TemporalDynamicsAnalyzer(AnalyzerBase[TemporalDynamicsResult, None]):
         ``period_steps`` steps — a sign of a functioning day–night cycle.
 
     **Hourly histograms**
-        Activity, meal, and sleep-onset counts are binned by clock-hour
-        (0–23). If records carry a ``datetime`` timestamp, the hour is
+        Activity counts are binned by clock-hour (0–23) for each action type
+        separately. If records carry a ``datetime`` timestamp, the hour is
         extracted directly; otherwise ``time_step mod period_steps`` is used.
-
-    This analyzer complements :class:`MoveDistanceAnalyzer`: rather than
-    asking *how far* agents move, it asks *when* they act and whether that
-    timing is rhythmic.
 
     Attributes:
         name (str): Analyzer name used for organizing outputs.
@@ -180,6 +229,7 @@ class TemporalDynamicsAnalyzer(AnalyzerBase[TemporalDynamicsResult, None]):
         agent_type (str, optional): If set, restrict the analysis to agents
             of this type (e.g. ``"LLMAgent"``); otherwise all agents with
             action records are used.
+        exclude_agent_ids (list[int]): Agent IDs to exclude from the analysis.
     """
 
     name: str = "temporal_dynamics"
@@ -197,13 +247,15 @@ class TemporalDynamicsAnalyzer(AnalyzerBase[TemporalDynamicsResult, None]):
         1. Optionally filter agents by ``agent_type`` using
            :class:`~econsimulacra.log_analyses.records.AgentGenerationRecord`
            entries.
-        2. Collect all action events for qualifying agents.
-        3. Per agent, sort event steps and compute inter-event intervals
-           :math:`\\tau_i = t_{i+1} - t_i`. Compute :math:`B` and :math:`M`
-           from the interval sequence.
-        4. Build hourly histograms for action events, consumption events,
-           and sleep-onset events.
-        5. Compute the circadian autocorrelation at lag ``period_steps``.
+        2. For each action type in ``action_types``, collect events for
+           qualifying agents.
+        3. Per action type and per agent, sort event steps and compute
+           inter-event intervals :math:`\\tau_i = t_{i+1} - t_i`. Compute
+           :math:`B` and :math:`M` from each agent's interval sequence, then
+           average across agents to obtain the per-action-type statistics.
+        4. Build hourly histograms for each action type.
+        5. Compute the circadian autocorrelation at lag ``period_steps``
+           using the pooled event stream across all action types.
 
         Args:
             store (RecordStore): Record store containing the simulation log.
@@ -220,8 +272,16 @@ class TemporalDynamicsAnalyzer(AnalyzerBase[TemporalDynamicsResult, None]):
 
         allowed_agents: Optional[set[int]] = self._select_agents(store)
 
-        actions: list[tuple[int, TimedRecord]] = []
+        all_action_records: list[TimedRecord] = []
+        all_agent_ids: set[int] = set()
+        total_events: int = 0
+
+        by_action_type: dict[str, ActionTypeStats] = {}
+
         for action_type in self.action_types:
+            type_name: str = action_type.__name__.removesuffix("Record")
+            type_records: list[tuple[int, TimedRecord]] = []
+
             for record in store.typed(action_type):
                 agent_id: Optional[int] = getattr(record, "agent_id", None)
                 if agent_id is None:
@@ -229,119 +289,276 @@ class TemporalDynamicsAnalyzer(AnalyzerBase[TemporalDynamicsResult, None]):
                 if agent_id in self.exclude_agent_ids:
                     continue
                 if allowed_agents is None or agent_id in allowed_agents:
-                    actions.append((int(agent_id), record))
-        if not actions:
+                    type_records.append((int(agent_id), record))
+                    all_action_records.append(record)
+                    all_agent_ids.add(int(agent_id))
+
+            if not type_records:
+                continue
+
+            total_events += len(type_records)
+
+            steps_by_agent: defaultdict[int, list[int]] = defaultdict(list)
+            for agent_id, record in type_records:
+                steps_by_agent[agent_id].append(int(record.time_step))
+
+            inter_event_times: list[int] = []
+            burstiness_values: list[float] = []
+            memory_values: list[float] = []
+            for steps in steps_by_agent.values():
+                sorted_steps: list[int] = sorted(steps)
+                intervals: list[int] = [
+                    later - earlier
+                    for earlier, later in zip(sorted_steps, sorted_steps[1:])
+                ]
+                inter_event_times.extend(intervals)
+                burstiness, memory = self._burstiness_and_memory(intervals)
+                if burstiness is not None:
+                    burstiness_values.append(burstiness)
+                if memory is not None:
+                    memory_values.append(memory)
+
+            activity_by_hour: Counter[int] = Counter()
+            for _, record in type_records:
+                hour: Optional[int] = self._clock_hour(record)
+                if hour is not None:
+                    activity_by_hour[hour] += 1
+
+            by_action_type[type_name] = ActionTypeStats(
+                mean_burstiness=(
+                    float(np.mean(burstiness_values)) if burstiness_values else None
+                ),
+                mean_memory=float(np.mean(memory_values)) if memory_values else None,
+                inter_event_times=inter_event_times,
+                activity_by_hour=dict(sorted(activity_by_hour.items())),
+                n_events=len(type_records),
+            )
+
+        if not all_action_records:
             raise ValueError("No action records found.")
 
-        steps_by_agent: defaultdict[int, set[int]] = defaultdict(set)
-        for agent_id, record in actions:
-            steps_by_agent[agent_id].add(int(record.time_step))
-
-        inter_event_times: list[int] = []
-        burstiness_values: list[float] = []
-        memory_values: list[float] = []
-        for steps in steps_by_agent.values():
-            intervals: list[int] = [
-                later - earlier
-                for earlier, later in zip(sorted(steps), sorted(steps)[1:])
-            ]
-            inter_event_times.extend(intervals)
-            burstiness, memory = self._burstiness_and_memory(intervals)
-            if burstiness is not None:
-                burstiness_values.append(burstiness)
-            if memory is not None:
-                memory_values.append(memory)
-
-        activity_by_hour: Counter[int] = Counter()
-        for _, record in actions:
-            hour: Optional[int] = self._clock_hour(record)
-            if hour is not None:
-                activity_by_hour[hour] += 1
-
-        meals_by_hour: Counter[int] = self._hour_histogram(
-            store.typed(ConsumptionRecord), allowed_agents
-        )
-        sleep_onsets_by_hour: Counter[int] = self._hour_histogram(
-            store.typed(SleepStartRecord), allowed_agents
-        )
-
         return TemporalDynamicsResult(
-            mean_burstiness=(
-                float(np.mean(burstiness_values)) if burstiness_values else None
-            ),
-            mean_memory=float(np.mean(memory_values)) if memory_values else None,
-            inter_event_times=inter_event_times,
-            activity_by_hour=dict(sorted(activity_by_hour.items())),
-            meals_by_hour=dict(sorted(meals_by_hour.items())),
-            sleep_onsets_by_hour=dict(sorted(sleep_onsets_by_hour.items())),
-            circadian_autocorr=self._circadian_autocorr(
-                [record for _, record in actions]
-            ),
-            n_agents=len(steps_by_agent),
-            n_events=len(actions),
+            by_action_type=by_action_type,
+            circadian_autocorr=self._circadian_autocorr(all_action_records),
+            n_agents=len(all_agent_ids),
+            n_events=total_events,
         )
 
-    def analyze_stores(self, stores: list[RecordStore]) -> None:
-        return None
+    def analyze_stores(
+        self, stores: list[RecordStore]
+    ) -> TemporalDynamicsAggregateResult:
+        """Aggregate temporal-dynamics statistics across multiple stores.
+
+        Runs :meth:`analyze` on each store and aggregates per-action-type
+        statistics (mean and standard deviation of burstiness, memory,
+        mean inter-event time, and event count) across runs.
+
+        Args:
+            stores (list[RecordStore]): One store per simulation run.
+
+        Returns:
+            TemporalDynamicsAggregateResult: Aggregated statistics.
+        """
+        individual: list[TemporalDynamicsResult] = [
+            self.analyze(store) for store in stores
+        ]
+
+        all_action_names: set[str] = set()
+        for result in individual:
+            all_action_names.update(result.by_action_type.keys())
+
+        by_action_type: dict[str, ActionTypeAggregateStats] = {}
+        for action_name in sorted(all_action_names):
+            burstiness_vals: list[float] = []
+            memory_vals: list[float] = []
+            mean_iet_vals: list[float] = []
+            n_events_vals: list[float] = []
+            pooled_iets: list[int] = []
+            hour_accumulator: defaultdict[int, list[int]] = defaultdict(list)
+
+            for result in individual:
+                stats: Optional[ActionTypeStats] = result.by_action_type.get(
+                    action_name
+                )
+                if stats is None:
+                    continue
+                if stats.mean_burstiness is not None:
+                    burstiness_vals.append(stats.mean_burstiness)
+                if stats.mean_memory is not None:
+                    memory_vals.append(stats.mean_memory)
+                if stats.inter_event_times:
+                    mean_iet_vals.append(float(np.mean(stats.inter_event_times)))
+                    pooled_iets.extend(stats.inter_event_times)
+                n_events_vals.append(float(stats.n_events))
+                for hour, count in stats.activity_by_hour.items():
+                    hour_accumulator[hour].append(count)
+
+            mean_activity_by_hour: dict[int, float] = {
+                hour: float(np.mean(counts))
+                for hour, counts in sorted(hour_accumulator.items())
+            }
+
+            def _mean(vals: list[float]) -> Optional[float]:
+                return float(np.mean(vals)) if vals else None
+
+            def _std(vals: list[float]) -> Optional[float]:
+                return float(np.std(vals, ddof=1)) if len(vals) >= 2 else None
+
+            by_action_type[action_name] = ActionTypeAggregateStats(
+                mean_burstiness_mean=_mean(burstiness_vals),
+                mean_burstiness_std=_std(burstiness_vals),
+                mean_memory_mean=_mean(memory_vals),
+                mean_memory_std=_std(memory_vals),
+                mean_iet_mean=_mean(mean_iet_vals),
+                mean_iet_std=_std(mean_iet_vals),
+                mean_n_events=float(np.mean(n_events_vals)) if n_events_vals else 0.0,
+                std_n_events=_std(n_events_vals),
+                pooled_inter_event_times=pooled_iets,
+                mean_activity_by_hour=mean_activity_by_hour,
+            )
+
+        autocorr_vals: list[float] = [
+            r.circadian_autocorr for r in individual if r.circadian_autocorr is not None
+        ]
+        return TemporalDynamicsAggregateResult(
+            by_action_type=by_action_type,
+            circadian_autocorr_mean=float(np.mean(autocorr_vals))
+            if autocorr_vals
+            else None,
+            circadian_autocorr_std=float(np.std(autocorr_vals, ddof=1))
+            if len(autocorr_vals) >= 2
+            else None,
+            n_runs=len(individual),
+        )
 
     def draw_figs(self, result: TemporalDynamicsResult) -> dict[str, Figure]:
         """Draw temporal-dynamics figures.
+
+        Produces one inter-event time line plot and one activity-by-hour bar
+        chart for each action type that has recorded events.
 
         Args:
             result: Output returned by :meth:`analyze`.
 
         Returns:
-            Dictionary mapping figure names to Matplotlib figures.
+            Dictionary mapping figure names to Matplotlib figures. Keys follow
+            the pattern ``"inter_event_times_{action_name}"`` and
+            ``"activity_by_hour_{action_name}"``.
         """
         figures: dict[str, Figure] = {}
-
         hours: list[int] = list(range(24))
-        activity: list[int] = [result.activity_by_hour.get(hour, 0) for hour in hours]
-        fig_activity: Figure
-        ax_activity: Axes
-        fig_activity, ax_activity = plt.subplots(figsize=(8, 6))
-        ax_activity.bar(hours, activity)
-        ax_activity.set_title("Activity by clock-hour")
-        ax_activity.set_xlabel("hour of day")
-        ax_activity.set_ylabel("action count")
-        ax_activity.set_xticks(range(0, 24, 2))
-        fig_activity.tight_layout()
-        figures["activity_by_hour"] = fig_activity
 
-        meals: list[int] = [result.meals_by_hour.get(hour, 0) for hour in hours]
-        fig_meals: Figure
-        ax_meals: Axes
-        fig_meals, ax_meals = plt.subplots(figsize=(8, 6))
-        ax_meals.bar(hours, meals)
-        ax_meals.set_title("Meals by clock-hour")
-        ax_meals.set_xlabel("hour of day")
-        ax_meals.set_ylabel("consumption count")
-        ax_meals.set_xticks(range(0, 24, 2))
-        fig_meals.tight_layout()
-        figures["meals_by_hour"] = fig_meals
+        for action_name, stats in result.by_action_type.items():
+            if stats.inter_event_times:
+                fig_iet: Figure
+                ax_iet: Axes
+                fig_iet, ax_iet = plt.subplots(figsize=(8, 6))
+                iet_array: np.ndarray = np.asarray(stats.inter_event_times, dtype=float)
+                min_val: float = max(float(iet_array.min()), 1.0)
+                max_val: float = float(iet_array.max())
+                bins: list[float] = np.logspace(
+                    np.log10(min_val), np.log10(max_val + 1), 50
+                ).tolist()
+                counts, edges = np.histogram(iet_array, bins=bins)
+                bin_centers = (edges[:-1] + edges[1:]) / 2
+                mask = counts > 0
+                ax_iet.plot(bin_centers[mask], counts[mask])
+                ax_iet.set_xscale("log")
+                ax_iet.set_yscale("log")
+                ax_iet.set_title(f"Inter-event time distribution — {action_name}")
+                ax_iet.set_xlabel("steps between actions")
+                ax_iet.set_ylabel("frequency")
+                fig_iet.tight_layout()
+                figures[f"inter_event_times_{action_name}"] = fig_iet
 
-        if result.inter_event_times:
-            fig_iet: Figure
-            ax_iet: Axes
-            fig_iet, ax_iet = plt.subplots(figsize=(8, 6))
-            max_interval: int = max(result.inter_event_times)
-            ax_iet.hist(
-                result.inter_event_times,
-                bins=range(1, max_interval + 2),
-                align="left",
-            )
-            ax_iet.set_title("Inter-event time distribution")
-            ax_iet.set_xlabel("steps between actions")
-            ax_iet.set_ylabel("frequency")
-            fig_iet.tight_layout()
-            figures["inter_event_times"] = fig_iet
+            activity: list[int] = [
+                stats.activity_by_hour.get(hour, 0) for hour in hours
+            ]
+            fig_hour: Figure
+            ax_hour: Axes
+            fig_hour, ax_hour = plt.subplots(figsize=(8, 6))
+            ax_hour.bar(hours, activity)
+            ax_hour.set_title(f"Activity by clock-hour — {action_name}")
+            ax_hour.set_xlabel("hour of day")
+            ax_hour.set_ylabel("event count")
+            ax_hour.set_xticks(range(0, 24, 2))
+            fig_hour.tight_layout()
+            figures[f"activity_by_hour_{action_name}"] = fig_hour
 
         return figures
 
     def draw_figs_all(
         self, individual_results: list[TemporalDynamicsResult]
     ) -> dict[str, Figure]:
-        return {}
+        """Draw temporal-dynamics figures pooled across multiple runs.
+
+        Produces one inter-event time log-log line plot and one
+        activity-by-hour bar chart (mean across runs) for each action type.
+
+        Args:
+            individual_results: List of results from :meth:`analyze`, one per run.
+
+        Returns:
+            Dictionary mapping figure names to Matplotlib figures. Keys follow
+            the same pattern as :meth:`draw_figs`.
+        """
+        figures: dict[str, Figure] = {}
+        hours: list[int] = list(range(24))
+
+        pooled_iets: defaultdict[str, list[int]] = defaultdict(list)
+        hour_accumulator: defaultdict[str, defaultdict[int, list[int]]] = defaultdict(
+            lambda: defaultdict(list)
+        )
+
+        for result in individual_results:
+            for action_name, stats in result.by_action_type.items():
+                pooled_iets[action_name].extend(stats.inter_event_times)
+                for hour, count in stats.activity_by_hour.items():
+                    hour_accumulator[action_name][hour].append(count)
+
+        for action_name in sorted(pooled_iets.keys()):
+            iet_list: list[int] = pooled_iets[action_name]
+            if iet_list:
+                fig_iet: Figure
+                ax_iet: Axes
+                fig_iet, ax_iet = plt.subplots(figsize=(8, 6))
+                iet_array: np.ndarray = np.asarray(iet_list, dtype=float)
+                min_val: float = max(float(iet_array.min()), 1.0)
+                max_val: float = float(iet_array.max())
+                bins: list[float] = np.logspace(
+                    np.log10(min_val), np.log10(max_val + 1), 50
+                ).tolist()
+                counts, edges = np.histogram(iet_array, bins=bins)
+                bin_centers = (edges[:-1] + edges[1:]) / 2
+                mask = counts > 0
+                ax_iet.plot(bin_centers[mask], counts[mask])
+                ax_iet.set_xscale("log")
+                ax_iet.set_yscale("log")
+                ax_iet.set_title(
+                    f"Inter-event time distribution (all runs) — {action_name}"
+                )
+                ax_iet.set_xlabel("steps between actions")
+                ax_iet.set_ylabel("frequency")
+                fig_iet.tight_layout()
+                figures[f"inter_event_times_{action_name}"] = fig_iet
+
+            mean_activity: list[float] = []
+            for hour in hours:
+                run_counts: list[int] = hour_accumulator[action_name].get(hour, [])
+                mean_activity.append(float(np.mean(run_counts)) if run_counts else 0.0)
+
+            fig_hour: Figure
+            ax_hour: Axes
+            fig_hour, ax_hour = plt.subplots(figsize=(8, 6))
+            ax_hour.bar(hours, mean_activity)
+            ax_hour.set_title(f"Activity by clock-hour (all runs) — {action_name}")
+            ax_hour.set_xlabel("hour of day")
+            ax_hour.set_ylabel("mean event count")
+            ax_hour.set_xticks(range(0, 24, 2))
+            fig_hour.tight_layout()
+            figures[f"activity_by_hour_{action_name}"] = fig_hour
+
+        return figures
 
     def build_summary(self, result: TemporalDynamicsResult) -> Panel:
         """Build a Rich summary panel for temporal-dynamics analysis.
@@ -350,39 +567,94 @@ class TemporalDynamicsAnalyzer(AnalyzerBase[TemporalDynamicsResult, None]):
             result: Output returned by :meth:`analyze`.
 
         Returns:
-            Rich panel summarizing the temporal statistics.
+            Rich panel summarising per-action-type temporal statistics.
         """
         table: Table = Table(title="Temporal Dynamics Summary")
-        table.add_column("Metric")
-        table.add_column("Value")
+        table.add_column("Action type")
+        table.add_column("Events")
+        table.add_column("Burstiness B")
+        table.add_column("Memory M")
+        table.add_column("Mean IET (steps)")
 
-        table.add_row("Agents", str(result.n_agents))
-        table.add_row("Action events", str(result.n_events))
-        table.add_row(
-            "Mean burstiness B",
-            "-" if result.mean_burstiness is None else f"{result.mean_burstiness:.3f}",
-        )
-        table.add_row(
-            "Mean memory M",
-            "-" if result.mean_memory is None else f"{result.mean_memory:.3f}",
-        )
+        for action_name, stats in result.by_action_type.items():
+            mean_iet: str = (
+                f"{np.mean(stats.inter_event_times):.1f}"
+                if stats.inter_event_times
+                else "-"
+            )
+            table.add_row(
+                action_name,
+                str(stats.n_events),
+                "-"
+                if stats.mean_burstiness is None
+                else f"{stats.mean_burstiness:.3f}",
+                "-" if stats.mean_memory is None else f"{stats.mean_memory:.3f}",
+                mean_iet,
+            )
+
+        table.add_section()
+        table.add_row("Total", str(result.n_events), "", "", "")
+        table.add_row("Agents", str(result.n_agents), "", "", "")
         table.add_row(
             f"Circadian autocorr (lag {self.period_steps})",
             "-"
             if result.circadian_autocorr is None
             else f"{result.circadian_autocorr:.3f}",
-        )
-        peak_hour: Optional[int] = (
-            max(result.activity_by_hour, key=lambda hour: result.activity_by_hour[hour])
-            if result.activity_by_hour
-            else None
-        )
-        table.add_row(
-            "Peak activity hour",
-            "-" if peak_hour is None else f"{peak_hour:02d}:00",
+            "",
+            "",
+            "",
         )
 
         return Panel.fit(table, title="Analysis Summary", border_style="cyan")
+
+    def build_summary_all(self, result: TemporalDynamicsAggregateResult) -> Panel:
+        """Build a Rich summary panel for multi-run temporal-dynamics analysis.
+
+        Shows mean ± standard deviation across runs for burstiness, memory,
+        mean inter-event time, and event count per action type.
+
+        Args:
+            result: Output returned by :meth:`analyze_stores`.
+
+        Returns:
+            Rich panel summarising aggregated temporal statistics.
+        """
+
+        def _fmt(mean: Optional[float], std: Optional[float], decimals: int = 3) -> str:
+            if mean is None:
+                return "-"
+            fmt = f".{decimals}f"
+            if std is None:
+                return f"{mean:{fmt}}"
+            return f"{mean:{fmt}}±{std:{fmt}}"
+
+        table: Table = Table(title=f"Temporal Dynamics Summary ({result.n_runs} runs)")
+        table.add_column("Action type")
+        table.add_column("Events (mean±std)")
+        table.add_column("Burstiness B (mean±std)")
+        table.add_column("Memory M (mean±std)")
+        table.add_column("Mean IET (mean±std)")
+
+        for action_name, stats in result.by_action_type.items():
+            table.add_row(
+                action_name,
+                _fmt(stats.mean_n_events, stats.std_n_events, decimals=1),
+                _fmt(stats.mean_burstiness_mean, stats.mean_burstiness_std),
+                _fmt(stats.mean_memory_mean, stats.mean_memory_std),
+                _fmt(stats.mean_iet_mean, stats.mean_iet_std, decimals=1),
+            )
+
+        table.add_section()
+        table.add_row(
+            f"Circadian autocorr (lag {self.period_steps})",
+            _fmt(result.circadian_autocorr_mean, result.circadian_autocorr_std),
+            "",
+            "",
+            "",
+        )
+        table.add_row("Runs", str(result.n_runs), "", "", "")
+
+        return Panel.fit(table, title="Multi-Run Analysis Summary", border_style="cyan")
 
     def _select_agents(self, store: RecordStore) -> Optional[set[int]]:
         """Return the agent ids to include, or ``None`` to include all."""
@@ -447,21 +719,6 @@ class TemporalDynamicsAnalyzer(AnalyzerBase[TemporalDynamicsResult, None]):
             return None
         lag: int = self.period_steps
         return float(np.sum(centered[:-lag] * centered[lag:]) / denom)
-
-    def _hour_histogram(
-        self, records: list[TimedRecord], allowed_agents: Optional[set[int]]
-    ) -> Counter[int]:
-        """Count records per clock-hour, optionally filtered by agent."""
-        histogram: Counter[int] = Counter()
-        for record in records:
-            if allowed_agents is not None:
-                agent_id: Optional[int] = getattr(record, "agent_id", None)
-                if agent_id is None or agent_id not in allowed_agents:
-                    continue
-            hour: Optional[int] = self._clock_hour(record)
-            if hour is not None:
-                histogram[hour] += 1
-        return histogram
 
     def _clock_hour(self, record: TimedRecord) -> Optional[int]:
         """Clock-hour of a record, from datetime or step-within-period."""

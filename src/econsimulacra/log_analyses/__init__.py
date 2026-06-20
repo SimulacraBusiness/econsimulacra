@@ -36,6 +36,9 @@ from .store_sales_analyzer import StoreSalesAnalyzer
 from .stress_action_analyzer import StressActionAnalyzer
 from .stress_analyzer import StressAnalyzer
 from .temporal_dynamics_analyzer import (
+    ActionTypeAggregateStats,
+    ActionTypeStats,
+    TemporalDynamicsAggregateResult,
     TemporalDynamicsAnalyzer,
     TemporalDynamicsResult,
 )
@@ -89,6 +92,9 @@ __all__ = [
     "TopicSentimentAnalyzer",
     "TopicSentimentCorrelationResult",
     "TopicSentimentWindowStats",
+    "ActionTypeAggregateStats",
+    "ActionTypeStats",
+    "TemporalDynamicsAggregateResult",
     "TemporalDynamicsAnalyzer",
     "TemporalDynamicsResult",
 ]
