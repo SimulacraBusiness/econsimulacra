@@ -4,6 +4,7 @@ from .base import (
     ConsumptionLog as ConsumptionLog,
     FollowLog as FollowLog,
     InnerThoughtLog as InnerThoughtLog,
+    InvalidActionLog as InvalidActionLog,
     ItemGenerationLog as ItemGenerationLog,
     Log as Log,
     Logger as Logger,

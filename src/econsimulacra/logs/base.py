@@ -30,6 +30,32 @@ class Log:
         return self.__dict__
 
 
+class InvalidActionLog(Log):
+    def __init__(
+        self,
+        time: int | str,
+        time_step: int,
+        agent_id: int,
+        action_type: str,
+        description: str,
+    ) -> None:
+        """Initialization.
+
+        Args:
+            time (int | str): Current time of the environment when the invalid action occurs.
+            time_step (int): Current integer step index of the environment when the invalid action occurs.
+            agent_id (int): The unique id of the agent that attempted the invalid action.
+            action_type (str): The type of the invalid action attempted by the agent.
+            description (str): A description of why the action was considered invalid.
+        """
+        self.type: str = "invalid_action"
+        self.time: int | str = time
+        self.time_step: int = time_step
+        self.agent_id: int = agent_id
+        self.action_type: str = action_type
+        self.description: str = description
+
+
 class AgentGenerationLog(Log):
     def __init__(
         self,

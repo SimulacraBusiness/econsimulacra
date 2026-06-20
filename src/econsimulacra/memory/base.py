@@ -10,6 +10,7 @@ from ..logs import (
     ConsumptionLog,
     FollowLog,
     InnerThoughtLog,
+    InvalidActionLog,
     Log,
     MoveLog,
     ObsLog,
@@ -32,6 +33,7 @@ from .memory_items import (
     ConsumptionHistoryItem,
     ExchangeHistoryItem,
     InnerThoughtHistoryItem,
+    InvalidActionHistoryItem,
     MoveHistoryItem,
     ObsHistoryItem,
     PurchaseHistoryItem,
@@ -129,6 +131,7 @@ class MemoryHandler:
 
                 {
                     "memory_length": int,
+                    "invalid_action_history": "You failed to perform action_type at time (description), ...",
                     "sleep_history": "slept from time to time, ...",
                     "move_history": "(x0,y0) -> (x1,y1) -> (x2,y2)",
                     "consumption_history": "item_name x quantity at time, ...",
@@ -160,6 +163,7 @@ class MemoryHandler:
             You can implement specific memory update logic in these methods.
         """
         return {
+            InvalidActionLog: self._process_invalid_action_log,
             AgentGenerationLog: self._process_agent_generation_log,
             SpaceAssignLog: self._process_space_assign_log,
             SleepStartLog: self._process_sleep_start_log,
@@ -216,6 +220,7 @@ class MemoryHandler:
         agent_id: int = log.agent_id
         if agent_id not in self.agent_id2memory:
             agent_memory: AgentMemory = AgentMemory(
+                invalid_action_history=deque(maxlen=self.memory_length),
                 consumption_history=deque(maxlen=self.memory_length),
                 move_history=deque(maxlen=self.memory_length),
                 sleep_history=deque(maxlen=self.memory_length),
@@ -265,6 +270,31 @@ class MemoryHandler:
             )
         move_history.append(
             MoveHistoryItem(pos=log.pos, init_pos=log.pos, time=None, time_step=-1)
+        )
+
+    def _process_invalid_action_log(self, log: InvalidActionLog) -> None:
+        """Process the InvalidActionLog to update the invalid action history of the agent in memory.
+
+        Args:
+            log (InvalidActionLog): the log of invalid action.
+
+        Note:
+            Generate a new InvalidActionHistoryItem and add it to the invalid_action_history of the agent's memory.
+        """
+        agent_id: int = log.agent_id
+        if agent_id not in self.agent_id2memory:
+            raise ValueError(f"Agent with id {agent_id} does not exist in memory.")
+        agent_memory: AgentMemory = self.agent_id2memory[agent_id]
+        invalid_action_history: Deque[InvalidActionHistoryItem] = (
+            agent_memory.invalid_action_history
+        )
+        invalid_action_history.append(
+            InvalidActionHistoryItem(
+                action_type=log.action_type,
+                description=log.description,
+                time=log.time,
+                time_step=log.time_step,
+            )
         )
 
     def _process_sleep_start_log(self, log: SleepStartLog) -> None:

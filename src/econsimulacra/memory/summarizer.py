@@ -9,6 +9,7 @@ from .memory_items import (
     ConsumptionHistoryItem,
     ExchangeHistoryItem,
     InnerThoughtHistoryItem,
+    InvalidActionHistoryItem,
     MoveHistoryItem,
     ObsHistoryItem,
     PurchaseHistoryItem,
@@ -70,6 +71,10 @@ class MemorySummarizer:
 
     def summarize_memory(self, agent_memory: AgentMemory) -> dict[str, str]:
         summary_specs: dict[str, tuple[Deque, Callable[[Deque], str]]] = {
+            "invalid_action_history": (
+                agent_memory.invalid_action_history,
+                self._summarize_invalid_action_history,
+            ),
             "sleep_history": (
                 agent_memory.sleep_history,
                 self._summarize_sleep_history,
@@ -142,12 +147,27 @@ class MemorySummarizer:
             | StateEvaluationHistoryItem
             | ObsHistoryItem
             | InnerThoughtHistoryItem
+            | InvalidActionHistoryItem
             | SleepHistoryItem
         ],
         base_summary: str,
     ) -> dict[str, Any]:
         """Hook for subclasses to append or transform each summary."""
         return {}
+
+    def _summarize_invalid_action_history(
+        self, invalid_action_history: Deque[InvalidActionHistoryItem]
+    ) -> str:
+        if not invalid_action_history:
+            return "You have no invalid action history."
+        return (
+            "You have failed to perform "
+            + ", ".join(
+                f"{item.action_type} at time {item.time} (reason: {item.description})"
+                for item in invalid_action_history
+            )
+            + "."
+        )
 
     def _summarize_sleep_history(self, sleep_history: Deque[SleepHistoryItem]) -> str:
         if not sleep_history:
