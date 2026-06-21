@@ -63,3 +63,17 @@ class TestTimeTranslator:
     def test_get_timedelta(self) -> None:
         time_translator = TimeTranslator(config=self.config)
         assert time_translator.get_timedelta() == "0:01:00"
+
+    def test_step_to_display_time(self) -> None:
+        revealed = TimeTranslator(config=self.config)
+        assert revealed.reveal_time_of_day is True
+        for step in range(self.config["numSteps"]):
+            assert revealed.step_to_display_time(step) == revealed.step_to_datetime(
+                step
+            )
+
+        hidden = TimeTranslator(config={**self.config, "revealTimeOfDay": False})
+        assert hidden.reveal_time_of_day is False
+        for step in range(self.config["numSteps"]):
+            assert hidden.step_to_display_time(step) == step
+        assert hidden.step_to_display_time(-1) == -1
