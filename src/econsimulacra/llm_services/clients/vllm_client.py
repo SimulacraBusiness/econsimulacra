@@ -5,11 +5,13 @@ import atexit
 import copy
 import json
 import os
+import re
 import signal
 import socket
 import subprocess
 import sys
 import time
+import unicodedata
 import urllib.request
 from typing import Any, Optional, Type, cast
 
@@ -273,6 +275,11 @@ class VLLMClient(LLMClient):
                     await asyncio.to_thread(self._restart_server)
 
     async def generate_response(self, prompt: str) -> dict[str, Any]:
+        prompt = re.sub(r"<\|[^|>]*\|>", "", prompt)
+        prompt = re.sub(r"<<[^>]*>>", "", prompt)
+        prompt = re.sub(r"\[/?INST\]", "", prompt)
+        prompt = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]", "", prompt)
+        prompt = unicodedata.normalize("NFKC", prompt)
         prompt = prompt.encode("utf-8", errors="replace").decode("utf-8")
         schema = copy.deepcopy(self.json_schema)
         last_error: Optional[Exception] = None
