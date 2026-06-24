@@ -345,7 +345,7 @@ class TopicSalesAnalyzer(AnalyzerBase[TopicSalesResult, dict[str, QuadraticFitRe
             sales_key: str = f"sales_{firm_name}"
             for result in topic_sales_results:
                 for _, values in result.items():
-                    if firm_name =="Pizza Place31":
+                    if firm_name == "Pizza Place31":
                         print(values)
                     if sales_key in values:
                         xs.append(float(values["word_count"]))
@@ -366,9 +366,7 @@ class TopicSalesAnalyzer(AnalyzerBase[TopicSalesResult, dict[str, QuadraticFitRe
                 popt, _ = curve_fit(
                     quadratic_model, x_norm, y_norm, p0=(0.0, 0.0, 0.0), maxfev=10_000
                 )
-            except (
-                RuntimeError, TypeError, ValueError
-            ):
+            except (RuntimeError, TypeError, ValueError):
                 continue
             a, b, c = map(float, popt)
             y_pred: NDArray[np.float64] = quadratic_model(x_norm, a, b, c)
