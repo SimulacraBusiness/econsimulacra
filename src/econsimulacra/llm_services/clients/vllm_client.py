@@ -123,9 +123,7 @@ class VLLMClient(LLMClient):
         self.server_start_timeout: float = float(
             config.get("serverStartTimeout", 180.0)
         )
-        self.ignore_server_errors: bool = bool(
-            config.get("ignoreServerErrors", False)
-        )
+        self.ignore_server_errors: bool = bool(config.get("ignoreServerErrors", False))
         self.dtype: str = config.get("dtype", "auto")
         self.trust_remote_code: bool = config.get("trustRemoteCode", False)
         self.max_model_len: Optional[int] = config.get("maxModelLen")
@@ -344,7 +342,7 @@ class VLLMClient(LLMClient):
                     async with self._server_lock:
                         if not self._probe_server():
                             await asyncio.to_thread(self._restart_server)
-        
+
         if self.ignore_server_errors:
             return {}
         else:
