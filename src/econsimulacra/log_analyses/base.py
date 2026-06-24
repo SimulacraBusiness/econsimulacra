@@ -465,7 +465,7 @@ class FigureSaver:
                 bbox_inches="tight",
                 pad_inches=0.02,
             )
-        plt.close(fig)
+            plt.close(fig)
 
 
 class AnalysisManager:
