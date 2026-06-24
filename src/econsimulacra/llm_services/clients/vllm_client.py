@@ -273,6 +273,7 @@ class VLLMClient(LLMClient):
                     await asyncio.to_thread(self._restart_server)
 
     async def generate_response(self, prompt: str) -> dict[str, Any]:
+        prompt = prompt.encode("utf-8", errors="replace").decode("utf-8")
         schema = copy.deepcopy(self.json_schema)
         last_error: Optional[Exception] = None
         for attempt in range(self.max_retries):
