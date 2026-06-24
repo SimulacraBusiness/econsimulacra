@@ -20,6 +20,7 @@ from openai import (
     APITimeoutError,
     AsyncOpenAI,
     BadRequestError,
+    InternalServerError,
     RateLimitError,
 )
 from openai.types.chat import ChatCompletion
@@ -326,6 +327,7 @@ class VLLMClient(LLMClient):
             except (
                 APITimeoutError,
                 APIConnectionError,
+                InternalServerError,
                 RateLimitError,
                 json.JSONDecodeError,
                 ValueError,
