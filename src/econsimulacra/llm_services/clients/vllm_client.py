@@ -60,6 +60,9 @@ class VLLMClient(LLMClient):
                 - maxRetries (int, default=5):
                     Number of retry attempts when API calls fail due to timeout,
                     connection errors, or rate limits.
+                - ignoreServerErrors (bool, default=False):
+                    If True, the client will ignore server-side errors and return an empty response.
+                    If False, the client will raise exceptions on server errors.
                 Optional fields (advanced tuning):
                 # Server configuration
                 - host (str, default="127.0.0.1"):
@@ -119,6 +122,9 @@ class VLLMClient(LLMClient):
         self.max_retries: int = int(config.get("maxRetries", 5))
         self.server_start_timeout: float = float(
             config.get("serverStartTimeout", 180.0)
+        )
+        self.ignore_server_errors: bool = bool(
+            config.get("ignoreServerErrors", False)
         )
         self.dtype: str = config.get("dtype", "auto")
         self.trust_remote_code: bool = config.get("trustRemoteCode", False)
@@ -338,10 +344,14 @@ class VLLMClient(LLMClient):
                     async with self._server_lock:
                         if not self._probe_server():
                             await asyncio.to_thread(self._restart_server)
-        raise RuntimeError(
-            f"VLLMClient: Failed after {self.max_retries} retries. "
-            f"Last error: {last_error!r}"
-        )
+        
+        if self.ignore_server_errors:
+            return {}
+        else:
+            raise RuntimeError(
+                f"VLLMClient: Failed after {self.max_retries} retries. "
+                f"Last error: {last_error!r}"
+            )
 
     def close(self) -> None:
         if not self._owns_server or self._server_proc is None:
