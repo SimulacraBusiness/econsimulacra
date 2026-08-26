@@ -801,7 +801,10 @@ class Environment(Generic[ObsT]):
             follow_agent_id=valid_follow_agent_id,
             unfollow_agent_id=valid_unfollow_agent_id,
         )
-        where_to_move: Optional[tuple[int, ...] | str] = action_dic.get("move", None)
+        where_to_move: Optional[tuple[int, ...] | str] = self._get_where_to_move(
+            agent_id=agent_id,
+            where_to_move=action_dic.get("move", None)
+        )
         move_allowed: bool = self._check_move(
             agent_id=agent_id, where_to_move=where_to_move
         )
@@ -942,6 +945,36 @@ class Environment(Generic[ObsT]):
         else:
             return False
         return True
+
+    def _get_where_to_move(
+        self,
+        agent_id: int,
+        where_to_move: Optional[tuple[int, ...] | str],
+    ) -> Optional[tuple[int, ...] | str]:
+        """Get the target position or agent name to move to.
+
+        Args:
+            agent_id (int): the id of the agent who wants to move.
+            where_to_move (Optional[tuple[int, ...] | str]): the target position or agent name the agent intended to move to.
+        
+        Note:
+            If where_to_move is None, check if the agent is currently moving.
+            If the agent is moving, check if the agent is sleeping.
+            If the agent is sleeping, stop the movement and set where_to_move to None.
+            If the agent is not sleeping, continue moving to the previously set destination.
+        """
+        if where_to_move is None:
+            is_moving: bool = self.agent_id2is_moving.get(agent_id, False)
+            sleep_manager: Optional[SleepManager] = self.get_sleep_manager()
+            if sleep_manager is not None:
+                is_sleeping: bool = sleep_manager.get_sleep_status(agent_id=agent_id)
+            if is_moving:
+                if is_sleeping:
+                    self.agent_id2is_moving[agent_id] = False
+                    self.agent_id2destination[agent_id] = None
+                else:
+                    where_to_move = self.agent_id2destination.get(agent_id, None)
+        return where_to_move
 
     def _check_move(
         self, agent_id: int, where_to_move: Optional[tuple[int, ...] | str]
