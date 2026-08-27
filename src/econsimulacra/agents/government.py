@@ -1,9 +1,8 @@
 from random import Random
 from typing import Any, Optional
 
-from .base import Agent
-
 from ..date_utils import get_corresponding_value
+from .base import Agent
 
 
 class Government(Agent[dict[str, Any]]):

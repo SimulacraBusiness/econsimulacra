@@ -802,8 +802,7 @@ class Environment(Generic[ObsT]):
             unfollow_agent_id=valid_unfollow_agent_id,
         )
         where_to_move: Optional[tuple[int, ...] | str] = self._get_where_to_move(
-            agent_id=agent_id,
-            where_to_move=action_dic.get("move", None)
+            agent_id=agent_id, where_to_move=action_dic.get("move", None)
         )
         move_allowed: bool = self._check_move(
             agent_id=agent_id, where_to_move=where_to_move
@@ -956,7 +955,7 @@ class Environment(Generic[ObsT]):
         Args:
             agent_id (int): the id of the agent who wants to move.
             where_to_move (Optional[tuple[int, ...] | str]): the target position or agent name the agent intended to move to.
-        
+
         Note:
             If where_to_move is None, check if the agent is currently moving.
             If the agent is moving, check if the agent is sleeping.

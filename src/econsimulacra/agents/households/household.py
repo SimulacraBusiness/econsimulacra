@@ -4,14 +4,14 @@ from random import Random
 from typing import Any, Optional
 
 from ..base import Agent
-from .states import DecisionContext, HouseholdState
-from .stylized_models import MobilityModel, PhysiologyModel, ShoppingModel
 from .policy import (
     ActionCapabilities,
     HouseholdDecisionPolicy,
     ProposalReactionPolicy,
-    SupplementalPolicy
+    SupplementalPolicy,
 )
+from .states import DecisionContext
+from .stylized_models import MobilityModel, PhysiologyModel, ShoppingModel
 
 
 class RuleBasedHousehold(Agent[dict[str, Any]]):
@@ -115,7 +115,7 @@ class RuleBasedHousehold(Agent[dict[str, Any]]):
             ),
             capabilities=ActionCapabilities.from_config(self.config),
         )
-    
+
     def add_supplemental_policy(self, policy: SupplementalPolicy) -> None:
         """Register one custom policy after existing supplemental policies.
 
@@ -174,8 +174,7 @@ class RuleBasedHousehold(Agent[dict[str, Any]]):
         return self._compose_fragments(action_fragments)
 
     def _compose_fragments(
-        self,
-        action_fragments: list[dict[str, Any]]
+        self, action_fragments: list[dict[str, Any]]
     ) -> dict[str, Any]:
         r"""Merge action fragments without silently overwriting them.
 

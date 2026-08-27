@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Optional, Protocol
 
-from .states import DecisionContext, HouseholdState, MODE
+from .states import MODE, DecisionContext, HouseholdState
 from .stylized_models import (
     MobilityModel,
     PhysiologyModel,
@@ -242,7 +242,8 @@ class HouseholdDecisionPolicy:
             can_sleep=can_sleep,
             can_consume=can_consume,
             can_order=self.capabilities.is_enabled("orders"),
-            should_sleep=can_sleep and self.physiology.should_sleep(state, context.hour),
+            should_sleep=can_sleep
+            and self.physiology.should_sleep(state, context.hour),
             can_eat=can_consume and self.physiology.can_eat(context.inventory),
             should_eat=can_consume and self.physiology.should_eat(state, context.hour),
         )
@@ -306,7 +307,11 @@ class HouseholdDecisionPolicy:
         Returns:
             Homeward move when applicable, otherwise ``None``.
         """
-        if signals.should_sleep and context.current_pos != state.home and signals.can_move:
+        if (
+            signals.should_sleep
+            and context.current_pos != state.home
+            and signals.can_move
+        ):
             return self._return_home(state, "RETURN_HOME_SLEEP")
         return None
 
@@ -329,9 +334,7 @@ class HouseholdDecisionPolicy:
         """
         if state.home is None:
             raise ValueError("Household home is not initialized.")
-        return self.mobility.generate_move_action(
-            state, state.home, mode
-        )
+        return self.mobility.generate_move_action(state, state.home, mode)
 
     def _continue_return_action(
         self,
@@ -374,9 +377,7 @@ class HouseholdDecisionPolicy:
             Consumption action when applicable, otherwise ``None``.
         """
         if signals.should_eat and signals.can_eat:
-            return self.physiology.generate_eat_action(
-                state, context.inventory
-            )
+            return self.physiology.generate_eat_action(state, context.inventory)
         return None
 
     def _critical_meal_action(
@@ -582,6 +583,7 @@ class ProposalReactionPolicy(SupplementalPolicy):
     an action fragment. It is evaluated after the core household decision, then
     combined by :class:RuleBasedHousehold._compose_fragments.
     """
+
     def __init__(self) -> None:
         """Initialization."""
         self.reaction_model = ProposalReactionModel()
