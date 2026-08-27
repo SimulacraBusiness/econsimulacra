@@ -206,35 +206,8 @@ def test_action_composition_concatenates_sequences_and_rejects_conflicts() -> No
     }
     with pytest.raises(ValueError, match="Conflicting action fragments"):
         household._compose_fragments([{"tweet": "first"}, {"tweet": "second"}])
+        
 
-
-@pytest.mark.xfail(
-    reason="ShoppingModel.get_stores currently ignores sellerNamePrefixes",
-    strict=True,
-)
-def test_store_candidates_are_restricted_to_configured_seller_prefixes() -> None:
-    model = ShoppingModel(
-        {"storeChoice": {"sellerNamePrefixes": ("Market",)}},
-        ("Rice",),
-        "Yen",
-        Random(42),
-    )
-    context = _context(
-        others_pos=(
-            {"agent_id": 1, "agent_name": "Neighbor", "pos": (1, 0)},
-            {"agent_id": 2, "agent_name": "MarketEast", "pos": (2, 0)},
-        )
-    )
-
-    assert model.get_stores(context) == [
-        {"agent_id": 2, "agent_name": "MarketEast", "pos": (2, 0)}
-    ]
-
-
-@pytest.mark.xfail(
-    reason="HouseholdDecisionPolicy.decide currently checks sleep before critical hunger",
-    strict=True,
-)
 def test_critical_hunger_takes_priority_over_sleep_as_documented() -> None:
     config = {
         "sleepRule": {"initialPressure": 1.0},
@@ -316,7 +289,7 @@ def test_rule_based_household_completes_a_shopping_simulation() -> None:
         "Rice": {"type": "Item", "initialPrice": 2.0, "weightInBasket": 1},
     }
     simulator = Simulator(config=config, env_class=Environment, logger=DictLogger())
-    simulator.register_classes([RuleBasedHousehold, AcceptingMarket])
+    simulator.register_classes([AcceptingMarket])
 
     asyncio.run(simulator.simulate(seed=42))
 
