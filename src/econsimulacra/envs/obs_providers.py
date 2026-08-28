@@ -275,6 +275,7 @@ class OthersPosProvider(ObsProvider[list[dict[str, Any]]]):
                 Each dictionary has the following keys:
                 - "agent_id": The ID of the other agent.
                 - "agent_name": The name of the other agent.
+                - "is_household": Whether the other agent belongs to the household group.
                 - "pos": The position of the other agent as a tuple of coordinates.
         """
         others_pos_infos: list[dict[str, Any]] = []
@@ -287,6 +288,7 @@ class OthersPosProvider(ObsProvider[list[dict[str, Any]]]):
                     {
                         "agent_id": other_agent_id,
                         "agent_name": other_agent.get_self_name(),
+                        "is_household": other_agent_id in self.env.household_ids,
                         "pos": self.env.grid_space.get_pos(agent_id=other_agent_id),
                     }
                 )
@@ -610,8 +612,8 @@ class OthersInventoriesProvider(ObsProviderFromCoLocatedAgents[list[dict[str, An
 
         Returns:
             list[dict[str, Any]]: A list of inventories of other co-located agents as dictionaries.
-                Each dict contains ``"agent_id"`` (int), ``"agent_name"`` (str), and one key per
-                non-cash item in the agent's inventory whose value is
+                Each dict contains ``"agent_id"`` (int), ``"agent_name"`` (str),
+                ``"is_household"`` (bool), and one key per non-cash item in the agent's inventory whose value is
                 ``{"price": float, "amount": float | str}``.
 
         Note:
@@ -638,6 +640,7 @@ class OthersInventoriesProvider(ObsProviderFromCoLocatedAgents[list[dict[str, An
                 ] = {
                     "agent_id": other_agent_id,
                     "agent_name": other_agent.get_self_name(),
+                    "is_household": other_agent_id in self.env.household_ids,
                 }
                 other_agent_inventory_dic: dict[str, float | int] = (
                     other_agent.get_inventory()

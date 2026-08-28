@@ -150,7 +150,7 @@ DEFAULT_OBS_DESCRIPTION: dict[str, str] = {
     + "this is the target you will be moved to in the next time step. "
     + "If you are not currently moving, this will be null.",
     "others_pos": "A list of dictionaries representing the positions of other agents in the grid space. "
-    + "Each dictionary has 'agent_id', 'agent_name', and 'pos' (coordinates) of the other agent.",
+    + "Each dictionary has 'agent_id', 'agent_name', 'is_household', and 'pos' (coordinates) of the other agent.",
     "nearby_agents": "A list of dictionaries representing the nearby agents in the neighboring grid cells. "
     + "Each dictionary has 'agent_id', 'agent_name', and 'pos' (coordinates) of the nearby agent. "
     + "You may feel crowded and stressed when there are many nearby agents. ",
@@ -175,8 +175,8 @@ DEFAULT_OBS_DESCRIPTION: dict[str, str] = {
     + "This can help you make informed decisions about trading.",
     "others_inventory": "A list of dictionaries representing the inventories of other agents "
     + "that are co-located with you in the same grid space. "
-    + "Each dictionary has 'agent_id', 'agent_name', and 'inventory' "
-    + "(which is itself a dictionary mapping item names to amounts) of the other agent.",
+    + "Each dictionary has 'agent_id', 'agent_name', 'is_household', and one entry per offered item. "
+    + "Each item entry contains its posted price and available amount.",
 }
 
 DEFAULT_ACTION_DESCRIPTION: dict[str, str] = {

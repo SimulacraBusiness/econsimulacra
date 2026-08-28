@@ -236,4 +236,16 @@ Please also ensure that the installed versions of vLLM, PyTorch, and CUDA are co
 }
 ```
 
+# Citation
+
+If you consider cite our work, please use the following [arxiv entry](https://arxiv.org/abs/2606.26883):
+
+```bibtex
+@misc{hashimoto2026econsimulacra,
+    title={{EconSimulacra: A digital twin platform of socio-economic systems powered by LLM agents}}, 
+    author={Ryuji Hashimoto and Masahiro Kaneko and Kentaro Ueda and Takehiro Takayanagi and Kiyoshi Izumi},
+    year={2026},
+    doi={10.48550/arXiv.2606.26883}, 
+}
+```
 

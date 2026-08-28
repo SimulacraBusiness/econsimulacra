@@ -37,7 +37,7 @@ def summarize_observed_price_changes(
                     f"Expected inventory item to be a dict, but got {other_agent_inventory}"
                 )
             for key, value in other_agent_inventory.items():
-                if key in {"agent_id", "agent_name"}:
+                if key in {"agent_id", "agent_name", "is_household"}:
                     continue
                 elif isinstance(value, dict):
                     item_name: str = key

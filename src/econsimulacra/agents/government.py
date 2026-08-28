@@ -1,9 +1,8 @@
 from random import Random
-from typing import Any
-
-from econsimulacra.agents import Agent
+from typing import Any, Optional
 
 from ..date_utils import get_corresponding_value
+from .base import Agent
 
 
 class Government(Agent[dict[str, Any]]):
@@ -19,8 +18,8 @@ class Government(Agent[dict[str, Any]]):
         agent_id: int,
         agent_name: str,
         env_service_dic: dict[str, Any],
-        prng: Random | None = None,
-        config: dict[str, Any] | None = None,
+        prng: Optional[Random] = None,
+        config: Optional[dict[str, Any]] = None,
     ) -> None:
         """Initialize the government agent.
 

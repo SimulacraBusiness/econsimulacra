@@ -26,6 +26,7 @@ of agents.
    guide/installation
    guide/quickstart
    guide/configuration
+   guide/rule_based_household
    guide/architecture
    guide/demo
 
