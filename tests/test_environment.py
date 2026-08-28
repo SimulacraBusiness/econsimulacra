@@ -541,6 +541,7 @@ class TestEnvironment:
                     {
                         "agent_id": env.agent_name2agent_id["DummyRetailer"],
                         "agent_name": "DummyRetailer",
+                        "is_household": False,
                         "pos": (9, 9),
                     }
                 ]
@@ -586,6 +587,7 @@ class TestEnvironment:
             {
                 "agent_id": env.agent_name2agent_id["DummyRetailer"],
                 "agent_name": "DummyRetailer",
+                "is_household": False,
                 "Rice": {"price": 1000.0, "amount": 10000},
             }
         ]
