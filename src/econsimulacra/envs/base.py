@@ -828,6 +828,8 @@ class Environment(Generic[ObsT]):
             It is not an action that directly affects the environment.
             Just generate a InnerThoughtLog and remember it in memory (if MemoryHandler is available) and write it to logger (if logger is available).
         """
+        if len(inner_thought) == 0:
+            return
         log: InnerThoughtLog = InnerThoughtLog(
             time=self.get_time(),
             time_step=self.get_time_step(),
