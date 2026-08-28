@@ -197,7 +197,11 @@ class HouseholdDecisionPolicy:
 
         Returns:
             Exactly one core action fragment, possibly empty.
+
+        Before evaluating the priority branches, any co-located seller offers
+        update this household's store-specific price and availability beliefs.
         """
+        self.shopping.update_beliefs(context)
         signals = self.get_signals(context, state)
         rules = (
             self._env_sleep_action,

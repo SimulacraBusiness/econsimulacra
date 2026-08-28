@@ -322,9 +322,11 @@ class ShoppingModel:
 
     Store choice uses a multinomial logit over observed stores, following the
     random-utility form associated with conditional logit (McFadden, 1974).
-    Travel is embedded in an activity sequence (home, shopping, home), a
-    minimal stylization of activity-schedule demand models (Bowman & Ben-Akiva,
-    2001).
+    Every household maintains seller-specific expected prices and availability
+    probabilities, updates them after co-located observations, and values
+    coverage according to item-specific replenishment importance. Travel is
+    embedded in an activity sequence (home, shopping, home), a minimal
+    stylization of activity-schedule demand models (Bowman & Ben-Akiva, 2001).
 
     All stochastic choice uses the injected ``random.Random`` instance.  A
     fixed seed, observation order, configuration, and initial state therefore
@@ -362,7 +364,9 @@ class ShoppingModel:
                 - ``sSinventoryRule``: reorder points and target stocks.
                 - ``budgetRule``: cash reserve and maximum basket share.
                 - ``pricePriors``: prior prices for each food item.
-                - ``storeChoice``: store choice parameters.
+                - ``itemImportance``: relative replenishment importance by item.
+                - ``storeChoice``: utility coefficients, initial availability,
+                  and belief-learning rates.
             food_items: Ordered configured food names.
             cash_name: Inventory key used as currency.
             prng: Pseudo-random generator used by multinomial logit sampling.
@@ -389,10 +393,32 @@ class ShoppingModel:
             item: float(config.get("pricePriors", {}).get(item, 1.0))
             for item in food_items
         }
+        self.item_importance: dict[str, float] = {
+            item: max(0.0, float(config.get("itemImportance", {}).get(item, 1.0)))
+            for item in food_items
+        }
 
         store: dict[str, Any] = config.get("storeChoice", {})
-        self.beta_cost: float = float(store.get("betaCost", 0.04))
-        self.beta_distance: float = float(store.get("betaDistance", 0.65))
+        self.beta_price: float = float(store.get("betaPrice", 1.0))
+        self.beta_availability: float = float(store.get("betaAvailability", 2.0))
+        self.beta_budget_pressure: float = float(store.get("betaBudgetPressure", 1.0))
+        self.beta_distance: float = float(store.get("betaDistance", 0.1))
+        self.initial_availability = min(
+            1.0, max(0.0, float(store.get("initialAvailability", 0.5)))
+        )
+        belief_rate = float(store.get("beliefLearningRate", 0.5))
+        self.price_learning_rate = min(
+            1.0, max(0.0, float(store.get("priceLearningRate", belief_rate)))
+        )
+        self.availability_learning_rate = min(
+            1.0,
+            max(0.0, float(store.get("availabilityLearningRate", belief_rate))),
+        )
+
+        # ShoppingModel is instantiated once per household, so these mutable
+        # mappings are private, agent-specific beliefs keyed by seller ID.
+        self.expected_price: dict[int, dict[str, float]] = {}
+        self.expected_availability: dict[int, dict[str, float]] = {}
 
     def should_shop(self, inventory: dict[str, float]) -> bool:
         r"""Return whether any stock is at or below its reorder point.
@@ -442,7 +468,7 @@ class ShoppingModel:
         )
 
     def get_stores(self, context: DecisionContext) -> list[dict[str, Any]]:
-        """Return visible sellers matching configured name prefixes.
+        """Return every visible non-household agent as a store candidate.
 
         Args:
             context: Observation context containing optional ``others_pos``.
@@ -452,15 +478,18 @@ class ShoppingModel:
             Example:
 
             .. code-block:: python
+
                 [
                     {
                         "agent_id": 10,
                         "agent_name": "MarketEast",
+                        "is_household": False,
                         "pos": (2, 3),
                     },
                     {
                         "agent_id": 12,
                         "agent_name": "MarketWest",
+                        "is_household": False,
                         "pos": (8, 4),
                     },
                 ]
@@ -468,7 +497,70 @@ class ShoppingModel:
         Seller order is preserved from ``others_pos`` because it is also the
         deterministic tie order used by store choice.
         """
-        return [store for store in context.obs.get("others_pos", [])]
+        stores = [
+            store
+            for store in context.obs.get("others_pos", [])
+            if not store.get("is_household", False)
+        ]
+        for store in stores:
+            self._ensure_store_beliefs(int(store["agent_id"]))
+        return stores
+
+    def update_beliefs(self, context: DecisionContext) -> None:
+        r"""Update store-specific beliefs from co-located seller observations.
+
+        Args:
+            context: Observation containing optional ``others_inventory``.
+
+        For seller :math:`j`, item :math:`i`, learning rate
+        :math:`\rho\in[0,1]`, observed posted price :math:`p_{ij}` and
+        availability indicator :math:`a_{ij}\in\{0,1\}`, beliefs follow
+
+        .. math::
+
+           \hat p_{ij}\leftarrow(1-\rho_p)\hat p_{ij}+\rho_p p_{ij},
+           \qquad
+           \hat a_{ij}\leftarrow(1-\rho_a)\hat a_{ij}+\rho_a a_{ij}.
+
+        An item is observed available when the seller reports a positive or
+        masked amount.  A missing item is observed unavailable. Price is
+        updated only when the item is offered. Beliefs are held by this model
+        instance and therefore are not shared across households.
+        """
+        for seller in context.obs.get("others_inventory", ()):
+            if seller.get("is_household", False):
+                continue
+            seller_id = int(seller["agent_id"])
+            self._ensure_store_beliefs(seller_id)
+            for item in self.food_items:
+                offer = seller.get(item)
+                is_offer = isinstance(offer, dict)
+                if is_offer:
+                    amount = offer.get("amount")
+                    observed_availability = float(
+                        not isinstance(amount, (int, float)) or amount > 0
+                    )
+                    observed_price = float(offer["price"])
+                    old_price = self.expected_price[seller_id][item]
+                    self.expected_price[seller_id][item] = (
+                        1.0 - self.price_learning_rate
+                    ) * old_price + self.price_learning_rate * observed_price
+                else:
+                    observed_availability = 0.0
+                old_availability = self.expected_availability[seller_id][item]
+                self.expected_availability[seller_id][item] = (
+                    (1.0 - self.availability_learning_rate) * old_availability
+                    + self.availability_learning_rate * observed_availability
+                )
+
+    def _ensure_store_beliefs(self, seller_id: int) -> None:
+        """Lazily initialize one seller's item beliefs from household priors."""
+        if seller_id in self.expected_price:
+            return
+        self.expected_price[seller_id] = dict(self.price_priors)
+        self.expected_availability[seller_id] = {
+            item: self.initial_availability for item in self.food_items
+        }
 
     def choose_store(
         self,
@@ -476,7 +568,7 @@ class ShoppingModel:
         stores: list[dict[str, Any]],
         inventory: dict[str, float],
     ) -> Optional[dict[str, Any]]:
-        r"""Choose a store with a cost-distance multinomial logit.
+        r"""Choose a store with an importance-weighted belief logit.
 
         Args:
             current_pos: Household's current grid position.
@@ -486,20 +578,38 @@ class ShoppingModel:
         Returns:
             Sampled store record, or ``None`` for an empty choice set.
 
-        Let :math:`\mathcal{J}_t` be the ordered visible-store list,
-        :math:`T_i` target stock, :math:`\bar p_i` the price prior, and
-        :math:`p_t,d_j` the household and store positions.  The desired basket
-        cost, Chebyshev grid distance, and deterministic utility are
+        Let :math:`q_i=\max(0,T_i-I_t(i))` be desired replenishment,
+        :math:`w_i\geq0` item importance, :math:`\bar p_i` the household price
+        prior, :math:`\hat a_{ij}\in[0,1]`, :math:`\hat p_{ij}` the
+        household's availability and price beliefs for store :math:`j`, and
+        :math:`B_t>0` the household's shopping budget. The
+        importance-weighted desired quantity is
 
         .. math::
 
-           K_t=\sum_{i\in\mathcal{F}}
-             \max\{0,T_i-I_t(i)\}\bar p_i,
+           W_t=\sum_i w_iq_i.
+
+        For :math:`W_t>0`, expected coverage and price savings relative to the
+        household prior are
+
+        .. math::
+
+           C_{tj}=\frac{\sum_iw_iq_i\hat a_{ij}}{W_t},\qquad
+           R_{tj}=\frac{\sum_iw_iq_i\hat a_{ij}
+                    (\bar p_i-\hat p_{ij})/\bar p_i}{W_t}.
+
+        Expected basket expenditure and budget pressure are
+
+        .. math::
+
+           E_{tj}=\sum_iq_i\hat a_{ij}\max(0,\hat p_{ij}),\qquad
+           L_{tj}=E_{tj}/B_t.
 
         .. math::
 
            D_{tj}=\max_k|p_{t,k}-d_{j,k}|,\qquad
-           V_{tj}=-\beta_K K_t-\beta_D D_{tj}.
+           V_{tj}=\beta_P R_{tj}+\beta_A C_{tj}
+                  -\beta_B L_{tj}-\beta_D D_{tj}.
 
         A store is sampled with
 
@@ -508,30 +618,74 @@ class ShoppingModel:
            P(J_t=j\mid o_t,x_t)=
            \frac{\exp(V_{tj})}{\sum_{r\in\mathcal{J}_t}\exp(V_{tr})}.
 
-        Numerically, ``max(V)`` is subtracted before exponentiation.  Because
-        current price priors are not store-specific, :math:`K_t` is common to
-        every alternative and cancels from the probabilities; store choice is
-        therefore distance-driven in the current implementation.  An empty
-        choice set returns ``None``.
+        Because :math:`L_{tj}` divides by the household-specific budget, the
+        same expensive basket deters a budget-constrained household more than
+        a wealthy one. Unavailable goods contribute no artificial price saving
+        and reduce coverage, so a store cannot look cheap merely because it is
+        expected to carry few needed goods. Larger ``itemImportance`` makes
+        shortages of necessities contribute more strongly than shortages of
+        preference goods. Numerically, ``max(V)`` is subtracted before
+        exponentiation. An empty choice set, nonpositive budget, or basket with
+        zero weighted need returns ``None``.
         """
         if not stores:
             return None
+        budget = self.get_budget(inventory)
+        if budget <= 0.0:
+            return None
+        desired = {
+            item: max(0.0, self.target_stocks[item] - inventory.get(item, 0.0))
+            for item in self.food_items
+        }
+        need_weights = {
+            item: self.item_importance[item] * desired[item] for item in self.food_items
+        }
+        total_need_weight = sum(need_weights.values())
+        if total_need_weight <= 0.0:
+            return None
         scored: list[tuple[dict[str, Any], float]] = []
         for store in stores:
-            basket_cost = sum(
-                max(
-                    0.0,
-                    self.target_stocks[item] - inventory.get(item, 0.0),
+            seller_id = int(store["agent_id"])
+            self._ensure_store_beliefs(seller_id)
+            coverage = (
+                sum(
+                    need_weights[item] * self.expected_availability[seller_id][item]
+                    for item in self.food_items
                 )
-                * self.price_priors[item]
+                / total_need_weight
+            )
+            price_savings = (
+                sum(
+                    need_weights[item]
+                    * self.expected_availability[seller_id][item]
+                    * (
+                        (self.price_priors[item] - self.expected_price[seller_id][item])
+                        / self.price_priors[item]
+                        if self.price_priors[item] > 0.0
+                        else 0.0
+                    )
+                    for item in self.food_items
+                )
+                / total_need_weight
+            )
+            expected_expenditure = sum(
+                desired[item]
+                * self.expected_availability[seller_id][item]
+                * max(0.0, self.expected_price[seller_id][item])
                 for item in self.food_items
             )
+            budget_pressure = expected_expenditure / budget
             destination = tuple(store["pos"])
             distance = max(
                 abs(current - target)
                 for current, target in zip(current_pos, destination)
             )
-            utility = -self.beta_cost * basket_cost - self.beta_distance * distance
+            utility = (
+                self.beta_price * price_savings
+                + self.beta_availability * coverage
+                - self.beta_budget_pressure * budget_pressure
+                - self.beta_distance * distance
+            )
             scored.append((store, utility))
         max_utility = max(utility for _, utility in scored)
         weights = [math.exp(utility - max_utility) for _, utility in scored]
@@ -555,11 +709,12 @@ class ShoppingModel:
         Returns:
             Order records, or an empty mapping when no order is feasible.
 
-        The first matching seller in ``others_inventory`` is used.  Foods are
-        processed in configured order :math:`i=1,\ldots,F`.  Let :math:`p_i>0`
-        be observed price (zero or negative price removes the affordability
-        bound), :math:`A_i` observed seller stock when numeric and
-        :math:`+\infty` otherwise, and :math:`B_1=B_t`.  Then
+        The first matching seller in ``others_inventory`` is used. Foods are
+        processed by descending ``itemImportance`` with configured order as
+        the stable tie break, so a tight budget fills necessities first. Let
+        :math:`p_i>0` be observed price (zero or negative price removes the
+        affordability bound), :math:`A_i` observed seller stock when numeric
+        and :math:`+\infty` otherwise, and :math:`B_1=B_t`. Then
 
         .. math::
 
@@ -579,13 +734,22 @@ class ShoppingModel:
         therefore no settlement-wait state is retained. An empty seller set or
         basket produces no action.
         """
-        sellers = [seller for seller in context.obs.get("others_inventory", ())]
+        sellers = [
+            seller
+            for seller in context.obs.get("others_inventory", ())
+            if not seller.get("is_household", False)
+        ]
         if not sellers:
             return {}
         seller = sellers[0]
         remaining_budget = self.get_budget(context.inventory)
         orders: list[dict[str, Any]] = []
-        for item in self.food_items:
+        items_by_importance = sorted(
+            self.food_items,
+            key=self.item_importance.__getitem__,
+            reverse=True,
+        )
+        for item in items_by_importance:
             offer = seller.get(item)
             if not isinstance(offer, dict):
                 continue
@@ -598,7 +762,7 @@ class ShoppingModel:
             if isinstance(available, (int, float)):
                 desired = min(desired, float(available))
             affordable = remaining_budget / price if price > 0 else desired
-            amount = min(desired, affordable)
+            amount = int(min(desired, affordable))
             if amount <= 0:
                 continue
             orders.append(
