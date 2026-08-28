@@ -17,11 +17,11 @@ if __name__ == "__main__":
     manager = AnalysisManager(
         analyzers=[
             ActionCounter(),
-            AgentBehaviorStatsAnalyzer(exclude_agent_ids=[1,2,3]),
+            AgentBehaviorStatsAnalyzer(exclude_agent_ids=[1, 2, 3]),
             StoreSalesAnalyzer(),
             PriceAnalyzer(),
-            StressActionAnalyzer(exclude_agent_ids=[1,2,3]),
-            StressAnalyzer(exclude_agent_ids=[1,2,3]),
+            StressActionAnalyzer(exclude_agent_ids=[1, 2, 3]),
+            StressAnalyzer(exclude_agent_ids=[1, 2, 3]),
             ConsumerClusterAnalyzer(
                 window_size=24,
                 k_candidates=(2, 4, 6, 8, 10),
@@ -30,7 +30,7 @@ if __name__ == "__main__":
                 normalize=True,
             ),
             MoveDistanceAnalyzer(window_size=4),
-            TemporalDynamicsAnalyzer(exclude_agent_ids=[1,2,3]),
+            TemporalDynamicsAnalyzer(exclude_agent_ids=[1, 2, 3]),
         ]
     )
     store = RecordStore(load_from_file("log_baseline.txt"))

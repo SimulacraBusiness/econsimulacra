@@ -11,5 +11,5 @@ __all__ = [
     "AutoReactLLMAgent",
     "Government",
     "RuleBasedHousehold",
-    "RuleBasedRetailer"
+    "RuleBasedRetailer",
 ]
