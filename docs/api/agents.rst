@@ -32,3 +32,35 @@ Auto-Reactor Agent
    :members:
    :undoc-members:
    :show-inheritance:
+
+Rule-Based Household
+--------------------
+
+.. automodule:: econsimulacra.agents.households.household
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Household Decision Policy
+-------------------------
+
+.. automodule:: econsimulacra.agents.households.policy
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Household State and Context
+---------------------------
+
+.. automodule:: econsimulacra.agents.households.states
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Household Stylized Models
+-------------------------
+
+.. automodule:: econsimulacra.agents.households.stylized_models
+   :members:
+   :undoc-members:
+   :show-inheritance:
