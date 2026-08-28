@@ -280,4 +280,6 @@ class RuleBasedHousehold(Agent[dict[str, Any]]):
         value = obs.get("time", 0)
         if isinstance(value, (int, float)):
             return int(value)
-        return (self.state.last_step or 0) + 1
+        if self.state.last_step is None:
+            return 0
+        return self.state.last_step + 1
