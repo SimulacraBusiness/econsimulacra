@@ -123,11 +123,225 @@ def test_shopping_basket_obeys_target_stock_seller_stock_and_budget() -> None:
             {
                 "counterparty_id": 9,
                 "item_name": "Rice",
-                "item_amount": 2.5,
+                "item_amount": 2,
                 "ttl": 2,
             },
         )
     }
+
+
+def test_store_choice_favors_availability_of_important_shortages() -> None:
+    config = {
+        "sSinventoryRule": {
+            "targetStocks": {"Rice": 1.0, "Chocolate": 1.0},
+        },
+        "pricePriors": {"Rice": 1.0, "Chocolate": 1.0},
+        "itemImportance": {"Rice": 10.0, "Chocolate": 1.0},
+        "storeChoice": {
+            "betaPrice": 0.0,
+            "betaAvailability": 20.0,
+            "betaDistance": 0.0,
+        },
+    }
+    model = ShoppingModel(config, ("Rice", "Chocolate"), "Yen", Random(42))
+    stores = [
+        {"agent_id": 1, "agent_name": "StapleMarket", "pos": (1, 0)},
+        {"agent_id": 2, "agent_name": "TreatMarket", "pos": (1, 0)},
+    ]
+    model._ensure_store_beliefs(1)
+    model._ensure_store_beliefs(2)
+    model.expected_availability[1] = {"Rice": 1.0, "Chocolate": 0.0}
+    model.expected_availability[2] = {"Rice": 0.0, "Chocolate": 1.0}
+
+    chosen = model.choose_store(
+        (0, 0), stores, {"Yen": 100.0, "Rice": 0.0, "Chocolate": 0.0}
+    )
+
+    assert chosen == stores[0]
+
+
+def test_store_choice_favors_lower_expected_price_at_equal_coverage() -> None:
+    config = {
+        "sSinventoryRule": {"targetStocks": {"Rice": 1.0}},
+        "pricePriors": {"Rice": 2.0},
+        "storeChoice": {
+            "betaPrice": 20.0,
+            "betaAvailability": 1.0,
+            "betaDistance": 0.0,
+        },
+    }
+    model = ShoppingModel(config, ("Rice",), "Yen", Random(42))
+    stores = [
+        {"agent_id": 1, "agent_name": "CheapMarket", "pos": (1, 0)},
+        {"agent_id": 2, "agent_name": "ExpensiveMarket", "pos": (1, 0)},
+    ]
+    for seller_id in (1, 2):
+        model._ensure_store_beliefs(seller_id)
+        model.expected_availability[seller_id]["Rice"] = 1.0
+    model.expected_price[1]["Rice"] = 1.0
+    model.expected_price[2]["Rice"] = 3.0
+
+    chosen = model.choose_store((0, 0), stores, {"Yen": 100.0, "Rice": 0.0})
+
+    assert chosen == stores[0]
+
+
+def test_budget_pressure_makes_limited_household_avoid_expensive_store() -> None:
+    config = {
+        "sSinventoryRule": {
+            "targetStocks": {"Rice": 1.0, "Chocolate": 1.0},
+        },
+        "budgetRule": {"cashReserve": 0.0, "maxBasketShare": 1.0},
+        "pricePriors": {"Rice": 10.0, "Chocolate": 100.0},
+        "storeChoice": {
+            "betaPrice": 0.0,
+            "betaAvailability": 10.0,
+            "betaBudgetPressure": 2.0,
+            "betaDistance": 0.0,
+        },
+    }
+    stores = [
+        {"agent_id": 1, "agent_name": "BudgetMarket", "pos": (1, 0)},
+        {"agent_id": 2, "agent_name": "PrimeDiner", "pos": (1, 0)},
+    ]
+
+    def model_with_beliefs(seed: int) -> ShoppingModel:
+        model = ShoppingModel(config, ("Rice", "Chocolate"), "Yen", Random(seed))
+        for seller_id in (1, 2):
+            model._ensure_store_beliefs(seller_id)
+        model.expected_availability[1] = {"Rice": 1.0, "Chocolate": 0.0}
+        model.expected_availability[2] = {"Rice": 1.0, "Chocolate": 1.0}
+        return model
+
+    limited_choice = model_with_beliefs(42).choose_store(
+        (0, 0),
+        stores,
+        {"Yen": 20.0, "Rice": 0.0, "Chocolate": 0.0},
+    )
+    wealthy_choice = model_with_beliefs(42).choose_store(
+        (0, 0),
+        stores,
+        {"Yen": 1000.0, "Rice": 0.0, "Chocolate": 0.0},
+    )
+
+    assert limited_choice == stores[0]
+    assert wealthy_choice == stores[1]
+
+
+def test_store_beliefs_learn_from_visits_and_remain_household_specific() -> None:
+    config = {
+        "pricePriors": {"Rice": 2.0, "Chocolate": 5.0},
+        "storeChoice": {
+            "initialAvailability": 0.2,
+            "beliefLearningRate": 0.5,
+        },
+    }
+    first = ShoppingModel(config, ("Rice", "Chocolate"), "Yen", Random(1))
+    second = ShoppingModel(config, ("Rice", "Chocolate"), "Yen", Random(2))
+    context = _context(
+        others_inventory=(
+            {
+                "agent_id": 7,
+                "agent_name": "Market7",
+                "is_household": False,
+                "Rice": {"price": 4.0, "amount": 3.0},
+            },
+            {
+                "agent_id": 8,
+                "agent_name": "Household8",
+                "is_household": True,
+                "Rice": {"price": 1.0, "amount": 10.0},
+            },
+        )
+    )
+
+    first.update_beliefs(context)
+
+    assert first.expected_price[7]["Rice"] == pytest.approx(3.0)
+    assert first.expected_availability[7]["Rice"] == pytest.approx(0.6)
+    assert first.expected_availability[7]["Chocolate"] == pytest.approx(0.1)
+    assert 8 not in first.expected_price
+    assert 7 not in second.expected_price
+
+
+def test_all_visible_non_household_agents_are_store_candidates() -> None:
+    model = ShoppingModel({}, ("Rice",), "Yen", Random(42))
+    context = _context(
+        others_pos=(
+            {
+                "agent_id": 1,
+                "agent_name": "Market1",
+                "is_household": False,
+                "pos": (1, 0),
+            },
+            {
+                "agent_id": 2,
+                "agent_name": "Restaurant2",
+                "is_household": False,
+                "pos": (2, 0),
+            },
+            {
+                "agent_id": 3,
+                "agent_name": "Household3",
+                "is_household": True,
+                "pos": (3, 0),
+            },
+        )
+    )
+
+    assert model.get_stores(context) == [
+        {
+            "agent_id": 1,
+            "agent_name": "Market1",
+            "is_household": False,
+            "pos": (1, 0),
+        },
+        {
+            "agent_id": 2,
+            "agent_name": "Restaurant2",
+            "is_household": False,
+            "pos": (2, 0),
+        },
+    ]
+
+
+def test_tight_budget_replenishes_more_important_item_first() -> None:
+    config = {
+        "sSinventoryRule": {
+            "targetStocks": {"Chocolate": 2.0, "Rice": 2.0},
+        },
+        "budgetRule": {"cashReserve": 0.0, "maxBasketShare": 1.0},
+        "itemImportance": {"Chocolate": 1.0, "Rice": 10.0},
+    }
+    model = ShoppingModel(config, ("Chocolate", "Rice"), "Yen", Random(42))
+    context = _context(
+        inventory={"Yen": 2.0, "Chocolate": 0.0, "Rice": 0.0},
+        others_inventory=(
+            {
+                "agent_id": 8,
+                "is_household": True,
+                "Chocolate": {"price": 0.5, "amount": 10.0},
+                "Rice": {"price": 0.5, "amount": 10.0},
+            },
+            {
+                "agent_id": 9,
+                "is_household": False,
+                "Chocolate": {"price": 1.0, "amount": 10.0},
+                "Rice": {"price": 1.0, "amount": 10.0},
+            },
+        ),
+    )
+
+    action = model.generate_order_action(context)
+
+    assert action["orders"] == (
+        {
+            "counterparty_id": 9,
+            "item_name": "Rice",
+            "item_amount": 2.0,
+            "ttl": 2,
+        },
+    )
 
 
 def test_disabled_high_priority_action_does_not_block_enabled_meal() -> None:
@@ -206,7 +420,7 @@ def test_action_composition_concatenates_sequences_and_rejects_conflicts() -> No
     }
     with pytest.raises(ValueError, match="Conflicting action fragments"):
         household._compose_fragments([{"tweet": "first"}, {"tweet": "second"}])
-        
+
 
 def test_critical_hunger_takes_priority_over_sleep_as_documented() -> None:
     config = {
@@ -274,7 +488,6 @@ def test_rule_based_household_completes_a_shopping_simulation() -> None:
             },
             "budgetRule": {"cashReserve": 0.0, "maxBasketShare": 1.0},
             "pricePriors": {"Rice": 2.0},
-            "storeChoice": {"sellerNamePrefixes": ("Market",)},
         },
         "Market": {
             "type": "AcceptingMarket",
