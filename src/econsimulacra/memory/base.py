@@ -42,6 +42,7 @@ from .memory_items import (
     SleepHistoryItem,
     SocialHistoryItem,
     StateEvaluationHistoryItem,
+    TweetHistoryItem,
 )
 from .summarizer import MemorySummarizer
 
@@ -230,6 +231,7 @@ class MemoryHandler:
                 set_price_history=deque(maxlen=self.memory_length),
                 inner_thought_history=deque(maxlen=self.memory_length),
                 social_history=deque(maxlen=self.memory_length),
+                tweet_history=deque(maxlen=self.memory_length),
                 state_evaluation_history=deque(maxlen=self.memory_length),
                 obs_history=deque(maxlen=self.memory_length * self.num_obs),
             )
@@ -717,9 +719,24 @@ class MemoryHandler:
             log (TweetLog): the log of tweet.
 
         Note:
-            Not implemented yet.
+            Generate a :class:`TweetHistoryItem` and append it to the posting
+            agent's finite tweet history.
         """
-        pass
+        agent_id = log.agent_id
+        if agent_id not in self.agent_id2memory:
+            raise ValueError(f"Agent with id {agent_id} does not exist in memory.")
+        tweet_history: Deque[TweetHistoryItem] = self.agent_id2memory[
+            agent_id
+        ].tweet_history
+        tweet_history.append(
+            TweetHistoryItem(
+                message=log.message,
+                time=log.time,
+                time_step=log.time_step,
+                num_follows=log.num_follows,
+                num_followers=log.num_followers,
+            )
+        )
 
     def _process_follow_log(self, log: FollowLog) -> None:
         """Process the FollowLog to update the social action history of the agent in memory.

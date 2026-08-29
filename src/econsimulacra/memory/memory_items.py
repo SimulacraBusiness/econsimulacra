@@ -233,6 +233,28 @@ class SocialHistoryItem:
 
 
 @dataclass
+class TweetHistoryItem:
+    """Represent one tweet retained in an agent's finite memory.
+
+    Attributes:
+        message: Posted tweet text.
+        time: Display time at which the tweet was posted.
+        time_step: Integer simulation step at which the tweet was posted.
+        num_follows: Number of followed agents at posting time.
+        num_followers: Number of followers at posting time.
+
+    Note:
+        This item is generated from :class:`econsimulacra.logs.TweetLog`.
+    """
+
+    message: str
+    time: int | str
+    time_step: int
+    num_follows: int
+    num_followers: int
+
+
+@dataclass
 class StateEvaluationHistoryItem:
     """A class representing a state evaluation item in the agent's memory.
 
@@ -314,5 +336,6 @@ class AgentMemory:
     set_price_history: Deque[SetPriceHistoryItem]
     inner_thought_history: Deque[InnerThoughtHistoryItem]
     social_history: Deque[SocialHistoryItem]
+    tweet_history: Deque[TweetHistoryItem]
     state_evaluation_history: Deque[StateEvaluationHistoryItem]
     obs_history: Deque[ObsHistoryItem]

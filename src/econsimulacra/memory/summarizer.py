@@ -18,6 +18,7 @@ from .memory_items import (
     SleepHistoryItem,
     SocialHistoryItem,
     StateEvaluationHistoryItem,
+    TweetHistoryItem,
 )
 from .obs_summarization_utils import (
     summarize_num_changes,
@@ -111,6 +112,10 @@ class MemorySummarizer:
                 agent_memory.social_history,
                 self._summarize_social_history,
             ),
+            "tweet_history": (
+                agent_memory.tweet_history,
+                self._summarize_tweet_history,
+            ),
             "state_evaluation_history": (
                 agent_memory.state_evaluation_history,
                 self._summarize_state_evaluation_history,
@@ -144,6 +149,7 @@ class MemorySummarizer:
             | ExchangeHistoryItem
             | SetPriceHistoryItem
             | SocialHistoryItem
+            | TweetHistoryItem
             | StateEvaluationHistoryItem
             | ObsHistoryItem
             | InnerThoughtHistoryItem
@@ -285,6 +291,25 @@ class MemorySummarizer:
             + "; ".join(
                 f"{item.action} target_agent_id {item.target_agent_id} at time {item.time} "
                 for item in social_history
+            )
+            + "."
+        )
+
+    def _summarize_tweet_history(self, tweet_history: Deque[TweetHistoryItem]) -> str:
+        """Summarize the agent's finite sequence of posted tweets.
+
+        Args:
+            tweet_history: Chronological retained tweet history.
+
+        Returns:
+            Compact text containing tweet messages and posting times.
+        """
+        if not tweet_history:
+            return "You have no tweet history."
+        return (
+            "Your tweets are "
+            + "; ".join(
+                f"'{item.message}' at time {item.time}" for item in tweet_history
             )
             + "."
         )
