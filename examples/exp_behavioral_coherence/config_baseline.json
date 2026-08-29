@@ -24,7 +24,7 @@
             "Sushi", "Course meals", "Wagyu beef steak", "Wine"
         ],
         "service": [
-            "timeTranslator", "sleepManager", "memoryHandler"
+            "timeTranslator", "sleepManager", "memoryHandler", "tweetTextClient"
         ]
     },
     "gridSpace": {
@@ -46,7 +46,6 @@
         "name": "Household",
         "isRichInfoAllowed": false,
         "isHousehold": true,
-        "initialCoords": null,
         "numAgents": 116,
         "inventory": {
             "Yen": {"expon": [100000]},
@@ -84,6 +83,33 @@
         "provideInfo4CoLocatedAgents": [],
         "provideInfo4AllowedAgents": [],
         "personaConfig": {},
+        "socialRule": {
+            "enabled": true,
+            "tweet": {
+                "textGeneratorService": "tweetTextClient",
+                "baseIntensity": 0.0001,
+                "selfExcitation": 0.1,
+                "decayRate": 0.8,
+                "memoryExcitation": 0.0001,
+                "stressExcitationScale": 0.000001,
+                "maxMemoryExcerptCharacters": 320,
+                "language": "English",
+                "maxCharacters": 280
+            },
+            "follow": {
+                "probability": 0.0005,
+                "cooldownSteps": 24
+            },
+            "unfollow": {
+                "probability": 0.0001,
+                "cooldownSteps": 48,
+                "emptyTweetSteps": 168
+            },
+            "topicPriority": [
+                "health", "finances", "shopping", "social",
+                "consumption", "mobility", "daily_life"
+            ]
+        },
         "cashName": "Yen",
         "foodItems": [
             "Rice", "Eggs", "Milk", "Bread", "Cooking oil",
@@ -377,6 +403,21 @@
         "provideInfo4AllAgents": ["self_pos"],
         "provideInfo4AllowedAgents": [],
         "personaConfig": {}
+    },
+    "tweetTextClient": {
+        "type": "TransformersTextClient",
+        "modelName": "HuggingFaceTB/SmolLM2-360M-Instruct",
+        "device": "cpu",
+        "dtype": "float32",
+        "maxModelParameters": 1000000000,
+        "maxPromptTokens": 384,
+        "maxNewTokens": 32,
+        "temperature": 0.4,
+        "topP": 0.9,
+        "repetitionPenalty": 1.1,
+        "numThreads": 4,
+        "maxConcurrentGenerations": 1,
+        "ignoreGenerationErrors": false
     },
     "timeTranslator": {
         "type": "TimeTranslator",
