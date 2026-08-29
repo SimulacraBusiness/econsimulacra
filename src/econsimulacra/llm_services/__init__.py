@@ -1,7 +1,9 @@
 from .clients import (
     LLMClient as LLMClient,
     OpenAIClient as OpenAIClient,
+    TextGenerationClient as TextGenerationClient,
     TransformersClient as TransformersClient,
+    TransformersTextClient as TransformersTextClient,
     VLLMClient as VLLMClient,
 )
 from .constant import (
@@ -23,7 +25,9 @@ from .prompts import (
 __all__ = [
     "LLMClient",
     "OpenAIClient",
+    "TextGenerationClient",
     "TransformersClient",
+    "TransformersTextClient",
     "VLLMClient",
     "PersonaBuilder",
     "ScoredPersonaBuilder",

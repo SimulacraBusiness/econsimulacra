@@ -15,6 +15,7 @@ from .memory_items import (
     SleepHistoryItem,
     SocialHistoryItem,
     StateEvaluationHistoryItem,
+    TweetHistoryItem,
 )
 from .obs_summarization_utils import (
     summarize_num_changes,
@@ -43,6 +44,7 @@ __all__ = [
     "SetPriceHistoryItem",
     "SleepHistoryItem",
     "SocialHistoryItem",
+    "TweetHistoryItem",
     "StateEvaluationHistoryItem",
     "AgentMemory",
     "MemorySummarizer",

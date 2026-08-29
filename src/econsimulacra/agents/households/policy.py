@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Optional, Protocol
+from random import Random
+from typing import Any, Awaitable, Optional, Protocol
 
+from .social import SocialDecision, _SocialMediaPolicyRules
 from .states import MODE, DecisionContext, HouseholdState
 from .stylized_models import (
     MobilityModel,
@@ -10,6 +12,7 @@ from .stylized_models import (
     ProposalReactionModel,
     ShoppingModel,
 )
+from .tweet_renderer import TweetRenderer
 
 
 @dataclass(frozen=True)
@@ -534,7 +537,7 @@ class SupplementalPolicy(Protocol):
     additional policies can add independent behavior such as SNS actions.
 
     Implementations do not need to inherit this Protocol; providing a
-    compatible synchronous :meth:`decide` method is sufficient.
+    compatible synchronous or asynchronous :meth:`decide` method is sufficient.
 
     .. rubric:: Usage
 
@@ -565,7 +568,7 @@ class SupplementalPolicy(Protocol):
         self,
         context: DecisionContext,
         state: HouseholdState,
-    ) -> dict[str, Any]:
+    ) -> dict[str, Any] | Awaitable[dict[str, Any]]:
         """Return an action fragment to merge with the core decision.
 
         Args:
@@ -577,6 +580,78 @@ class SupplementalPolicy(Protocol):
             the supplemental policy has no action for this step.
         """
         raise NotImplementedError
+
+
+class SocialMediaPolicy(_SocialMediaPolicyRules, SupplementalPolicy):
+    """Generate a complete supplemental SNS action fragment.
+
+    Args:
+        config: ``socialRule`` household configuration.
+        prng: Shared seeded pseudo-random generator.
+        capabilities: Household action capabilities used to avoid infeasible
+            decisions and unnecessary Tiny LM calls.
+        tweet_renderer: Optional asynchronous renderer. It is required only
+            when tweet actions are enabled.
+
+    Follow, unfollow, tweet-event occurrence, topic, sentiment, and style are
+    selected by rules. The renderer controls wording only. This policy is
+    asynchronous solely because text generation may take time; existing
+    synchronous supplemental policies remain valid.
+    """
+
+    def __init__(
+        self,
+        config: dict[str, Any],
+        prng: Random,
+        capabilities: Optional[ActionCapabilities] = None,
+        tweet_renderer: Optional[TweetRenderer] = None,
+    ) -> None:
+        """Initialize SNS rules and optional text realization.
+
+        Args:
+            config: ``socialRule`` household configuration.
+            prng: Shared seeded pseudo-random generator.
+            capabilities: Enabled household actions.
+            tweet_renderer: Renderer used only after a Hawkes tweet event.
+        """
+        super().__init__(config=config, prng=prng)
+        self.capabilities = capabilities or ActionCapabilities()
+        self.tweet_renderer = tweet_renderer
+
+    async def decide(
+        self,
+        context: DecisionContext,
+        state: HouseholdState,
+    ) -> dict[str, Any]:
+        """Generate one supplemental social-network action fragment.
+
+        Args:
+            context: Normalized current observation.
+            state: Household state after the core policy decision.
+
+        Returns:
+            Mapping containing zero or more of ``follow``, ``unfollow``, and
+            ``tweet``.
+        """
+        decision: SocialDecision = self.generate_social_decision(
+            context=context,
+            household_state=state,
+            capabilities=self.capabilities,
+        )
+        fragment: dict[str, Any] = {}
+        if decision.follow_agent_id is not None:
+            fragment["follow"] = decision.follow_agent_id
+        if decision.unfollow_agent_id is not None:
+            fragment["unfollow"] = decision.unfollow_agent_id
+        if decision.tweet_intent is not None and self.tweet_renderer is not None:
+            tweet = await self.tweet_renderer.generate_tweet(
+                intent=decision.tweet_intent,
+                previous_tweet=context.obs.get("self_tweet"),
+            )
+            if tweet is not None:
+                fragment["tweet"] = tweet
+                self.record_generated_tweet(decision.tweet_intent)
+        return fragment
 
 
 class ProposalReactionPolicy(SupplementalPolicy):

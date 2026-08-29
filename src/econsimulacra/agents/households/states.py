@@ -1,7 +1,10 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Any, Literal, Optional, TypeAlias
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, Any, Literal, Optional, TypeAlias
+
+if TYPE_CHECKING:
+    from .social import TweetIntent
 
 MODE: TypeAlias = Literal[
     "HOME",
@@ -44,6 +47,35 @@ class HouseholdState:
     mode: MODE = "HOME"
     last_step: Optional[int] = None
     has_been_sleeping: bool = False
+
+
+@dataclass
+class SocialState:
+    """Store private state used by the household social-media policy.
+
+    Args:
+        hawkes_excitation: Current excitation above the baseline intensity.
+        last_hawkes_step: Last step at which excitation was decayed.
+        last_memory_snapshot: Previous relevant summarized-memory values.
+        changed_memory_keys: Memory categories changed at the current step.
+        empty_timeline_steps: Consecutive empty-tweet observations by followee.
+        last_follow_step: Most recent step at which follow was selected.
+        last_unfollow_step: Most recent step at which unfollow was selected.
+        last_tweet_intent: Most recently realized tweet intent.
+
+    Tweet occurrence state is separate from :class:`HouseholdState` because
+    the Hawkes process and graph-management rules are supplemental behavior and
+    do not alter sleep, hunger, mobility, or shopping state.
+    """
+
+    hawkes_excitation: float = 0.0
+    last_hawkes_step: Optional[int] = None
+    last_memory_snapshot: dict[str, Any] = field(default_factory=dict)
+    changed_memory_keys: tuple[str, ...] = ()
+    empty_timeline_steps: dict[int, int] = field(default_factory=dict)
+    last_follow_step: Optional[int] = None
+    last_unfollow_step: Optional[int] = None
+    last_tweet_intent: Optional[TweetIntent] = None
 
 
 @dataclass

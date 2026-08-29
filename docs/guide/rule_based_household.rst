@@ -50,6 +50,151 @@ ordinary return-home behavior follow. Only the first applicable core branch
 emits an action. Actions listed in ``disabledActions`` are removed from the
 feasible policy.
 
+SNS behavior
+------------
+
+SNS behavior is optional. Set ``socialRule.enabled`` to ``true`` to create a
+:class:`~econsimulacra.agents.households.SocialMediaPolicy` and register it as
+a supplemental policy. It is evaluated through the same supplemental-policy
+interface as :class:`~econsimulacra.agents.households.ProposalReactionPolicy`,
+after the core household decision. Its fragment may contain ``follow``,
+``unfollow``, and ``tweet`` alongside the core economic action.
+
+The policy does not modify or replace the social-network recommender. It only
+consumes ``recommended_follows`` from the configured recommender. For example,
+``TwoHopRecommenderSystem.temperature`` continues to control how uniformly
+randomized recommendations are sampled, including choices among candidates
+with equal scores.
+
+A complete household and text-service configuration is:
+
+.. code-block:: json
+
+   "Household": {
+       "type": "RuleBasedHousehold",
+       "isHousehold": true,
+       "requestObs": ["all"],
+       "socialRule": {
+           "enabled": true,
+           "topicPriority": [
+               "health", "finances", "shopping", "social",
+               "consumption", "mobility", "daily_life"
+           ],
+           "tweet": {
+               "textGeneratorService": "tweetTextClient",
+               "baseIntensity": 0.0001,
+               "selfExcitation": 0.1,
+               "decayRate": 0.8,
+               "memoryExcitation": 0.0001,
+               "stressExcitationScale": 0.000001,
+               "maxMemoryExcerptCharacters": 320,
+               "language": "English",
+               "maxCharacters": 280
+           },
+           "follow": {
+               "probability": 0.0005,
+               "cooldownSteps": 24
+           },
+           "unfollow": {
+               "probability": 0.0001,
+               "cooldownSteps": 48,
+               "emptyTweetSteps": 168
+           }
+       }
+   },
+   "tweetTextClient": {
+       "type": "TransformersTextClient",
+       "modelName": "HuggingFaceTB/SmolLM2-360M-Instruct",
+       "device": "cpu",
+       "dtype": "float32",
+       "maxModelParameters": 1000000000,
+       "maxPromptTokens": 384,
+       "maxNewTokens": 32,
+       "temperature": 0.4,
+       "topP": 0.9,
+       "repetitionPenalty": 1.1,
+       "numThreads": 4,
+       "maxConcurrentGenerations": 1
+   }
+
+Tweet timing
+~~~~~~~~~~~~
+
+Tweet occurrence follows a discrete exponential-kernel Hawkes process rather
+than a minimum posting interval. Before sampling step :math:`t`, the policy
+updates
+
+.. math::
+
+   h_t=h_{t^-}\exp(-\beta\Delta t)
+       +w_M M_t+w_S S_t,
+   \qquad \lambda_t=\mu+h_t,
+
+and emits a tweet with probability
+
+.. math::
+
+   P(\text{tweet at }t)=1-\exp(-\lambda_t).
+
+Here ``baseIntensity`` is :math:`\mu`, ``decayRate`` is :math:`\beta`,
+``memoryExcitation`` contributes :math:`w_M` for each changed memory category,
+and ``stressExcitationScale`` scales the corresponding summarized stress.
+After a tweet is successfully rendered, ``selfExcitation`` is added to
+:math:`h_t`. Consequently, successive tweets can occur in adjacent steps and
+form bursts; there is no ``minIntervalSteps`` setting.
+
+Tweet content
+~~~~~~~~~~~~~
+
+Rules first construct a structured
+:class:`~econsimulacra.agents.households.TweetIntent` containing topic,
+sentiment, style, and a compact memory excerpt. Topic is selected from changed
+memory categories in ``topicPriority`` order. Summarized stress and negative
+language influence sentiment, while rules map topic and sentiment to style.
+Only after the intent has been fixed does
+:class:`~econsimulacra.agents.households.TweetRenderer` ask the configured text
+service to realize its wording.
+
+The default output language is English. ``maxCharacters`` is a configurable
+upper bound, not a fixed 140-character Twitter limit; the baseline example uses
+``280``. The renderer normalizes whitespace, removes a leading ``Tweet:`` or
+``Post:`` label, rejects empty text and an exact repeat of ``self_tweet``, and
+otherwise preserves the Tiny LM wording. It does not apply a factual-grounding
+fallback, so a very small model may paraphrase or supplement details from the
+memory excerpt.
+
+``TransformersTextClient`` is a plain-text service separate from the existing
+schema-based ``TransformersClient``. At startup it counts model parameters and
+raises ``ValueError`` if the model exceeds ``maxModelParameters``. Setting that
+limit to ``1000000000`` enforces the intended maximum of one billion
+parameters. The baseline uses ``SmolLM2-360M-Instruct``.
+
+Memory used by SNS rules
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Content and external Hawkes excitation use the summarized ``memory`` mapping
+already present in the household observation. Consumption, purchases, sales,
+state evaluations, sleep, movement, social actions, and inner thoughts are
+mapped to suitable tweet topics. ``TweetLog`` entries are also retained as
+``tweet_history`` by :class:`~econsimulacra.memory.MemoryHandler`, allowing an
+agent's earlier posts to become social-topic memory. The stress-aware
+summarizer exposes tweet history but assigns it no stress score.
+
+Follow and unfollow rules
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A follow is sampled with ``follow.probability`` after its cooldown and is
+chosen from valid ``recommended_follows`` candidates. Self-following, already
+followed agents, the same-step unfollow target, and choices beyond
+``follow_cap`` are excluded. If an unfollow in the same step frees capacity, a
+replacement follow may be emitted.
+
+An unfollow becomes eligible when a visible followee has produced an empty
+timeline entry for ``emptyTweetSteps``, or its message contains a configured
+``negativeKeywords`` value. The fallback random-unfollow probability is
+``unfollow.probability``. Sleeping households make no SNS action, and entries
+listed in ``disabledActions`` remain unavailable.
+
 Sleep and hunger
 ----------------
 

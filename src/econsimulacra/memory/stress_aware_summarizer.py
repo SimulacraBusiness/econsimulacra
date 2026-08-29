@@ -17,6 +17,7 @@ from .memory_items import (
     SleepHistoryItem,
     SocialHistoryItem,
     StateEvaluationHistoryItem,
+    TweetHistoryItem,
 )
 from .stress_utils import (
     calc_stress_from_consumption_history,
@@ -136,6 +137,7 @@ class StressCalculator:
                         | InnerThoughtHistoryItem
                         | SleepHistoryItem
                         | SocialHistoryItem
+                        | TweetHistoryItem
                         | StateEvaluationHistoryItem
                         | ObsHistoryItem
                     ]
@@ -152,6 +154,7 @@ class StressCalculator:
             "inner_thought_history": self._calc_stress_from_inner_thought_history_dispatch,
             "set_price_history": self._calc_stress_from_set_price_history_dispatch,
             "social_history": self._calc_stress_from_social_history_dispatch,
+            "tweet_history": self._calc_stress_from_tweet_history_dispatch,
             "state_evaluation_history": (
                 self._calc_stress_from_state_evaluation_history_dispatch
             ),
@@ -180,6 +183,7 @@ class StressCalculator:
             | InnerThoughtHistoryItem
             | SleepHistoryItem
             | SocialHistoryItem
+            | TweetHistoryItem
             | StateEvaluationHistoryItem
             | ObsHistoryItem
         ],
@@ -306,6 +310,21 @@ class StressCalculator:
         return self._calc_stress_from_social_history(
             cast(Deque[SocialHistoryItem], history)
         )
+
+    def _calc_stress_from_tweet_history_dispatch(
+        self,
+        history: Deque[Any],
+    ) -> tuple[Optional[int], str]:
+        """Return no stress value for tweet history.
+
+        Args:
+            history: Tweet history accepted by the common dispatch signature.
+
+        Returns:
+            ``(None, "")`` because no tweet-stress model is configured.
+        """
+        del history
+        return None, ""
 
     def _calc_stress_from_obs_history_dispatch(
         self,
@@ -530,6 +549,7 @@ class StressAwareSummarizer(MemorySummarizer):
             | SetPriceHistoryItem
             | InnerThoughtHistoryItem
             | SocialHistoryItem
+            | TweetHistoryItem
             | StateEvaluationHistoryItem
             | ObsHistoryItem
             | SleepHistoryItem

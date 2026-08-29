@@ -4,6 +4,7 @@
 [![CI](https://github.com/SimulacraBusiness/econsimulacra/actions/workflows/ci.yml/badge.svg)](https://github.com/SimulacraBusiness/econsimulacra/actions/workflows/ci.yml)
 [![Publish to PyPI](https://github.com/SimulacraBusiness/econsimulacra/actions/workflows/release.yml/badge.svg)](https://github.com/SimulacraBusiness/econsimulacra/actions/workflows/release.yml)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![arXiv](https://img.shields.io/badge/arXiv-2606.26883-b31b1b.svg)](https://arxiv.org/abs/2606.26883)
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/SimulacraBusiness/econsimulacra/main/imgs/econsimulacra_logo.png" width="80%" />
@@ -248,4 +249,3 @@ If you consider cite our work, please use the following [arxiv entry](https://ar
     doi={10.48550/arXiv.2606.26883}, 
 }
 ```
-

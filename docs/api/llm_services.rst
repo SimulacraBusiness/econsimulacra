@@ -19,6 +19,16 @@ LLM Clients
    :undoc-members:
    :show-inheritance:
 
+.. automodule:: econsimulacra.llm_services.clients.text_base
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: econsimulacra.llm_services.clients.transformers_text_client
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 .. automodule:: econsimulacra.llm_services.clients.vllm_client
    :members:
    :undoc-members:

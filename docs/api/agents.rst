@@ -49,6 +49,22 @@ Household Decision Policy
    :undoc-members:
    :show-inheritance:
 
+Household Social-Media Rules
+----------------------------
+
+.. automodule:: econsimulacra.agents.households.social
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Household Tweet Renderer
+------------------------
+
+.. automodule:: econsimulacra.agents.households.tweet_renderer
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Household State and Context
 ---------------------------
 

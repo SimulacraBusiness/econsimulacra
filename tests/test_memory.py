@@ -7,6 +7,7 @@ from econsimulacra.logs import (
     SleepStartLog,
     SpaceAssignLog,
     StateEvaluationLog,
+    TweetLog,
 )
 from econsimulacra.memory import MemoryHandler, StressAwareSummarizer, StressCalculator
 
@@ -139,6 +140,20 @@ class TestMemoryHandler:
         assert summarizer.current_time == 2
         assert summarizer.current_time_step == 2
         assert len(memory_handler.agent_id2memory) == 1
+        tweet_log = TweetLog(
+            time=2,
+            time_step=2,
+            agent_id=1,
+            message="A remembered tweet.",
+            num_follows=2,
+            num_followers=3,
+        )
+        memory_handler.update(log=tweet_log)
+        tweet_history = memory_handler.agent_id2memory[1].tweet_history
+        assert tweet_history[-1].message == "A remembered tweet."
+        assert memory_handler.get_memory(agent_id=1)["tweet_history"] == (
+            "Your tweets are 'A remembered tweet.' at time 2."
+        )
         consumption_history = memory_handler.agent_id2memory[1].consumption_history
         calculator = summarizer.stress_calculator
         score, _ = calculator._calc_stress_from_consumption_history(

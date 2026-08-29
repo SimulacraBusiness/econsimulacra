@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import inspect
 from random import Random
 from typing import Any, Optional
 
@@ -8,10 +9,12 @@ from .policy import (
     ActionCapabilities,
     HouseholdDecisionPolicy,
     ProposalReactionPolicy,
+    SocialMediaPolicy,
     SupplementalPolicy,
 )
 from .states import DecisionContext
 from .stylized_models import MobilityModel, PhysiologyModel, ShoppingModel
+from .tweet_renderer import TweetRenderer, TweetTextGenerator
 
 
 class RuleBasedHousehold(Agent[dict[str, Any]]):
@@ -92,6 +95,36 @@ class RuleBasedHousehold(Agent[dict[str, Any]]):
         for policy in supplemental_policies:
             self.add_supplemental_policy(policy)
         self.state = self.decision_policy.physiology.initialize_state()
+        self.social_media_policy: Optional[SocialMediaPolicy] = None
+        social_rule: dict[str, Any] = self.config.get("socialRule", {})
+        if social_rule.get("enabled", False):
+            if self.capabilities.is_enabled("tweet"):
+                service_key = str(
+                    social_rule.get("tweet", {}).get(
+                        "textGeneratorService", "tweetTextClient"
+                    )
+                )
+                if service_key not in env_service_dic:
+                    raise ValueError(
+                        f"RuleBasedHousehold {self.agent_name} requires "
+                        f"'{service_key}' when rule-based tweeting is enabled."
+                    )
+                text_generator: TweetTextGenerator = env_service_dic[service_key]
+                tweet_rule = social_rule.get("tweet", {})
+                tweet_renderer: Optional[TweetRenderer] = TweetRenderer(
+                    text_generator=text_generator,
+                    language=str(tweet_rule.get("language", "English")),
+                    max_characters=int(tweet_rule.get("maxCharacters", 140)),
+                )
+            else:
+                tweet_renderer = None
+            self.social_media_policy = SocialMediaPolicy(
+                config=social_rule,
+                prng=self.prng,
+                capabilities=self.capabilities,
+                tweet_renderer=tweet_renderer,
+            )
+            self.add_supplemental_policy(self.social_media_policy)
 
     def build_decision_policy(self) -> HouseholdDecisionPolicy:
         """Build the default core decision policy.
@@ -120,7 +153,8 @@ class RuleBasedHousehold(Agent[dict[str, Any]]):
         """Register one custom policy after existing supplemental policies.
 
         Args:
-            policy: Object implementing synchronous ``decide(context, state)``.
+            policy: Object implementing synchronous or asynchronous
+                ``decide(context, state)``.
         """
         self.supplemental_policies.append(policy)
 
@@ -142,7 +176,7 @@ class RuleBasedHousehold(Agent[dict[str, Any]]):
         context = self._context(obs)
         self._initialize_home(obs)
         self.decision_policy.physiology.update_state(self.state, context.time_step)
-        return self._compose_action(context)
+        return await self._compose_action(context)
 
     @property
     def mode(self) -> str:
@@ -158,7 +192,7 @@ class RuleBasedHousehold(Agent[dict[str, Any]]):
         if self.state.home is None:
             self.state.home = tuple(obs["self_init_pos"])
 
-    def _compose_action(self, context: DecisionContext) -> dict[str, Any]:
+    async def _compose_action(self, context: DecisionContext) -> dict[str, Any]:
         """Evaluate, filter, and compose all policy fragments.
 
         Args:
@@ -170,7 +204,7 @@ class RuleBasedHousehold(Agent[dict[str, Any]]):
         action_fragments = [
             self._enabled(self.decision_policy.decide(context, self.state)),
         ]
-        action_fragments.extend(self._supplemental_fragments(context))
+        action_fragments.extend(await self._supplemental_fragments(context))
         return self._compose_fragments(action_fragments)
 
     def _compose_fragments(
@@ -222,7 +256,9 @@ class RuleBasedHousehold(Agent[dict[str, Any]]):
                     composed_action[key] = value
         return composed_action
 
-    def _supplemental_fragments(self, context: DecisionContext) -> list[dict[str, Any]]:
+    async def _supplemental_fragments(
+        self, context: DecisionContext
+    ) -> list[dict[str, Any]]:
         """Evaluate supplemental policies in registration order.
 
         Args:
@@ -231,10 +267,15 @@ class RuleBasedHousehold(Agent[dict[str, Any]]):
         Returns:
             Capability-filtered supplemental action fragments.
         """
-        return [
-            self._enabled(policy.decide(context, self.state))
-            for policy in self.supplemental_policies
-        ]
+        fragments: list[dict[str, Any]] = []
+        for policy in self.supplemental_policies:
+            fragment_or_awaitable = policy.decide(context, self.state)
+            if inspect.isawaitable(fragment_or_awaitable):
+                fragment = await fragment_or_awaitable
+            else:
+                fragment = fragment_or_awaitable
+            fragments.append(self._enabled(fragment))
+        return fragments
 
     def _enabled(self, fragment: dict[str, Any]) -> dict[str, Any]:
         """Restrict one fragment to enabled action keys.
