@@ -214,6 +214,92 @@ Each agent key maps to a block that configures all agents of that type:
      - If ``true``, the agent receives market-price information.
        Defaults to ``false``.
 
+Rule-based household SNS configuration
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``RuleBasedHousehold`` accepts an optional ``socialRule`` block. When
+``enabled`` is ``false`` or omitted, its existing behavior is unchanged. When
+enabled, ``SocialMediaPolicy`` is added to the household's supplemental
+policies.
+
+.. list-table::
+   :header-rows: 1
+   :widths: 34 18 48
+
+   * - Key
+     - Default
+     - Description
+   * - ``enabled``
+     - ``false``
+     - Enable rule-based follow, unfollow, and tweet behavior.
+   * - ``topicPriority``
+     - built-in ordering
+     - Priority of topics associated with changed memory categories.
+   * - ``tweet.textGeneratorService``
+     - ``"tweetTextClient"``
+     - Environment service used only to render a rule-selected tweet intent.
+   * - ``tweet.baseIntensity``
+     - ``0.002``
+     - Hawkes baseline intensity per simulation step.
+   * - ``tweet.selfExcitation``
+     - ``0.18``
+     - Excitation added after a successfully emitted tweet.
+   * - ``tweet.decayRate``
+     - ``0.7``
+     - Positive exponential decay rate of Hawkes excitation.
+   * - ``tweet.memoryExcitation``
+     - ``0.025``
+     - Excitation added per changed summarized-memory category.
+   * - ``tweet.stressExcitationScale``
+     - ``0.001``
+     - Multiplier applied to summarized memory stress.
+   * - ``tweet.maxMemoryExcerptCharacters``
+     - ``320``
+     - Maximum memory context supplied to the text model.
+   * - ``tweet.language``
+     - ``"English"``
+     - Output language requested from the text model.
+   * - ``tweet.maxCharacters``
+     - ``140``
+     - Configurable output bound. Values above 140 are supported.
+   * - ``follow.probability``
+     - ``0.01``
+     - Per-eligible-step probability of following a recommended agent.
+   * - ``follow.cooldownSteps``
+     - ``24``
+     - Minimum steps between follow decisions.
+   * - ``unfollow.probability``
+     - ``0.005``
+     - Random-unfollow probability when no inactivity or keyword rule applies.
+   * - ``unfollow.cooldownSteps``
+     - ``48``
+     - Minimum steps between unfollow decisions.
+   * - ``unfollow.emptyTweetSteps``
+     - ``72``
+     - Consecutive empty timeline observations before inactivity unfollow.
+   * - ``unfollow.negativeKeywords``
+     - built-in tuple
+     - Case-insensitive substrings that make a visible followee eligible for
+       unfollowing.
+
+Tweet timing has no minimum-interval option. It is governed by a Hawkes
+process, so adjacent-step posts and bursts remain possible. The policy consumes
+the existing recommender's ``recommended_follows`` output and does not alter
+``recSys`` or its temperature behavior. See :doc:`rule_based_household` for the
+equations and a complete configuration.
+
+Plain-text Transformers service
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``TransformersTextClient`` uses a local causal model for plain-text generation
+without an action JSON schema. ``modelName`` is required. Important optional
+keys are ``device``, ``dtype``, ``maxModelParameters``, ``maxPromptTokens``,
+``maxNewTokens``, ``temperature``, ``topP``, ``repetitionPenalty``,
+``numThreads``, ``maxConcurrentGenerations``, ``trustRemoteCode``, and
+``ignoreGenerationErrors``. For Tiny LM use, set
+``maxModelParameters`` to ``1000000000`` or less. The behavioral-coherence
+baseline uses ``HuggingFaceTB/SmolLM2-360M-Instruct``.
+
 Item Configuration
 ------------------
 
