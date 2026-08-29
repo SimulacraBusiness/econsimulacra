@@ -77,6 +77,7 @@ class SocialState:
     last_unfollow_step: Optional[int] = None
     last_tweet_intent: Optional[TweetIntent] = None
 
+
 @dataclass
 class DecisionContext:
     r"""Normalized observation supplied to every household policy.
