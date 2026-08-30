@@ -271,7 +271,13 @@ class MemoryHandler:
                 f"Agent with id {agent_id} already has a position assigned in memory."
             )
         move_history.append(
-            MoveHistoryItem(pos=log.pos, init_pos=log.pos, time=None, time_step=-1)
+            MoveHistoryItem(
+                pos=log.pos,
+                pos_description=None,
+                init_pos=log.pos,
+                time=None,
+                time_step=-1,
+            )
         )
 
     def _process_invalid_action_log(self, log: InvalidActionLog) -> None:
@@ -377,6 +383,7 @@ class MemoryHandler:
         move_history.append(
             MoveHistoryItem(
                 pos=log.new_pos,
+                pos_description=log.new_pos_description,
                 init_pos=log.init_pos,
                 time=log.time,
                 time_step=log.time_step,

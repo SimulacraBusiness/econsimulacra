@@ -189,9 +189,17 @@ class MemorySummarizer:
     def _summarize_move_history(self, move_history: Deque[MoveHistoryItem]) -> str:
         if not move_history:
             return "You have no movement history."
+        move_history_with_description = [
+            item for item in move_history if item.pos_description is not None
+        ]
+        if not move_history_with_description:
+            return "You have no salient movement history."
         return (
-            "You have moved to "
-            + " -> ".join(f"{item.pos}" for item in move_history)
+            "You have moved "
+            + ", ".join(
+                f"to {item.pos} at time {item.time} ({item.pos_description})"
+                for item in move_history_with_description
+            )
             + "."
         )
 

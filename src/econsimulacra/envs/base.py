@@ -1580,6 +1580,9 @@ class Environment(Generic[ObsT]):
         next_pos: tuple[int, ...] = self._calc_next_pos(
             current_pos=current_pos, destination_pos=destination_pos
         )
+        new_pos_description: Optional[str] = self.get_pos_description(
+            agent_id=agent_id, pos=next_pos
+        )
         self.grid_space.move_agent(agent_id=agent_id, new_pos=next_pos)
         log: MoveLog = MoveLog(
             time=self.get_time(),
@@ -1587,6 +1590,7 @@ class Environment(Generic[ObsT]):
             agent_id=agent_id,
             old_pos=current_pos,
             new_pos=next_pos,
+            new_pos_description=new_pos_description,
             init_pos=self.agent_id2initial_coords[agent_id],
         )
         self.remember_log(log)
@@ -1609,7 +1613,7 @@ class Environment(Generic[ObsT]):
             where_to_move (tuple[int, ...] | str): the target position or agent name to move to.
 
         Returns:
-            Optional[tuple[int, ...]]: the calculated destination position, or None if the input is invalid.
+            tuple[int, ...], optional: the calculated destination position, or None if the input is invalid.
         """
         destination_pos: Optional[tuple[int, ...]]
         if isinstance(where_to_move, str):
@@ -1625,6 +1629,40 @@ class Environment(Generic[ObsT]):
         else:
             destination_pos = None
         return destination_pos
+
+    def get_pos_description(self, agent_id: int, pos: tuple[int, ...]) -> Optional[str]:
+        """Get the description of the position for the agent.
+
+        Args:
+            agent_id (int): the ID of the agent.
+            pos (tuple[int, ...]): the position to get the description for.
+
+        Returns:
+            str, optional: the description of the position, or None if not found.
+
+        Note:
+            The description is determined based on the following priority:
+            1. If the agent is at its home, return "got home".
+            2. If there are non-household agents at the position, return one of their names.
+            3. If there are friends (follow & follower) at the position, return one of their names.
+            5. Otherwise, return None.
+        """
+        init_pos: tuple[int, ...] = self.agent_id2initial_coords[agent_id]
+        if pos == init_pos:
+            return "got home"
+        colocated_agent_ids: set[int] = self.grid_space.get_agents(pos=pos)
+        for colocated_agent_id in colocated_agent_ids:
+            if colocated_agent_id not in self.household_ids:
+                return (
+                    f"arrived at {self.agent_id2agent[colocated_agent_id].agent_name}"
+                )
+            if colocated_agent_id in self.social_network.get_follows(
+                agent_id=agent_id
+            ) and colocated_agent_id in self.social_network.get_followers(
+                agent_id=agent_id
+            ):
+                return f"met {self.agent_id2agent[colocated_agent_id].agent_name}"
+        return None
 
     def _calc_next_pos(
         self, current_pos: tuple[int, ...], destination_pos: tuple[int, ...]

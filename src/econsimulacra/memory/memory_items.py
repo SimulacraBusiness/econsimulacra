@@ -49,6 +49,7 @@ class MoveHistoryItem:
 
     Attributes:
         pos (tuple[int, ...]): the position of the agent after the movement.
+        pos_description (str, optional): the description of the position after the movement.
         init_pos (tuple[int, ...]): the initial position of the agent assigned by the environment.
         time (int | str, optional): the time of the movement.
             It can be None for the initial position assigned by the environment, which is based on the SpaceAssignLog.
@@ -61,6 +62,7 @@ class MoveHistoryItem:
     """
 
     pos: tuple[int, ...]
+    pos_description: Optional[str]
     init_pos: tuple[int, ...]
     time: Optional[int | str]
     time_step: int

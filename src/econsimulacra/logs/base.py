@@ -230,6 +230,7 @@ class MoveLog(Log):
         agent_id: int,
         old_pos: tuple[int, ...],
         new_pos: tuple[int, ...],
+        new_pos_description: Optional[str],
         init_pos: tuple[int, ...],
     ) -> None:
         """Initialization.
@@ -240,6 +241,8 @@ class MoveLog(Log):
             agent_id (int): The unique id of the agent.
             old_pos (tuple[int, ...]): The previous position of the agent. The length of the tuple should match the dimension of the environment's space.
             new_pos (tuple[int, ...]): The new position of the agent. The length of the tuple should match the dimension of the environment's space.
+            new_pos_description (Optional[str]): A description of the new position.
+            init_pos (tuple[int, ...]): The initial position of the agent. The length of the tuple should match the dimension of the environment's space.
         """
         self.type: str = "move"
         self.time: int | str = time
@@ -247,6 +250,7 @@ class MoveLog(Log):
         self.agent_id: int = agent_id
         self.old_pos: tuple[int, ...] = old_pos
         self.new_pos: tuple[int, ...] = new_pos
+        self.new_pos_description: Optional[str] = new_pos_description
         self.init_pos: tuple[int, ...] = init_pos
 
 
