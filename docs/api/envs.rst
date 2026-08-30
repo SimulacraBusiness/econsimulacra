@@ -17,14 +17,6 @@ Order
    :undoc-members:
    :show-inheritance:
 
-Grid Space
-----------
-
-.. automodule:: econsimulacra.envs.space
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 Observation Providers
 ---------------------
 

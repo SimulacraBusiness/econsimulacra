@@ -1,6 +1,6 @@
 import pytest
 
-from econsimulacra.envs import GridSpace
+from econsimulacra.spaces import GridSpace
 
 
 class TestGridSpace:

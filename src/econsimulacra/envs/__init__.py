@@ -29,12 +29,10 @@ from .obs_providers import (
 )
 from .order import Order as Order, SwapProposal as SwapProposal
 from .sleep_manager import SleepManager as SleepManager
-from .space import GridSpace as GridSpace
 from .time_translator import TimeTranslator as TimeTranslator
 
 __all__ = [
     "Environment",
-    "GridSpace",
     "Order",
     "SwapProposal",
     "TimeTranslator",

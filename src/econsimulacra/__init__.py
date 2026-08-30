@@ -8,6 +8,7 @@ from econsimulacra import (
     logs as logs,
     memory as memory,
     social_networks as social_networks,
+    spaces as spaces,
 )
 from econsimulacra.sim_utils import JsonRandom as JsonRandom, find_class as find_class
 from econsimulacra.simulator import (
@@ -25,6 +26,7 @@ __all__ = [
     "log_analyses",
     "memory",
     "social_networks",
+    "spaces",
     "Simulator",
     "find_class",
     "JsonRandom",

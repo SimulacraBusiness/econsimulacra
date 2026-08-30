@@ -37,6 +37,7 @@ from ..logs import (
 from ..memory import MemoryHandler
 from ..sim_utils import find_class
 from ..social_networks import SocialNetwork
+from ..spaces import GridSpace
 from .obs_providers import (
     FollowCapProvider,
     IncomingOrdersProvider,
@@ -68,7 +69,6 @@ from .obs_providers import (
 )
 from .order import Order, SwapProposal
 from .sleep_manager import SleepManager
-from .space import GridSpace
 from .time_translator import TimeTranslator
 
 ObsT = TypeVar("ObsT")
@@ -121,7 +121,7 @@ class Environment(Generic[ObsT]):
                     # Optional, the common environment services provided for the agents. Default to [].
                 }
                 "gridSpace": {
-                    "type": "GridSpace", # See also: ``econsimulacra.envs.space.GridSpace``
+                    "type": "GridSpace", # See also: ``econsimulacra.spaces.GridSpace``
                     "gridSize": [int, ...],
                 },
                 "socialNetwork": {

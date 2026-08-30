@@ -7,6 +7,7 @@ API Reference
    simulator
    agents
    envs
+   spaces
    items
    events
    logs
