@@ -31,6 +31,7 @@ class TestDictLogger:
             agent_id=1,
             old_pos=(0, 0),
             new_pos=(1, 1),
+            new_pos_description=None,
             init_pos=(0, 0),
         )
         log1.read_and_write(logger)
@@ -55,6 +56,7 @@ class TestDictLogger:
                 "agent_id": 1,
                 "old_pos": (0, 0),
                 "new_pos": (1, 1),
+                "new_pos_description": None,
                 "init_pos": (0, 0),
             },
         ]
@@ -81,6 +83,7 @@ class TestDictLogger:
                 "agent_id": 1,
                 "old_pos": (0, 0),
                 "new_pos": (1, 1),
+                "new_pos_description": None,
                 "init_pos": (0, 0),
                 "tag": "movement",
             },

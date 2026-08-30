@@ -161,7 +161,7 @@ class TestMemoryHandler:
         )
         assert score == int((15 - (10 * 1 * 0.9 + 1 * 5)) / 15 * 100)
         d = memory_handler.get_memory(agent_id=1)
-        assert d["move_history"] == "You have moved to (0, 0)."
+        assert d["move_history"] == "You have no salient movement history."
         assert d["move_history_stress"] == 0
         assert (
             d["move_history_stress_reason"]
@@ -181,11 +181,12 @@ class TestMemoryHandler:
             agent_id=1,
             old_pos=(0, 0),
             new_pos=(0, 1),
+            new_pos_description=None,
             init_pos=(0, 0),
         )
         memory_handler.update(log=log3)
         d = memory_handler.get_memory(agent_id=1)
-        assert d["move_history"] == ("You have moved to (0, 0) -> (0, 1).")
+        assert d["move_history"] == ("You have no salient movement history.")
         assert d["move_history_stress"] == 90
         assert (
             d["move_history_stress_reason"]
@@ -198,11 +199,12 @@ class TestMemoryHandler:
             agent_id=1,
             old_pos=(0, 1),
             new_pos=(0, 0),
+            new_pos_description="got home",
             init_pos=(0, 0),
         )
         memory_handler.update(log=log4)
         d = memory_handler.get_memory(agent_id=1)
-        assert d["move_history"] == ("You have moved to (0, 0) -> (0, 1) -> (0, 0).")
+        assert d["move_history"] == ("You have moved to (0, 0) at time 4 (got home).")
         assert d["move_history_stress"] == 64
         assert (
             d["move_history_stress_reason"]
@@ -230,7 +232,6 @@ class TestMemoryHandler:
             "Your state evaluations are Wealth: 10000 at time 0; Wealth: 9000 at time 5."
         )
         assert d["state_evaluation_history_stress"] == 29
-        print(d)
         assert (
             d["state_evaluation_history_stress_reason"]
             == "Your stress level from this state evaluation is 29 out of 100. "
