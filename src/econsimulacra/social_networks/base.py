@@ -33,6 +33,7 @@ class SocialNetwork:
         """
         self.config: dict[str, Any] = config
         self.prng: Random = prng
+        self.registered_classes: list[Type] = registered_classes
         self.nodes: set[int] = set()
         self.follow_cap: Optional[int] = config.get("followCap")
         self.agent_id2agent_name: dict[int, str] = {}
