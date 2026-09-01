@@ -313,10 +313,13 @@ class NearbyAgentsProvider(ObsProvider[list[dict[str, Any]]]):
                 - "pos": The position of the nearby agent as a tuple of coordinates.
         """
         nearby_agents_infos: list[dict[str, Any]] = []
+        agent_pos: tuple[int, ...] = self.env.grid_space.get_pos(agent_id=agent_id)
         nearby_agent_ids: set[int] = self.env.grid_space.get_near_agents(
-            agent_id=agent_id, max_distance=1
+            center_pos=agent_pos, max_distance=1
         )
         for nearby_agent_id in nearby_agent_ids:
+            if nearby_agent_id == agent_id:
+                continue
             nearby_agent: Agent = self.env.agent_id2agent[nearby_agent_id]
             nearby_agents_infos.append(
                 {
