@@ -323,17 +323,17 @@ class Environment(Generic[ObsT]):
         self.social_network: SocialNetwork = self._generate_social_network(
             social_network_key=social_network_key
         )
-        service_provider_keys: list[str] = self.config["environment"].get("service", [])
+        service_provider_keys: list[str] = list(self.config["environment"].get("service", []))
         self._generate_service_providers(service_provider_keys=service_provider_keys)
         assert "items" in self.config["environment"], (
             "Environment config must include 'items' key."
         )
-        item_keys: list[str] = self.config["environment"]["items"]
+        item_keys: list[str] = list(self.config["environment"]["items"])
         self._generate_items(item_keys=item_keys)
         assert "agents" in self.config["environment"], (
             "Environment config must include 'agents' key."
         )
-        agent_keys: list[str] = self.config["environment"]["agents"]
+        agent_keys: list[str] = list(self.config["environment"]["agents"])
         self._generate_agents(agent_keys=agent_keys)
         self.pending_orders: list[Order] = []
         self.pending_swap_proposals: list[SwapProposal] = []
@@ -381,7 +381,11 @@ class Environment(Generic[ObsT]):
         space_class: Type[GridSpace] = find_class(
             name=space_type, optional_class_list=self.registered_classes
         )
-        grid_space: GridSpace = space_class(space_config)
+        grid_space: GridSpace = space_class(
+            config=space_config,
+            registered_classes=self.registered_classes,
+            prng=self.prng
+        )
         return grid_space
 
     def _generate_social_network(self, social_network_key: str) -> SocialNetwork:
@@ -498,6 +502,10 @@ class Environment(Generic[ObsT]):
         self.agent_id2destination: dict[int, Optional[tuple[int, ...]]] = {}
         self.agent_id2initial_inventory: dict[int, dict[str, int | float]] = {}
         self.agent_id2wealth: dict[int, float | int] = {}
+        agent_keys.sort(
+            key=lambda x: self.config.get(x, {}).get("initialCoords") is not None,
+            reverse=True
+        )
         for agent_key in agent_keys:
             agent_config: dict[str, Any] = self.config.get(agent_key, {})
             instance_type: str = agent_config.get("type", agent_key)
@@ -621,15 +629,10 @@ class Environment(Generic[ObsT]):
             Called when generating agents in the reset() method.
             The initial coordinates can be specified in the agent config with the "initialCoords" key.
         """
-        space_size: tuple[int, ...] = self.grid_space.get_space_size()
-        if coords is None:
-            coords = tuple(
-                self.prng.randint(0, space_size[dim] - 1)
-                for dim in range(len(space_size))
-            )
         self.grid_space.place_agent(agent_id=agent_id, pos=coords)
-        self.agent_id2initial_coords[agent_id] = coords
-        log: SpaceAssignLog = SpaceAssignLog(agent_id=agent_id, pos=coords)
+        agent_pos: tuple[int, ...] = self.grid_space.get_pos(agent_id=agent_id)
+        self.agent_id2initial_coords[agent_id] = agent_pos
+        log: SpaceAssignLog = SpaceAssignLog(agent_id=agent_id, pos=agent_pos)
         self.remember_log(log)
         self.event_manager.trigger_events_after_log(log=log, env=self)
         if self.logger is not None:
@@ -1577,7 +1580,7 @@ class Environment(Generic[ObsT]):
         )
         if destination_pos is None:
             raise ValueError(f"Invalid move destination: {where_to_move}")
-        next_pos: tuple[int, ...] = self._calc_next_pos(
+        next_pos: tuple[int, ...] = self.grid_space.calc_next_pos(
             current_pos=current_pos, destination_pos=destination_pos
         )
         new_pos_description: Optional[str] = self.get_pos_description(
@@ -1663,32 +1666,6 @@ class Environment(Generic[ObsT]):
             ):
                 return f"met {self.agent_id2agent[colocated_agent_id].agent_name}"
         return None
-
-    def _calc_next_pos(
-        self, current_pos: tuple[int, ...], destination_pos: tuple[int, ...]
-    ) -> tuple[int, ...]:
-        """Calculate the next position for the agent to move towards the destination.
-
-        Args:
-            current_pos (tuple[int, ...]): the current position of the agent.
-            destination_pos (tuple[int, ...]): the target position of the agent.
-
-        Returns:
-            tuple[int, ...]: the next position for the agent to move towards the destination.
-
-        Note:
-            The agent can only move one step (i.e., to an adjacent cell) towards
-            the destination in one step of the environment.
-            This method calculate the nearest adjacent cell to the destination and return
-            its coordinates as the next position.
-        """
-        next_pos: list[int] = list(current_pos)
-        for dim in range(len(current_pos)):
-            if current_pos[dim] < destination_pos[dim]:
-                next_pos[dim] += 1
-            elif current_pos[dim] > destination_pos[dim]:
-                next_pos[dim] -= 1
-        return tuple(next_pos)
 
     def _consume_items(self, agent_id: int, consumptions: list[dict[str, Any]]) -> None:
         """Apply the consumption action to the environment by reducing the agent's inventory of the consumed items.
