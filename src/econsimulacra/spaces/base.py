@@ -188,7 +188,7 @@ class GridSpace:
 
         Returns:
             set[int]: Agent IDs within ``max_distance`` from the reference agent,
-                excluding the reference agent itself.
+                including the reference agent itself if it is present in the grid space.
         """
         if max_distance < 0:
             raise ValueError("max_distance must be non-negative.")
