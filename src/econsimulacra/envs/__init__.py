@@ -6,6 +6,7 @@ from .obs_providers import (
     ItemName2PriceProvider as ItemName2PriceProvider,
     MemoryProvider as MemoryProvider,
     NearbyAgentsProvider as NearbyAgentsProvider,
+    NearbyInfoProvider as NearbyInfoProvider,
     NumFollowersProvider as NumFollowersProvider,
     NumFollowsProvider as NumFollowsProvider,
     ObsProvider as ObsProvider,
@@ -29,12 +30,10 @@ from .obs_providers import (
 )
 from .order import Order as Order, SwapProposal as SwapProposal
 from .sleep_manager import SleepManager as SleepManager
-from .space import GridSpace as GridSpace
 from .time_translator import TimeTranslator as TimeTranslator
 
 __all__ = [
     "Environment",
-    "GridSpace",
     "Order",
     "SwapProposal",
     "TimeTranslator",
@@ -51,6 +50,7 @@ __all__ = [
     "SelfDestinationProvider",
     "OthersPosProvider",
     "NearbyAgentsProvider",
+    "NearbyInfoProvider",
     "SelfInventoryProvider",
     "SelfTweetProvider",
     "SelfSalaryProvider",

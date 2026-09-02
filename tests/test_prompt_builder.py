@@ -8,6 +8,13 @@ from econsimulacra.llm_services import (
 
 
 class TestPromptBuilder:
+    def test_default_observation_description_includes_nearby_info(self) -> None:
+        description = DEFAULT_OBS_DESCRIPTION["nearby_info"]
+
+        assert "neighboring grid cells" in description
+        assert "can_enter" in description
+        assert "attributes" in description
+
     def test_build_prompt(self) -> None:
         prompt_builder = PromptBuilder(config={})
         obs: dict[str, str] = {"key1": "value1", "key2": 2.5}

@@ -78,6 +78,62 @@ def summarize_observed_price_changes(
     )
 
 
+def summarize_nearby_info(obs_items: list[ObsHistoryItem]) -> str:
+    """Summarizes the nearby cell information over time.
+
+    Args:
+        obs_items (list[ObsHistoryItem]): A list of observation items to summarize.
+
+    Returns:
+        str: A summarized string of nearby cell information.
+
+    Note:
+        The components in obs_items must be: ObsHistoryItem with obs_type=='nearby_info'.
+        The function flags nearby cells that have changed (can_enter status).
+        The function also lists the cells that could not be entered.
+        If no significant changes are found, it returns an empty string.
+    """
+    if not obs_items:
+        return ""
+    sorted_items: list[ObsHistoryItem] = sorted(
+        obs_items, key=lambda item: item.time_step
+    )
+    pos2can_enter: dict[str, list[bool]] = defaultdict(list)
+    for obs_item in sorted_items:
+        if obs_item.obs_type != "nearby_info":
+            raise ValueError(
+                f"Expected obs_type 'nearby_info', but got '{obs_item.obs_type}'"
+            )
+        for nearby_cell in obs_item.obs:
+            if not isinstance(nearby_cell, dict):
+                raise ValueError(
+                    f"Expected nearby cell to be a dict, but got {nearby_cell}"
+                )
+            pos = str(nearby_cell["pos"])
+            can_enter = bool(nearby_cell["can_enter"])
+            pos2can_enter[pos].append(can_enter)
+    messages: list[str] = []
+    for pos, can_enter_list in pos2can_enter.items():
+        if len(can_enter_list) < 2:
+            continue
+        if can_enter_list[-1] != can_enter_list[0]:
+            messages.append(
+                f"The cell at {pos} changed its can_enter status from {can_enter_list[0]} to {can_enter_list[-1]}"
+            )
+    cannot_enter_cells: list[str] = [
+        pos for pos, can_enter_list in pos2can_enter.items() if not can_enter_list[-1]
+    ]
+    if cannot_enter_cells:
+        messages.append(
+            f"The following cells could not be entered: {', '.join(cannot_enter_cells)}"
+        )
+    return (
+        "; ".join(messages) + "."
+        if messages
+        else "No significant changes in nearby cell information observed."
+    )
+
+
 def summarize_num_changes(
     obs_items: list[ObsHistoryItem],
     is_follow: bool = True,

@@ -154,6 +154,9 @@ DEFAULT_OBS_DESCRIPTION: dict[str, str] = {
     "nearby_agents": "A list of dictionaries representing the nearby agents in the neighboring grid cells. "
     + "Each dictionary has 'agent_id', 'agent_name', and 'pos' (coordinates) of the nearby agent. "
     + "You may feel crowded and stressed when there are many nearby agents. ",
+    "nearby_info": "A list of dictionaries representing the nearby cells in the neighboring grid cells. "
+    + "Each dictionary has 'pos' (coordinates), 'can_enter' (a boolean indicating whether you can enter the cell), "
+    + "and 'attributes' (a dictionary of arbitrary attributes) of the nearby cell. ",
     "self_salary": "Your salary that is supposed to be paid.",
     "self_inventory": "A dictionary representing your inventory, where the keys are item names and the values are the amounts of each item you have. "
     + "The items included in this inventory constitute the complete set of goods that exist in this world.",

@@ -10,6 +10,8 @@ from econsimulacra.logs import (
     TweetLog,
 )
 from econsimulacra.memory import MemoryHandler, StressAwareSummarizer, StressCalculator
+from econsimulacra.memory.memory_items import ObsHistoryItem
+from econsimulacra.memory.obs_summarization_utils import summarize_nearby_info
 
 
 class TestMemoryHandler:
@@ -81,6 +83,107 @@ class TestMemoryHandler:
         assert stress_calculator.relative_wealth_weight == 0.9
         assert stress_calculator.wealth_drawdown_weight == 0.3
         assert stress_calculator.tolerance_threshold_for_stress == 20
+
+    def test_summarize_nearby_info_remembers_current_and_past_blocked_cells(
+        self,
+    ) -> None:
+        obs_items = [
+            ObsHistoryItem(
+                obs_type="nearby_info",
+                time=0,
+                time_step=0,
+                obs=[
+                    {
+                        "pos": (1, 0),
+                        "can_enter": False,
+                        "attributes": {"kind": "house"},
+                    },
+                    {
+                        "pos": (0, 1),
+                        "can_enter": True,
+                        "attributes": {"kind": "road"},
+                    },
+                ],
+            ),
+            ObsHistoryItem(
+                obs_type="nearby_info",
+                time=1,
+                time_step=1,
+                obs=[
+                    {
+                        "pos": (2, 1),
+                        "can_enter": False,
+                        "attributes": {"kind": "construction"},
+                    },
+                    {
+                        "pos": (1, 2),
+                        "can_enter": True,
+                        "attributes": {"kind": "road"},
+                    },
+                ],
+            ),
+        ]
+
+        assert summarize_nearby_info(obs_items) == (
+            "The following cells could not be entered: (1, 0), (2, 1)."
+        )
+
+    def test_summarize_nearby_info_reports_access_change(self) -> None:
+        obs_items = [
+            ObsHistoryItem(
+                obs_type="nearby_info",
+                time=0,
+                time_step=0,
+                obs=[{"pos": (1, 0), "can_enter": False, "attributes": {}}],
+            ),
+            ObsHistoryItem(
+                obs_type="nearby_info",
+                time=1,
+                time_step=1,
+                obs=[{"pos": (1, 0), "can_enter": True, "attributes": {}}],
+            ),
+        ]
+
+        assert summarize_nearby_info(obs_items) == (
+            "The cell at (1, 0) changed its can_enter status from False to True."
+        )
+
+    def test_nearby_info_is_included_in_memory_observation_summary(self) -> None:
+        memory_handler = MemoryHandler(self.config)
+        memory_handler.update(
+            log=AgentGenerationLog(
+                time=0,
+                time_step=0,
+                agent_id=1,
+                agent_type="Dummy",
+                agent_name="Dummy",
+                wealth=10000,
+                inventory_dic={"Yen": 10000},
+                persona_dic=None,
+            )
+        )
+        memory_handler.update(
+            log=ObsLog(
+                obs_type="nearby_info",
+                time=1,
+                time_step=1,
+                agent_id=1,
+                obs=[
+                    {
+                        "pos": (1, 0),
+                        "can_enter": False,
+                        "attributes": {"kind": "house"},
+                    }
+                ],
+            )
+        )
+
+        memory = memory_handler.get_memory(agent_id=1)
+
+        assert memory["obs_history"] == (
+            "Your observations history are: "
+            "The following cells could not be entered: (1, 0)."
+        )
 
     def test_summarize_memory(self):
         memory_handler = MemoryHandler(self.config)
