@@ -318,6 +318,83 @@ class TestEnvironment:
         assert env.agent_id2is_moving[household_id] is True
         assert env.agent_id2destination[household_id] == retailer_pos
 
+    def test_move_waits_and_retries_when_destination_is_closed(self) -> None:
+        env = Environment(config=self.config)
+        env.register_classes(
+            [DummyHousehold, DummyRetailer, DummyMemoryHandler, DummyEvent]
+        )
+        env.reset(seed=42)
+        household_id: int = env.household_ids[0]
+        initial_pos: tuple[int, ...] = env.grid_space.get_pos(household_id)
+        destination_pos: tuple[int, ...] = tuple(
+            coordinate + 1
+            if coordinate + 1 < env.grid_space.space_size[dim]
+            else coordinate - 1
+            for dim, coordinate in enumerate(initial_pos)
+        )
+        env.grid_space.update_cell_access(
+            pos=destination_pos,
+            traversable=False,
+        )
+
+        env._move(agent_id=household_id, where_to_move=destination_pos)
+
+        assert env.grid_space.get_pos(household_id) == initial_pos
+        assert env.agent_id2is_moving[household_id] is True
+        assert env.agent_id2destination[household_id] == destination_pos
+
+        env.grid_space.update_cell_access(
+            pos=destination_pos,
+            traversable=True,
+        )
+        continued_destination = env._get_where_to_move(
+            agent_id=household_id,
+            where_to_move=None,
+        )
+        env._move(
+            agent_id=household_id,
+            where_to_move=continued_destination,
+        )
+
+        assert env.grid_space.get_pos(household_id) == destination_pos
+        assert env.agent_id2is_moving[household_id] is False
+
+    def test_nearby_info_contains_four_cardinal_cells(self) -> None:
+        env = Environment(config=self.config)
+        env.register_classes(
+            [DummyHousehold, DummyRetailer, DummyMemoryHandler, DummyEvent]
+        )
+        env.reset(seed=42)
+        household_id: int = env.household_ids[0]
+        center_pos: tuple[int, int] = (5, 5)
+        env.grid_space.move_agent(agent_id=household_id, new_pos=center_pos)
+        env.grid_space.update_cell_access(pos=(4, 5), traversable=False)
+        env.grid_space.update_cell_attrs(
+            pos=(4, 5), updates={"kind": "house", "name": "Neighbor's house"}
+        )
+        env.grid_space.update_cell_attrs(pos=(6, 5), updates={"kind": "road"})
+        env.grid_space.update_cell_attrs(pos=(5, 4), updates={"kind": "road"})
+        env.grid_space.update_cell_attrs(pos=(5, 6), updates={"kind": "park"})
+        env.grid_space.update_cell_access(pos=(4, 4), traversable=False)
+        env.grid_space.update_cell_attrs(pos=(4, 4), updates={"kind": "diagonal"})
+
+        obs: dict[str, Any] = env.get_observations(agent_id=household_id)
+        nearby_info: list[dict[str, Any]] = obs["nearby_info"]
+        pos2info: dict[tuple[int, ...], dict[str, Any]] = {
+            info["pos"]: info for info in nearby_info
+        }
+
+        assert set(pos2info) == {(4, 5), (6, 5), (5, 4), (5, 6)}
+        assert center_pos not in pos2info
+        assert (4, 4) not in pos2info
+        assert pos2info[(4, 5)] == {
+            "pos": (4, 5),
+            "can_enter": False,
+            "attributes": {"kind": "house", "name": "Neighbor's house"},
+        }
+        assert pos2info[(6, 5)]["can_enter"] is True
+        assert pos2info[(6, 5)]["attributes"] == {"kind": "road"}
+
     def test_consume_items(self) -> None:
         env = Environment(config=self.config)
         env.register_classes(

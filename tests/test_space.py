@@ -2,7 +2,7 @@ from random import Random
 
 import pytest
 
-from econsimulacra.spaces import GridSpace
+from econsimulacra.spaces import Cell, CellAccess, GridSpace
 
 
 class TestGridSpace:
@@ -21,6 +21,55 @@ class TestGridSpace:
         assert grid_space_3d.space_size == (5, 5, 5)
         grid_space_1d = self.make_grid_space(config={"gridSize": (20,)})
         assert grid_space_1d.space_size == (20,)
+
+    def test_cell_configuration_and_arbitrary_attributes(self) -> None:
+        grid_space = self.make_grid_space(
+            config={
+                "gridSize": (2, 2),
+                "cellDefaults": {
+                    "access": {"spawnable": False},
+                    "attrs": {"district": "central"},
+                },
+                "cells": [
+                    {
+                        "pos": [0, 1],
+                        "access": {"traversable": False, "spawnable": True},
+                        "attrs": {"kind": "house"},
+                    }
+                ],
+            }
+        )
+
+        assert grid_space.get_cell((0, 0)) == Cell(
+            access=CellAccess(traversable=True, spawnable=False),
+            attrs={"district": "central"},
+        )
+        assert grid_space.get_cell((0, 1)) == Cell(
+            access=CellAccess(traversable=False, spawnable=True),
+            attrs={"district": "central", "kind": "house"},
+        )
+        attrs = grid_space.get_cell_attrs((0, 1))
+        attrs["kind"] = "road"
+        assert grid_space.get_cell_attrs((0, 1))["kind"] == "house"
+
+    def test_update_cell_information(self) -> None:
+        grid_space = self.make_grid_space(config={"gridSize": (2, 2)})
+
+        grid_space.update_cell_access(pos=(1, 1), traversable=False, spawnable=False)
+        grid_space.update_cell_attrs(pos=(1, 1), updates={"kind": "common_space"})
+
+        cell = grid_space.get_cell((1, 1))
+        assert cell.access == CellAccess(traversable=False, spawnable=False)
+        assert cell.attrs == {"kind": "common_space"}
+
+    def test_invalid_cell_configuration_is_rejected(self) -> None:
+        with pytest.raises(ValueError, match="configured more than once"):
+            self.make_grid_space(
+                config={
+                    "gridSize": (1, 1),
+                    "cells": [{"pos": [0, 0]}, {"pos": [0, 0]}],
+                }
+            )
 
     def test_place_agent(self) -> None:
         grid_space = self.make_grid_space(config=self.config)
@@ -58,8 +107,16 @@ class TestGridSpace:
         grid_space.place_agent(agent_id=2, pos=(3, 4))
         grid_space.place_agent(agent_id=3, pos=(5, 5))
         assert grid_space.get_near_agents(center_pos=(2, 3), max_distance=1) == {0, 1}
-        assert grid_space.get_near_agents(center_pos=(2, 3), max_distance=2) == {0, 1, 2}
-        assert grid_space.get_near_agents(center_pos=(2, 4), max_distance=1) == {0, 1, 2}
+        assert grid_space.get_near_agents(center_pos=(2, 3), max_distance=2) == {
+            0,
+            1,
+            2,
+        }
+        assert grid_space.get_near_agents(center_pos=(2, 4), max_distance=1) == {
+            0,
+            1,
+            2,
+        }
         assert grid_space.get_near_agents(center_pos=(3, 4), max_distance=1) == {1, 2}
         assert grid_space.get_near_agents(center_pos=(5, 5), max_distance=1) == {3}
         with pytest.raises(ValueError):
@@ -86,6 +143,20 @@ class TestGridSpace:
         with pytest.raises(ValueError):
             grid_space.move_agent(agent_id=0, new_pos=(10, 5))
 
+    def test_move_agent_rejects_non_traversable_cell(self) -> None:
+        grid_space = self.make_grid_space(
+            config={
+                "gridSize": (2, 1),
+                "cells": [{"pos": [1, 0], "access": {"traversable": False}}],
+            }
+        )
+        grid_space.place_agent(agent_id=0, pos=(0, 0))
+
+        with pytest.raises(ValueError, match="not traversable"):
+            grid_space.move_agent(agent_id=0, new_pos=(1, 0))
+
+        assert grid_space.get_pos(agent_id=0) == (0, 0)
+
     def test_move_many_agents(self) -> None:
         grid_space = self.make_grid_space(config=self.config)
         grid_space.place_agent(agent_id=0, pos=(2, 3))
@@ -96,11 +167,86 @@ class TestGridSpace:
         assert grid_space.get_agents(pos=(2, 3)) == set()
         assert grid_space.get_agents(pos=(4, 5)) == set()
 
+    def test_move_many_agents_validates_before_updating(self) -> None:
+        grid_space = self.make_grid_space(
+            config={
+                "gridSize": (3, 1),
+                "cells": [{"pos": [2, 0], "access": {"traversable": False}}],
+            }
+        )
+        grid_space.place_agent(agent_id=0, pos=(0, 0))
+        grid_space.place_agent(agent_id=1, pos=(1, 0))
+
+        with pytest.raises(ValueError, match="not traversable"):
+            grid_space.move_many_agents(agent_id2new_pos={0: (1, 0), 1: (2, 0)})
+
+        assert grid_space.get_pos(agent_id=0) == (0, 0)
+        assert grid_space.get_pos(agent_id=1) == (1, 0)
+
+    def test_movement_colocation_is_allowed(self) -> None:
+        grid_space = self.make_grid_space(
+            config={
+                "gridSize": (2, 1),
+                "allowInitialColocatedAgents": False,
+            }
+        )
+        grid_space.place_agent(agent_id=0, pos=(0, 0))
+        grid_space.place_agent(agent_id=1, pos=(1, 0))
+
+        grid_space.move_agent(agent_id=0, new_pos=(1, 0))
+
+        assert grid_space.get_agents((1, 0)) == {0, 1}
+
+    def test_calc_next_pos_avoids_non_traversable_cells(self) -> None:
+        grid_space = self.make_grid_space(
+            config={
+                "gridSize": (3, 3),
+                "cells": [{"pos": [1, 1], "access": {"traversable": False}}],
+            }
+        )
+
+        next_pos = grid_space.calc_next_pos(current_pos=(0, 1), destination_pos=(2, 1))
+
+        assert next_pos in {(1, 0), (1, 2)}
+
+    def test_calc_next_pos_respects_velocity(self) -> None:
+        grid_space = self.make_grid_space(config={"gridSize": (5, 1)})
+
+        assert grid_space.calc_next_pos(
+            current_pos=(0, 0), destination_pos=(4, 0), velocity=2
+        ) == (2, 0)
+        assert grid_space.calc_next_pos(
+            current_pos=(0, 0), destination_pos=(1, 0), velocity=3
+        ) == (1, 0)
+
+    def test_calc_next_pos_returns_none_when_no_path_exists(self) -> None:
+        grid_space = self.make_grid_space(
+            config={
+                "gridSize": (3, 1),
+                "cells": [{"pos": [1, 0], "access": {"traversable": False}}],
+            }
+        )
+
+        assert (
+            grid_space.calc_next_pos(current_pos=(0, 0), destination_pos=(2, 0)) is None
+        )
+
+    @pytest.mark.parametrize("velocity", [0, -1, 1.5, True])
+    def test_calc_next_pos_rejects_invalid_velocity(self, velocity: object) -> None:
+        grid_space = self.make_grid_space(config={"gridSize": (2, 1)})
+
+        with pytest.raises(ValueError, match="velocity"):
+            grid_space.calc_next_pos(
+                current_pos=(0, 0),
+                destination_pos=(1, 0),
+                velocity=velocity,  # type: ignore[arg-type]
+            )
+
     @pytest.mark.parametrize(
         "config",
         [
             {"gridSize": (2, 2)},
-            {"gridSize": (2, 2), "allowColocatedAgents": True},
+            {"gridSize": (2, 2), "allowInitialColocatedAgents": True},
         ],
     )
     def test_colocated_agents_remain_allowed_by_default_and_when_enabled(
@@ -116,7 +262,7 @@ class TestGridSpace:
 
     def test_colocated_agents_are_rejected_when_disabled(self) -> None:
         grid_space = self.make_grid_space(
-            config={"gridSize": (2, 2), "allowColocatedAgents": False}
+            config={"gridSize": (2, 2), "allowInitialColocatedAgents": False}
         )
         grid_space.place_agent(agent_id=0, pos=(0, 0))
 
@@ -127,7 +273,7 @@ class TestGridSpace:
         self,
     ) -> None:
         grid_space = self.make_grid_space(
-            config={"gridSize": (2, 2), "allowColocatedAgents": False}
+            config={"gridSize": (2, 2), "allowInitialColocatedAgents": False}
         )
 
         grid_space.place_agent(agent_id=0, pos=(0, 0))
@@ -139,7 +285,7 @@ class TestGridSpace:
         self,
     ) -> None:
         grid_space = self.make_grid_space(
-            config={"gridSize": (2, 1), "allowColocatedAgents": False}
+            config={"gridSize": (2, 1), "allowInitialColocatedAgents": False}
         )
 
         grid_space.place_agent(agent_id=0, pos=None)
@@ -151,10 +297,45 @@ class TestGridSpace:
         self,
     ) -> None:
         grid_space = self.make_grid_space(
-            config={"gridSize": (1, 1), "allowColocatedAgents": True}
+            config={"gridSize": (1, 1), "allowInitialColocatedAgents": True}
         )
 
         grid_space.place_agent(agent_id=0, pos=None)
         grid_space.place_agent(agent_id=1, pos=None)
 
         assert grid_space.get_agents(pos=(0, 0)) == {0, 1}
+
+    def test_random_initial_position_is_selected_from_spawnable_cells(self) -> None:
+        grid_space = self.make_grid_space(
+            config={
+                "gridSize": (3, 1),
+                "cellDefaults": {"access": {"spawnable": False}},
+                "cells": [{"pos": [1, 0], "access": {"spawnable": True}}],
+            }
+        )
+
+        grid_space.place_agent(agent_id=0, pos=None)
+
+        assert grid_space.get_pos(agent_id=0) == (1, 0)
+
+    def test_explicit_initial_position_must_be_spawnable(self) -> None:
+        grid_space = self.make_grid_space(
+            config={
+                "gridSize": (2, 1),
+                "cells": [{"pos": [1, 0], "access": {"spawnable": False}}],
+            }
+        )
+
+        with pytest.raises(ValueError, match="not spawnable"):
+            grid_space.place_agent(agent_id=0, pos=(1, 0))
+
+    def test_random_placement_fails_when_no_spawnable_cell_exists(self) -> None:
+        grid_space = self.make_grid_space(
+            config={
+                "gridSize": (2, 1),
+                "cellDefaults": {"access": {"spawnable": False}},
+            }
+        )
+
+        with pytest.raises(ValueError, match="valid spawnable position"):
+            grid_space.place_agent(agent_id=0, pos=None)
