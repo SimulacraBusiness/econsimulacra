@@ -45,6 +45,7 @@ from .obs_providers import (
     ItemName2PriceProvider,
     MemoryProvider,
     NearbyAgentsProvider,
+    NearbyInfoProvider,
     NumFollowersProvider,
     NumFollowsProvider,
     ObsProvider,
@@ -323,7 +324,9 @@ class Environment(Generic[ObsT]):
         self.social_network: SocialNetwork = self._generate_social_network(
             social_network_key=social_network_key
         )
-        service_provider_keys: list[str] = list(self.config["environment"].get("service", []))
+        service_provider_keys: list[str] = list(
+            self.config["environment"].get("service", [])
+        )
         self._generate_service_providers(service_provider_keys=service_provider_keys)
         assert "items" in self.config["environment"], (
             "Environment config must include 'items' key."
@@ -384,7 +387,7 @@ class Environment(Generic[ObsT]):
         grid_space: GridSpace = space_class(
             config=space_config,
             registered_classes=self.registered_classes,
-            prng=self.prng
+            prng=self.prng,
         )
         return grid_space
 
@@ -504,7 +507,7 @@ class Environment(Generic[ObsT]):
         self.agent_id2wealth: dict[int, float | int] = {}
         agent_keys.sort(
             key=lambda x: self.config.get(x, {}).get("initialCoords") is not None,
-            reverse=True
+            reverse=True,
         )
         for agent_key in agent_keys:
             agent_config: dict[str, Any] = self.config.get(agent_key, {})
@@ -1564,6 +1567,9 @@ class Environment(Generic[ObsT]):
             where_to_move (Optional[tuple[int, ...] | str]): the target position or agent name to move to.
                 If None, the agent will stay in the current position.
 
+        Returns:
+            None.
+
         Note:
             Move action example:
             {
@@ -1580,9 +1586,16 @@ class Environment(Generic[ObsT]):
         )
         if destination_pos is None:
             raise ValueError(f"Invalid move destination: {where_to_move}")
-        next_pos: tuple[int, ...] = self.grid_space.calc_next_pos(
-            current_pos=current_pos, destination_pos=destination_pos
+        next_pos: Optional[tuple[int, ...]] = self.grid_space.calc_next_pos(
+            current_pos=current_pos,
+            destination_pos=destination_pos,
+            velocity=1,
+            agent_id=agent_id,
         )
+        if next_pos is None:
+            self.agent_id2is_moving[agent_id] = True
+            self.agent_id2destination[agent_id] = destination_pos
+            return
         new_pos_description: Optional[str] = self.get_pos_description(
             agent_id=agent_id, pos=next_pos
         )
@@ -2347,14 +2360,15 @@ class Environment(Generic[ObsT]):
             "self_agent_id": SelfIDProvider(env=self),
             "self_name": SelfNameProvider(env=self),
             "self_is_household": SelfIsHouseholdProvider(env=self),
+            "self_is_sleeping": SelfIsSleepingProvider(env=self),
             "memory": MemoryProvider(env=self),
             "self_pos": SelfPosProvider(env=self),
             "self_init_pos": SelfInitPosProvider(env=self),
-            "self_is_sleeping": SelfIsSleepingProvider(env=self),
             "self_is_moving": SelfIsMovingProvider(env=self),
             "self_destination": SelfDestinationProvider(env=self),
             "others_pos": OthersPosProvider(env=self),
             "nearby_agents": NearbyAgentsProvider(env=self),
+            "nearby_info": NearbyInfoProvider(env=self),
             "self_salary": SelfSalaryProvider(env=self),
             "self_inventory": SelfInventoryProvider(env=self),
             "self_tweet": SelfTweetProvider(env=self),

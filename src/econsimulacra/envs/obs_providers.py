@@ -6,6 +6,8 @@ from typing import TYPE_CHECKING, Any, Generic, Optional, TypeVar
 from econsimulacra.envs.sleep_manager import SleepManager
 
 from ..agents import Agent
+from ..spaces import Cell
+from ..spaces.space_utils import Position
 
 if TYPE_CHECKING:
     from ..memory import MemoryHandler
@@ -329,6 +331,44 @@ class NearbyAgentsProvider(ObsProvider[list[dict[str, Any]]]):
                 }
             )
         return nearby_agents_infos
+
+
+class NearbyInfoProvider(ObsProvider[list[dict[str, Any]]]):
+    """Nearby Info Provider class."""
+
+    def get_obs(self, agent_id: int) -> list[dict[str, Any]]:
+        """Get the nearby agents' information of the agent.
+
+        Args:
+            agent_id (int): The ID of the agent for which to get the observation.
+
+        Returns:
+            list[dict[str, Any]]: A list of dictionaries containing the nearby cell's information
+                Each dictionary has the following keys:
+                - "pos": The position of the nearby cell as a tuple of coordinates.
+                - "can_enter": Whether the agent can enter the nearby cell.
+                - "attributes": The attributes of the nearby cell as a dictionary.
+        """
+        nearby_info: list[dict[str, Any]] = []
+        current_pos: Position = self.env.grid_space.get_pos(agent_id=agent_id)
+        nearby_cells: dict[Position, Cell] = self.env.grid_space.get_nearby_info(
+            agent_id=agent_id, max_distance=1
+        )
+        for pos, cell in nearby_cells.items():
+            if pos == current_pos:
+                continue
+            nearby_info.append(
+                {
+                    "pos": pos,
+                    "can_enter": self.env.grid_space.can_enter(
+                        agent_id=agent_id,
+                        current_pos=current_pos,
+                        new_pos=pos,
+                    ),
+                    "attributes": cell.attrs,
+                }
+            )
+        return nearby_info
 
 
 class SelfInventoryProvider(ObsProvider[dict[str, float | int]]):
