@@ -28,6 +28,7 @@ from .obs_providers import (
     SelfTweetProvider as SelfTweetProvider,
     TimeDeltaProvider as TimeDeltaProvider,
     TimeProvider as TimeProvider,
+    TimeStepProvider as TimeStepProvider,
     VisibleTLProvider as VisibleTLProvider,
 )
 from .order import Order as Order, SwapProposal as SwapProposal
@@ -43,6 +44,7 @@ __all__ = [
     "ObsProvider",
     "ObsProviderFromCoLocatedAgents",
     "TimeProvider",
+    "TimeStepProvider",
     "TimeDeltaProvider",
     "SelfIDProvider",
     "SelfNameProvider",

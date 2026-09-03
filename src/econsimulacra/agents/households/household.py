@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import inspect
+from datetime import datetime
 from random import Random
 from typing import Any, Optional
 
@@ -303,7 +304,7 @@ class RuleBasedHousehold(Agent[dict[str, Any]]):
         return DecisionContext(
             obs=obs,
             time_step=time_step,
-            hour=(self.start_hour + time_step * self.step_hours) % 24.0,
+            hour=self.get_current_hour(obs, time_step),
             current_pos=tuple(obs["self_pos"]),
             inventory={
                 key: float(value)
@@ -312,17 +313,56 @@ class RuleBasedHousehold(Agent[dict[str, Any]]):
         )
 
     def get_time_step(self, obs: dict[str, Any]) -> int:
-        """Extract a numeric step with a monotone fallback.
+        """Extract the canonical environment step with legacy fallbacks.
 
         Args:
-            obs: Raw observation that may contain numeric ``time``.
+            obs: Raw observation that may contain ``time_step`` or numeric ``time``.
 
         Returns:
             Integer simulation step.
+
+        Note:
+            Counting calls is the last resort because sleeping and non-walking
+            agents can legitimately skip calls to :meth:`act`.
         """
-        value = obs.get("time", 0)
-        if isinstance(value, (int, float)):
-            return int(value)
+        value = obs.get("time_step")
+        if isinstance(value, int) and not isinstance(value, bool) and value >= 0:
+            return value
+        legacy_value = obs.get("time", 0)
+        if isinstance(legacy_value, (int, float)) and not isinstance(
+            legacy_value, bool
+        ):
+            return int(legacy_value)
         if self.state.last_step is None:
             return 0
         return self.state.last_step + 1
+
+    def get_current_hour(self, obs: dict[str, Any], time_step: int) -> float:
+        """Extract wall-clock hour with a step-derived compatibility fallback.
+
+        Args:
+            obs: Raw observation that may contain an ISO display time.
+            time_step: Canonical environment step for fallback calculation.
+
+        Returns:
+            Local hour in the interval ``[0, 24)``.
+
+        Note:
+            Display time is authoritative when it is a valid ISO string. This keeps
+            circadian decisions aligned after sleep or automatic travel skips calls
+            to :meth:`act`.
+        """
+        value = obs.get("time")
+        if isinstance(value, str):
+            try:
+                display_time = datetime.fromisoformat(value)
+            except ValueError:
+                pass
+            else:
+                return (
+                    display_time.hour
+                    + display_time.minute / 60.0
+                    + display_time.second / 3600.0
+                    + display_time.microsecond / 3_600_000_000.0
+                )
+        return (self.start_hour + time_step * self.step_hours) % 24.0

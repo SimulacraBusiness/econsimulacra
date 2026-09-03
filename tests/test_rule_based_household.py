@@ -548,6 +548,48 @@ def test_action_composition_concatenates_sequences_and_rejects_conflicts() -> No
         household._compose_fragments([{"tweet": "first"}, {"tweet": "second"}])
 
 
+def test_household_context_uses_environment_step_and_iso_clock() -> None:
+    household = RuleBasedHousehold(
+        agent_id=0,
+        agent_name="Household0",
+        env_service_dic={},
+        config={"foodItems": ("Rice",), "startHour": 7.0, "stepHours": 1.0},
+    )
+    household.state.last_step = 3
+
+    context = household._context(
+        {
+            "time": "2025-03-02 23:30:00",
+            "time_step": 40,
+            "self_pos": (0, 0),
+            "self_inventory": {"Yen": 100.0, "Rice": 2.0},
+        }
+    )
+
+    assert context.time_step == 40
+    assert context.hour == pytest.approx(23.5)
+
+
+def test_household_context_retains_legacy_time_fallback() -> None:
+    household = RuleBasedHousehold(
+        agent_id=0,
+        agent_name="Household0",
+        env_service_dic={},
+        config={"foodItems": ("Rice",), "startHour": 7.0, "stepHours": 1.0},
+    )
+
+    context = household._context(
+        {
+            "time": 5,
+            "self_pos": (0, 0),
+            "self_inventory": {"Yen": 100.0, "Rice": 2.0},
+        }
+    )
+
+    assert context.time_step == 5
+    assert context.hour == pytest.approx(12.0)
+
+
 def test_critical_hunger_takes_priority_over_sleep_as_documented() -> None:
     config = {
         "sleepRule": {"initialPressure": 1.0},
@@ -653,3 +695,60 @@ def test_rule_based_household_completes_a_shopping_simulation() -> None:
         "follow": 0,
         "unfollow": 0,
     }
+
+
+def test_rule_based_household_uses_elapsed_environment_steps_after_sleep() -> None:
+    config = {
+        "simulation": {"numSteps": 3, "events": []},
+        "environment": {
+            "space": "gridSpace",
+            "socialNetwork": "socialNetwork",
+            "cashName": "Yen",
+            "agents": ("Household",),
+            "items": ("Yen", "Rice"),
+            "service": ("timeTranslator", "sleepManager"),
+        },
+        "gridSpace": {"type": "GridSpace", "gridSize": (1, 1)},
+        "socialNetwork": {
+            "type": "SocialNetwork",
+            "recSys": {"type": "TwoHopRecommenderSystem"},
+        },
+        "timeTranslator": {
+            "type": "TimeTranslator",
+            "numSteps": 3,
+            "startDatetime": "2025-01-01 00:00:00",
+            "endDatetime": "2025-01-01 03:00:00",
+        },
+        "sleepManager": {"type": "SleepManager"},
+        "Household": {
+            "type": "RuleBasedHousehold",
+            "isHousehold": True,
+            "initialCoords": (0, 0),
+            "inventory": {"Yen": 100.0, "Rice": 100.0},
+            "foodItems": ("Rice",),
+            "socialRule": {"enabled": False},
+            "sleepRule": {
+                "initialPressure": 1.0,
+                "lowerAsymptote": 0.05,
+                "tauSleepHours": 1.0,
+                "circadianAmplitude": 0.0,
+                "onsetThreshold": 0.9,
+                "wakeThreshold": 0.2,
+                "maxSleepSteps": 4,
+            },
+        },
+        "Yen": {"type": "Item", "initialPrice": 1.0, "weightInBasket": 0},
+        "Rice": {"type": "Item", "initialPrice": 1.0, "weightInBasket": 1},
+    }
+    logger = DictLogger()
+    simulator = Simulator(config=config, env_class=Environment, logger=logger)
+
+    asyncio.run(simulator.simulate(seed=42))
+
+    household = simulator.env.agent_id2agent[simulator.env.household_ids[0]]
+    assert household.state.last_step == 2
+    assert household.state.sleep_pressure == pytest.approx(
+        0.05 + (1.0 - 0.05) * math.exp(-2.0)
+    )
+    assert [log["type"] for log in logger.logs].count("sleep_start") == 1
+    assert [log["type"] for log in logger.logs].count("sleep_end") == 1

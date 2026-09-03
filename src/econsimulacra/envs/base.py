@@ -73,6 +73,7 @@ from .obs_providers import (
     SelfTweetProvider,
     TimeDeltaProvider,
     TimeProvider,
+    TimeStepProvider,
     VisibleTLProvider,
 )
 from .order import Order, SwapProposal
@@ -914,7 +915,7 @@ class Environment(Generic[ObsT]):
         )
 
     def prepare_agent_decision(self, agent_id: int) -> None:
-        """Stop an active journey that can no longer consume required resources.
+        """Refresh time-dependent state before deciding whether to call an agent.
 
         Args:
             agent_id (int): ID of the agent about to make a decision.
@@ -923,9 +924,23 @@ class Environment(Generic[ObsT]):
             None.
 
         Note:
-            Running this before observation lets an interrupted agent choose another
-            action in the same step and exposes the interruption through memory.
+            Running this before observation wakes an agent at its exact scheduled
+            step. It also lets an interrupted traveler choose another action in the
+            same step and exposes the interruption through memory.
         """
+        sleep_manager = self.get_sleep_manager()
+        if sleep_manager is not None:
+            sleep_log = sleep_manager.update_sleep_status(
+                agent_id=agent_id,
+                current_time=self.get_time(),
+                current_time_step=self.get_time_step(),
+            )
+            if sleep_log is not None:
+                self.remember_log(sleep_log)
+                self.event_manager.trigger_events_after_log(log=sleep_log, env=self)
+                if self.logger is not None:
+                    sleep_log.read_and_write(logger=self.logger)
+
         movement_state = self.agent_id2movement_state.get(agent_id)
         if movement_state is None:
             return
@@ -2604,6 +2619,7 @@ class Environment(Generic[ObsT]):
         """
         return {
             "time": TimeProvider(env=self),
+            "time_step": TimeStepProvider(env=self),
             "timedelta": TimeDeltaProvider(env=self),
             "self_agent_id": SelfIDProvider(env=self),
             "self_name": SelfNameProvider(env=self),
