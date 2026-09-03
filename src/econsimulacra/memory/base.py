@@ -13,6 +13,7 @@ from ..logs import (
     InvalidActionLog,
     Log,
     MoveLog,
+    MovementInterruptedLog,
     ObsLog,
     OrderExpirationLog,
     OrderLog,
@@ -35,6 +36,7 @@ from .memory_items import (
     InnerThoughtHistoryItem,
     InvalidActionHistoryItem,
     MoveHistoryItem,
+    MovementInterruptionHistoryItem,
     ObsHistoryItem,
     PurchaseHistoryItem,
     SaleHistoryItem,
@@ -170,6 +172,7 @@ class MemoryHandler:
             SleepStartLog: self._process_sleep_start_log,
             SleepEndLog: self._process_sleep_end_log,
             MoveLog: self._process_move_log,
+            MovementInterruptedLog: self._process_movement_interrupted_log,
             ConsumptionLog: self._process_consumption_log,
             OrderLog: self._process_order_log,
             OrderExpirationLog: self._process_order_expiration_log,
@@ -215,8 +218,11 @@ class MemoryHandler:
         Args:
             log (AgentGenerationLog): the log of agent generation.
 
-        See also:
-            econsimulacra.envs.memory.AgentMemory
+        Returns:
+            None.
+
+        Note:
+            See ``econsimulacra.memory.memory_items.AgentMemory``.
         """
         agent_id: int = log.agent_id
         if agent_id not in self.agent_id2memory:
@@ -224,6 +230,7 @@ class MemoryHandler:
                 invalid_action_history=deque(maxlen=self.memory_length),
                 consumption_history=deque(maxlen=self.memory_length),
                 move_history=deque(maxlen=self.memory_length),
+                movement_interruption_history=deque(maxlen=self.memory_length),
                 sleep_history=deque(maxlen=self.memory_length),
                 purchase_history=deque(maxlen=self.memory_length),
                 sale_history=deque(maxlen=self.memory_length),
@@ -305,6 +312,33 @@ class MemoryHandler:
             )
         )
 
+    def _process_movement_interrupted_log(self, log: MovementInterruptedLog) -> None:
+        """Store a journey interruption in the affected agent's memory.
+
+        Args:
+            log (MovementInterruptedLog): Journey interruption event.
+
+        Returns:
+            None.
+
+        Note:
+            The dedicated history distinguishes automatic fuel failure from an
+            invalid action selected by the agent.
+        """
+        if log.agent_id not in self.agent_id2memory:
+            raise ValueError(f"Agent with id {log.agent_id} does not exist in memory.")
+        history = self.agent_id2memory[log.agent_id].movement_interruption_history
+        history.append(
+            MovementInterruptionHistoryItem(
+                destination=log.destination,
+                mobility_name=log.mobility_name,
+                reason=log.reason,
+                missing_items=log.missing_items.copy(),
+                time=log.time,
+                time_step=log.time_step,
+            )
+        )
+
     def _process_sleep_start_log(self, log: SleepStartLog) -> None:
         """Process the SleepStartLog to update the sleep history of the agent in memory.
 
@@ -363,6 +397,9 @@ class MemoryHandler:
         Args:
             log (MoveLog): the log of movement.
 
+        Returns:
+            None.
+
         Note:
             Generate a new MoveHistoryItem and add it to the move_history of the agent's memory.
             The time of this MoveHistoryItem is log.time, indicating the time of the movement.
@@ -387,6 +424,8 @@ class MemoryHandler:
                 init_pos=log.init_pos,
                 time=log.time,
                 time_step=log.time_step,
+                mobility_name=log.mobility_name,
+                moved_cells=log.moved_cells,
             )
         )
 

@@ -10,6 +10,7 @@ from .memory_items import (
     InnerThoughtHistoryItem,
     InvalidActionHistoryItem,
     MoveHistoryItem,
+    MovementInterruptionHistoryItem,
     ObsHistoryItem,
     PurchaseHistoryItem,
     SaleHistoryItem,
@@ -136,6 +137,7 @@ class StressCalculator:
                         | SetPriceHistoryItem
                         | InnerThoughtHistoryItem
                         | SleepHistoryItem
+                        | MovementInterruptionHistoryItem
                         | SocialHistoryItem
                         | TweetHistoryItem
                         | StateEvaluationHistoryItem
@@ -182,6 +184,7 @@ class StressCalculator:
             | SetPriceHistoryItem
             | InnerThoughtHistoryItem
             | SleepHistoryItem
+            | MovementInterruptionHistoryItem
             | SocialHistoryItem
             | TweetHistoryItem
             | StateEvaluationHistoryItem
@@ -553,9 +556,26 @@ class StressAwareSummarizer(MemorySummarizer):
             | StateEvaluationHistoryItem
             | ObsHistoryItem
             | SleepHistoryItem
+            | MovementInterruptionHistoryItem
         ],
         base_summary: str,
     ) -> dict[str, Any]:
+        """Add stress fields for histories that define a stress calculation.
+
+        Args:
+            field_name (str): Name of the summarized history.
+            history (Deque): History values passed to the stress calculator.
+            base_summary (str): Human-readable base summary.
+
+        Returns:
+            dict[str, Any]: Additional stress fields, or an empty mapping.
+
+        Note:
+            Movement interruption memory is informational and has no stress score.
+        """
+        del base_summary
+        if field_name == "movement_interruption_history":
+            return {}
         self.stress_calculator.sync_time(self.current_time, self.current_time_step)
         stress_level, stress_reason = self.stress_calculator.summarize_stress(
             field_name=field_name,

@@ -1,10 +1,12 @@
 from .base import Environment as Environment
 from .obs_providers import (
+    AvailableMobilityProvider as AvailableMobilityProvider,
     FollowCapProvider as FollowCapProvider,
     IncomingOrdersProvider as IncomingOrdersProvider,
     IncomingSwapProposalsProvider as IncomingSwapProposalsProvider,
     ItemName2PriceProvider as ItemName2PriceProvider,
     MemoryProvider as MemoryProvider,
+    MovementStateProvider as MovementStateProvider,
     NearbyAgentsProvider as NearbyAgentsProvider,
     NearbyInfoProvider as NearbyInfoProvider,
     NumFollowersProvider as NumFollowersProvider,
@@ -34,6 +36,7 @@ from .time_translator import TimeTranslator as TimeTranslator
 
 __all__ = [
     "Environment",
+    "AvailableMobilityProvider",
     "Order",
     "SwapProposal",
     "TimeTranslator",
@@ -64,5 +67,6 @@ __all__ = [
     "ItemName2PriceProvider",
     "OthersInventoriesProvider",
     "MemoryProvider",
+    "MovementStateProvider",
     "SleepManager",
 ]

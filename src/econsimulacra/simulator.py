@@ -90,6 +90,9 @@ class Simulator(Generic[ObsT]):
         Args:
             - seed (int, optional): Random seed.
 
+        Returns:
+            None.
+
         Note:
             This method is the main entry point for running a simulation episode.
             It resets the environment, iteratively collects actions from all agents,
@@ -141,7 +144,10 @@ class Simulator(Generic[ObsT]):
 
             async def _act_one(agent_id: int) -> tuple[int, dict[str, Any]]:
                 agent: Agent = self.env.agent_id2agent[agent_id]
+                self.env.prepare_agent_decision(agent_id=agent_id)
                 obs: ObsT = self.env.get_observations(agent_id=agent_id)
+                if self.env.should_skip_decision(agent_id=agent_id):
+                    return agent_id, {}
                 action_dic: dict[str, Any] = await agent.act(obs=obs)
                 action_dic = self._convert_list_to_tuple(action_dic)
                 return agent_id, action_dic

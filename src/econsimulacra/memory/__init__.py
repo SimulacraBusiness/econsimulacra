@@ -8,6 +8,7 @@ from .memory_items import (
     ExchangeHistoryItem,
     InnerThoughtHistoryItem,
     MoveHistoryItem,
+    MovementInterruptionHistoryItem,
     ObsHistoryItem,
     PurchaseHistoryItem,
     SaleHistoryItem,
@@ -36,6 +37,7 @@ from .stress_utils import (
 __all__ = [
     "ConsumptionHistoryItem",
     "MoveHistoryItem",
+    "MovementInterruptionHistoryItem",
     "PurchaseHistoryItem",
     "SaleHistoryItem",
     "ExchangeHistoryItem",

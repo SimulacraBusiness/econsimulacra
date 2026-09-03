@@ -232,6 +232,8 @@ class MoveLog(Log):
         new_pos: tuple[int, ...],
         new_pos_description: Optional[str],
         init_pos: tuple[int, ...],
+        mobility_name: str = "Walking",
+        moved_cells: Optional[int] = None,
     ) -> None:
         """Initialization.
 
@@ -241,8 +243,16 @@ class MoveLog(Log):
             agent_id (int): The unique id of the agent.
             old_pos (tuple[int, ...]): The previous position of the agent. The length of the tuple should match the dimension of the environment's space.
             new_pos (tuple[int, ...]): The new position of the agent. The length of the tuple should match the dimension of the environment's space.
-            new_pos_description (Optional[str]): A description of the new position.
+            new_pos_description (str, optional): A description of the new position.
             init_pos (tuple[int, ...]): The initial position of the agent. The length of the tuple should match the dimension of the environment's space.
+            mobility_name (str, optional): Mobility mode used for the movement.
+            moved_cells (int, optional): Number of path edges traversed.
+
+        Returns:
+            None.
+
+        Note:
+            Defaults preserve MoveLog construction and walking behavior from older code.
         """
         self.type: str = "move"
         self.time: int | str = time
@@ -252,6 +262,102 @@ class MoveLog(Log):
         self.new_pos: tuple[int, ...] = new_pos
         self.new_pos_description: Optional[str] = new_pos_description
         self.init_pos: tuple[int, ...] = init_pos
+        self.mobility_name: str = mobility_name
+        self.moved_cells: Optional[int] = moved_cells
+
+    def to_dict(self) -> dict[str, object]:
+        """Convert the movement log while preserving legacy default output.
+
+        Args:
+            None.
+
+        Returns:
+            dict[str, object]: Serialized movement log fields.
+
+        Note:
+            Mobility fields are omitted only for an old-style Walking log whose
+            distance was not supplied.
+        """
+        result = dict(super().to_dict())
+        if self.mobility_name == "Walking" and self.moved_cells is None:
+            result.pop("mobility_name")
+            result.pop("moved_cells")
+        return result
+
+
+class MobilityConsumptionLog(Log):
+    """Record resources consumed by movement without treating them as goods consumption."""
+
+    def __init__(
+        self,
+        time: int | str,
+        time_step: int,
+        agent_id: int,
+        mobility_name: str,
+        consumption: dict[str, float | int],
+    ) -> None:
+        """Initialize a mobility resource consumption log.
+
+        Args:
+            time (int | str): Current display time.
+            time_step (int): Current integer step.
+            agent_id (int): ID of the moving agent.
+            mobility_name (str): Mobility mode used.
+            consumption (dict[str, float | int]): Resources deducted from inventory.
+
+        Returns:
+            None.
+
+        Note:
+            A copy is stored to isolate the log from subsequent mutations.
+        """
+        self.type = "mobility_consumption"
+        self.time = time
+        self.time_step = time_step
+        self.agent_id = agent_id
+        self.mobility_name = mobility_name
+        self.consumption = consumption.copy()
+
+
+class MovementInterruptedLog(Log):
+    """Record an active journey interrupted before its destination."""
+
+    def __init__(
+        self,
+        time: int | str,
+        time_step: int,
+        agent_id: int,
+        destination: tuple[int, ...],
+        mobility_name: str,
+        reason: str,
+        missing_items: dict[str, float | int],
+    ) -> None:
+        """Initialize a movement interruption log.
+
+        Args:
+            time (int | str): Current display time.
+            time_step (int): Current integer step.
+            agent_id (int): ID of the affected agent.
+            destination (tuple[int, ...]): Unreached destination.
+            mobility_name (str): Mobility mode that stopped.
+            reason (str): Machine-readable interruption reason.
+            missing_items (dict[str, float | int]): Missing resource amounts.
+
+        Returns:
+            None.
+
+        Note:
+            This is separate from InvalidActionLog because automatic continuation
+            is not a newly selected invalid action.
+        """
+        self.type = "movement_interrupted"
+        self.time = time
+        self.time_step = time_step
+        self.agent_id = agent_id
+        self.destination = destination
+        self.mobility_name = mobility_name
+        self.reason = reason
+        self.missing_items = missing_items.copy()
 
 
 class ConsumptionLog(Log):

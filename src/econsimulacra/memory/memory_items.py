@@ -66,6 +66,20 @@ class MoveHistoryItem:
     init_pos: tuple[int, ...]
     time: Optional[int | str]
     time_step: int
+    mobility_name: str = "Walking"
+    moved_cells: Optional[int] = None
+
+
+@dataclass
+class MovementInterruptionHistoryItem:
+    """A journey interruption retained for subsequent agent decisions."""
+
+    destination: tuple[int, ...]
+    mobility_name: str
+    reason: str
+    missing_items: dict[str, int | float]
+    time: int | str
+    time_step: int
 
 
 @dataclass
@@ -332,6 +346,7 @@ class AgentMemory:
     consumption_history: Deque[ConsumptionHistoryItem]
     sleep_history: Deque[SleepHistoryItem]
     move_history: Deque[MoveHistoryItem]
+    movement_interruption_history: Deque[MovementInterruptionHistoryItem]
     purchase_history: Deque[PurchaseHistoryItem]
     sale_history: Deque[SaleHistoryItem]
     exchange_history: Deque[ExchangeHistoryItem]

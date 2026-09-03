@@ -262,6 +262,64 @@ class SelfDestinationProvider(ObsProvider[Optional[tuple[int, ...]]]):
         return self.env.agent_id2destination[agent_id]
 
 
+class MovementStateProvider(ObsProvider[dict[str, Any]]):
+    """Provide canonical active-journey state in one observation field."""
+
+    def get_obs(self, agent_id: int) -> dict[str, Any]:
+        """Get normalized movement state for an agent.
+
+        Args:
+            agent_id (int): ID of the observed agent.
+
+        Returns:
+            dict[str, Any]: Moving flag, destination, and mobility name.
+
+        Note:
+            An inactive internal ``None`` state is normalized to explicit values for
+            stable prompting and serialization.
+        """
+        movement_state = self.env.agent_id2movement_state[agent_id]
+        if movement_state is None:
+            return {
+                "is_moving": False,
+                "destination": None,
+                "mobility_name": None,
+            }
+        return {
+            "is_moving": movement_state.is_moving,
+            "destination": movement_state.destination,
+            "mobility_name": movement_state.mobility_name,
+        }
+
+
+class AvailableMobilityProvider(ObsProvider[dict[str, dict[str, Any]]]):
+    """Provide mobility modes currently usable from an agent inventory."""
+
+    def get_obs(self, agent_id: int) -> dict[str, dict[str, Any]]:
+        """Get available mobility names and their current capabilities.
+
+        Args:
+            agent_id (int): ID of the observed agent.
+
+        Returns:
+            dict[str, dict[str, Any]]: Mobility metadata keyed by mode name.
+
+        Note:
+            Effective velocity reflects current consumables and may be below the
+            configured maximum velocity.
+        """
+        manager = self.env.get_mobility_manager()
+        inventory = self.env.agent_id2agent[agent_id].get_inventory()
+        return {
+            mode.name: {
+                "velocity": manager.get_effective_velocity(inventory, mode.name),
+                "max_velocity": mode.velocity,
+                "consumption_per_cell": dict(mode.consumption_per_cell),
+            }
+            for mode in manager.get_available_modes(inventory)
+        }
+
+
 class OthersPosProvider(ObsProvider[list[dict[str, Any]]]):
     """Others' Position Provider class."""
 

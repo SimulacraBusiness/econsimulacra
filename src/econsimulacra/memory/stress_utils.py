@@ -211,10 +211,15 @@ def calc_stress_from_move_history(
         if new_time_step < current_time_step - window_size:
             continue
         new_pos: tuple[int, ...] = history_item.pos
-        if old_pos is not None:
-            distance += sum(
-                (new - old) ** 2 for new, old in zip(new_pos, old_pos)
-            ) ** 0.5 * (time_decay ** (current_time_step - new_time_step))
+        if history_item.mobility_name == "Walking":
+            decay = time_decay ** (current_time_step - new_time_step)
+            if history_item.moved_cells is not None:
+                distance += history_item.moved_cells * decay
+            elif old_pos is not None:
+                distance += (
+                    sum((new - old) ** 2 for new, old in zip(new_pos, old_pos)) ** 0.5
+                    * decay
+                )
         old_pos = new_pos
     if distance == 0.0:
         if current_time_step >= window_size:

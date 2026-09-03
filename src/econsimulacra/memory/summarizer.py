@@ -11,6 +11,7 @@ from .memory_items import (
     InnerThoughtHistoryItem,
     InvalidActionHistoryItem,
     MoveHistoryItem,
+    MovementInterruptionHistoryItem,
     ObsHistoryItem,
     PurchaseHistoryItem,
     SaleHistoryItem,
@@ -72,6 +73,17 @@ class MemorySummarizer:
         self.current_time_step = current_time_step
 
     def summarize_memory(self, agent_memory: AgentMemory) -> dict[str, str]:
+        """Summarize every supported history in one agent memory.
+
+        Args:
+            agent_memory (AgentMemory): Structured histories for one agent.
+
+        Returns:
+            dict[str, str]: Human-readable summaries keyed by history name.
+
+        Note:
+            Movement interruptions are summarized independently of invalid actions.
+        """
         summary_specs: dict[str, tuple[Deque, Callable[[Deque], str]]] = {
             "invalid_action_history": (
                 agent_memory.invalid_action_history,
@@ -84,6 +96,10 @@ class MemorySummarizer:
             "move_history": (
                 agent_memory.move_history,
                 self._summarize_move_history,
+            ),
+            "movement_interruption_history": (
+                agent_memory.movement_interruption_history,
+                self._summarize_movement_interruption_history,
             ),
             "consumption_history": (
                 agent_memory.consumption_history,
@@ -156,6 +172,7 @@ class MemorySummarizer:
             | InnerThoughtHistoryItem
             | InvalidActionHistoryItem
             | SleepHistoryItem
+            | MovementInterruptionHistoryItem
         ],
         base_summary: str,
     ) -> dict[str, Any]:
@@ -200,6 +217,33 @@ class MemorySummarizer:
             + ", ".join(
                 f"to {item.pos} at time {item.time} ({item.pos_description})"
                 for item in move_history_with_description
+            )
+            + "."
+        )
+
+    def _summarize_movement_interruption_history(
+        self,
+        history: Deque[MovementInterruptionHistoryItem],
+    ) -> str:
+        """Summarize journeys stopped because their mobility became unavailable.
+
+        Args:
+            history (Deque[MovementInterruptionHistoryItem]): Recorded interruptions.
+
+        Returns:
+            str: Human-readable interruption memory.
+
+        Note:
+            Missing item amounts are retained so the agent can choose a viable action.
+        """
+        if not history:
+            return "You have no interrupted journey history."
+        return (
+            "You had interrupted journeys: "
+            + "; ".join(
+                f"to {item.destination} by {item.mobility_name} at time {item.time} "
+                f"because {item.reason} (missing items: {item.missing_items})"
+                for item in history
             )
             + "."
         )

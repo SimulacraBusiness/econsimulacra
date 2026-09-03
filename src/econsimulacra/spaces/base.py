@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections import defaultdict
 from collections.abc import Iterable, Mapping
 from random import Random
@@ -107,13 +109,14 @@ class GridSpace:
             None.
 
         Note:
-            ``cells`` is a list of mappings containing a ``pos`` array and
-            optional ``access`` and ``attrs`` mappings. Duplicate positions are
-            rejected to prevent silently shadowed map data.
+            ``cells`` is a list or tuple of mappings containing a ``pos`` array
+            and optional ``access`` and ``attrs`` mappings. Duplicate positions
+            are rejected to prevent silently shadowed map data. Tuples are
+            accepted because :class:`Simulator` normalizes JSON arrays to tuples.
         """
         raw_cells: Any = config.get("cells", [])
-        if not isinstance(raw_cells, list):
-            raise TypeError("'cells' must be a list.")
+        if not isinstance(raw_cells, (list, tuple)):
+            raise TypeError("'cells' must be a list or tuple.")
         configured_positions: set[Position] = set()
         for raw_cell in raw_cells:
             if not isinstance(raw_cell, Mapping):
@@ -609,7 +612,7 @@ class GridSpace:
             current_pos (tuple[int, ...]): Current agent position.
             destination_pos (tuple[int, ...]): Requested destination position.
             velocity (int): Maximum number of path edges traversed this step.
-            agent_id (Optional[int]): ID used by custom access and neighbor rules.
+            agent_id (int, optional): ID used by custom access and neighbor rules.
 
         Returns:
             Optional[tuple[int, ...]]: The position reached this step, or ``None``
@@ -618,6 +621,39 @@ class GridSpace:
         Note:
             ``velocity`` must be a positive integer. Intermediate cells remain
             part of the path, so higher velocity cannot skip over obstacles.
+        """
+        path = self.calc_next_path(
+            current_pos=current_pos,
+            destination_pos=destination_pos,
+            velocity=velocity,
+            agent_id=agent_id,
+        )
+        if path is None:
+            return None
+        return path[-1]
+
+    def calc_next_path(
+        self,
+        current_pos: Position,
+        destination_pos: Position,
+        velocity: int = 1,
+        agent_id: Optional[int] = None,
+    ) -> Optional[list[Position]]:
+        """Calculate the path segment traversed during the current step.
+
+        Args:
+            current_pos (tuple[int, ...]): Current agent position.
+            destination_pos (tuple[int, ...]): Requested destination position.
+            velocity (int): Maximum number of path edges traversed this step.
+            agent_id (int, optional): ID used by custom access and neighbor rules.
+
+        Returns:
+            Optional[list[tuple[int, ...]]]: Path segment including the current
+                position, or ``None`` when no traversable path exists.
+
+        Note:
+            Returning the segment lets callers calculate exact per-cell resource
+            consumption while ``calc_next_pos`` preserves its existing interface.
         """
         self._check_bounds(pos=current_pos)
         self._check_bounds(pos=destination_pos)
@@ -635,4 +671,4 @@ class GridSpace:
         )
         if path is None:
             return None
-        return path[min(velocity, len(path) - 1)]
+        return path[: min(velocity, len(path) - 1) + 1]
