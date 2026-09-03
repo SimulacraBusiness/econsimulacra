@@ -597,6 +597,7 @@ class TestEnvironment:
             obs: dict[str, Any] = env.get_observations(agent_id=agent_id)
             assert "time" in obs
             assert obs["time"] == "2025-01-01 00:00:00"
+            assert obs["time_step"] == 0
             assert "timedelta" in obs
             assert obs["timedelta"] == "0:00:06"
             assert "self_agent_id" in obs
@@ -672,6 +673,26 @@ class TestEnvironment:
                 "Rice": {"price": 1000.0, "amount": 10000},
             }
         ]
+
+    def test_prepare_agent_decision_wakes_agent_at_scheduled_step(self) -> None:
+        logger = DictLogger()
+        env = Environment(config=self.config, logger=logger)
+        env.register_classes(
+            [DummyHousehold, DummyRetailer, DummyMemoryHandler, DummyEvent]
+        )
+        env.reset(seed=42)
+        agent_id = env.household_ids[0]
+
+        env.apply_action_to_env(agent_id, {"sleep_duration": 2})
+        assert env.should_skip_decision(agent_id)
+
+        env._time = 2
+        env.prepare_agent_decision(agent_id)
+
+        assert not env.should_skip_decision(agent_id)
+        assert [log.type for log in logger.pending_logs].count("sleep_end") == 1
+        env.apply_action_to_env(agent_id, {})
+        assert [log.type for log in logger.pending_logs].count("sleep_end") == 1
 
     def test_step(self) -> None:
         env = Environment(config=self.config)

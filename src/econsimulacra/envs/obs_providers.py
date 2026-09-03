@@ -119,6 +119,24 @@ class TimeProvider(ObsProvider[int | str]):
         return self.env.get_time()
 
 
+class TimeStepProvider(ObsProvider[int]):
+    """Provide the canonical integer simulation step."""
+
+    def get_obs(self, agent_id: int) -> int:
+        """Get the environment step independently of display-time formatting.
+
+        Args:
+            agent_id (int): ID of the observed agent.
+
+        Returns:
+            int: Current integer simulation step.
+
+        Note:
+            ``agent_id`` is accepted for the common observation-provider interface.
+        """
+        return self.env.get_time_step()
+
+
 class TimeDeltaProvider(ObsProvider[int | str]):
     """Time Delta Provider class."""
 

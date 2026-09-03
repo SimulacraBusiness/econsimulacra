@@ -130,7 +130,8 @@ DEFAULT_ACTION_JSON_SCHEMA: dict[str, Any] = {
 DEFAULT_SIMULATION_DESCRIPTION: str = "You are a member of the society. Based on the following observation, decide the action to take."
 
 DEFAULT_OBS_DESCRIPTION: dict[str, str] = {
-    "time": "The current time step in the simulation. Provided as either an integer or a string in ISO datetime format.",
+    "time": "The current display time. Provided as either an integer step or a string in ISO datetime format.",
+    "time_step": "The current integer simulation step used for elapsed-time calculations.",
     "timedelta": "The time delta for each simulation step, represented as either an integer or a string in ISO format (e.g., '0:00:01' for 1 second).",
     "self_agent_id": "Your unique identifier.",
     "self_name": "Your name.",
