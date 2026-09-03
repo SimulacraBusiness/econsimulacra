@@ -1,4 +1,5 @@
 import asyncio
+from typing import Any
 
 from econsimulacra.agents import AutoReactLLMAgent, LLMAgent
 from econsimulacra.llm_services import LLMClient, PromptBuilder, ScoredPersonaBuilder
@@ -7,6 +8,29 @@ from econsimulacra.llm_services import LLMClient, PromptBuilder, ScoredPersonaBu
 class DummyClient(LLMClient):
     async def generate_response(self, prompt: str) -> dict[str, str]:
         return {"response": f"Echo: {prompt}"}
+
+
+class SchemaCapturingClient(DummyClient):
+    """Dummy client that records a request-specific schema."""
+
+    async def generate_response_with_schema(
+        self, prompt: str, json_schema: dict[str, Any]
+    ) -> dict[str, Any]:
+        """Record a schema and return a valid mobility selection.
+
+        Args:
+            prompt (str): Generated agent prompt.
+            json_schema (dict[str, Any]): Request-specific action schema.
+
+        Returns:
+            dict[str, Any]: Minimal dummy response.
+
+        Note:
+            No external model is invoked by this test double.
+        """
+        self.received_prompt = prompt
+        self.received_schema = json_schema
+        return {"mobility": "ElectricCar"}
 
 
 class DummpyBig5PersonaBuilder(ScoredPersonaBuilder):
@@ -92,6 +116,46 @@ class TestLLMAgent:
                 env_service_dic=env_service_dic,
             )
             assert agent.agent_name == f"Dummy{agent_id}"
+
+    def test_act_uses_available_mobility_in_request_schema(self) -> None:
+        """Test per-agent mobility restriction in the structured action schema.
+
+        Args:
+            None.
+
+        Returns:
+            None.
+
+        Note:
+            The schema comes from observation rather than shared client mutation.
+        """
+        client = SchemaCapturingClient(config={"modelName": "dummy"})
+        agent = LLMAgent(
+            agent_id=0,
+            agent_name="Agent0",
+            config={},
+            env_service_dic={
+                "promptBuilder": PromptBuilder(config={}),
+                "llmClient": client,
+            },
+        )
+
+        action = asyncio.run(
+            agent.act(
+                {
+                    "available_mobility": {
+                        "Walking": {},
+                        "ElectricCar": {},
+                    }
+                }
+            )
+        )
+
+        assert action == {"mobility": "ElectricCar"}
+        assert client.received_schema["properties"]["mobility"]["enum"] == [
+            "Walking",
+            "ElectricCar",
+        ]
 
 
 class TestAutoReactLLMAgent:

@@ -91,8 +91,17 @@ class LLMAgent(Agent[dict[str, Any]]):
             )
         obs_prompt: str = self.prompt_builder.build_prompt(obs=obs)
         prompt: str = persona_prompt + obs_prompt
-        llm_response: dict[str, Any] = await self.llm_client.generate_response(
-            prompt=prompt
+        available_mobility = obs.get("available_mobility", {"Walking": {}})
+        mobility_names = (
+            list(available_mobility)
+            if isinstance(available_mobility, dict)
+            else ["Walking"]
+        )
+        action_schema = self.llm_client.get_action_schema(mobility_names)
+        llm_response: dict[
+            str, Any
+        ] = await self.llm_client.generate_response_with_schema(
+            prompt=prompt, json_schema=action_schema
         )
         self.last_prompt = prompt
         return llm_response

@@ -79,8 +79,30 @@ class OpenAIClient(LLMClient):
 
         Returns:
             dict[str, Any]: The parsed JSON response from the OpenAI API.
+
+        Note:
+            Existing callers use the client-level schema through the dynamic path.
         """
-        schema: dict[str, Any] = copy.deepcopy(self.json_schema)
+        return await self.generate_response_with_schema(
+            prompt=prompt, json_schema=self.json_schema
+        )
+
+    async def generate_response_with_schema(
+        self, prompt: str, json_schema: dict[str, Any]
+    ) -> dict[str, Any]:
+        """Generate a response using a request-specific JSON schema.
+
+        Args:
+            prompt (str): Input prompt sent to the OpenAI API.
+            json_schema (dict[str, Any]): Schema for this individual request.
+
+        Returns:
+            dict[str, Any]: Parsed JSON response.
+
+        Note:
+            The schema is copied to keep concurrent agent requests isolated.
+        """
+        schema: dict[str, Any] = copy.deepcopy(json_schema)
         use_temperature: bool = True
         for _ in range(self.max_retries):
             try:

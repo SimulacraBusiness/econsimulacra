@@ -1,3 +1,4 @@
+import asyncio
 import json
 
 from econsimulacra.llm_services import DEFAULT_ACTION_JSON_SCHEMA, LLMClient
@@ -28,6 +29,7 @@ MODIFIED_ACTION_JSON_SCHEMA = {
                 {"type": "null"},
             ]
         },
+        "mobility": {"type": "string", "enum": ["Walking"]},
         "consumptions": {
             "type": "array",
             "items": {
@@ -125,6 +127,7 @@ MODIFIED_ACTION_JSON_SCHEMA = {
     "required": [
         "sleep_duration",
         "move",
+        "mobility",
         "consumptions",
         "orders",
         "proposals",
@@ -175,3 +178,28 @@ class TestLLMClient:
         assert modified_schema_str != json.dumps(DEFAULT_ACTION_JSON_SCHEMA)
         modified_schema = json.loads(modified_schema_str)
         assert modified_schema == MODIFIED_ACTION_JSON_SCHEMA
+
+    def test_request_schema_and_legacy_generation_fallback(self) -> None:
+        """Test dynamic mobility schema and custom-client backward compatibility.
+
+        Args:
+            None.
+
+        Returns:
+            None.
+
+        Note:
+            A client implementing only ``generate_response`` remains operational.
+        """
+        client = DummyClient({"modelName": "dummy"})
+
+        schema = client.get_action_schema(["Walking", "ElectricCar"])
+        response = asyncio.run(
+            client.generate_response_with_schema("hello", json_schema=schema)
+        )
+
+        assert schema["properties"]["mobility"]["enum"] == [
+            "Walking",
+            "ElectricCar",
+        ]
+        assert response == {"response": "Echo: hello"}

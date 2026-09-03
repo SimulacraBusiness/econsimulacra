@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Optional, Type
 
+from ...mobility import build_action_schema_with_mobility
 from ..constant import DEFAULT_ACTION_JSON_SCHEMA
 from .llm_client_utils import modify_schema
 
@@ -78,6 +79,39 @@ class LLMClient(ABC):
     @abstractmethod
     async def generate_response(self, prompt: str) -> dict[str, Any]:
         pass
+
+    async def generate_response_with_schema(
+        self, prompt: str, json_schema: dict[str, Any]
+    ) -> dict[str, Any]:
+        """Generate a response using a request-specific action schema when supported.
+
+        Args:
+            prompt (str): Input prompt sent to the model.
+            json_schema (dict[str, Any]): Schema for this individual request.
+
+        Returns:
+            dict[str, Any]: Parsed model response.
+
+        Note:
+            The compatibility implementation delegates to ``generate_response``.
+            Built-in structured clients override this method.
+        """
+        return await self.generate_response(prompt)
+
+    def get_action_schema(self, mobility_names: list[str]) -> dict[str, Any]:
+        """Build an action schema for one agent's available mobility modes.
+
+        Args:
+            mobility_names (list[str]): Mobility names available to the agent.
+
+        Returns:
+            dict[str, Any]: Isolated, request-specific action schema.
+
+        Note:
+            The stored or configured base schema is not mutated.
+        """
+        base_schema = json.loads(self._get_json_schema())
+        return build_action_schema_with_mobility(base_schema, mobility_names)
 
     def _get_json_schema(self) -> str:
         """Get JSON schema for structured generation from config or use default schema.

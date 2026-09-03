@@ -20,6 +20,7 @@ DEFAULT_ACTION_JSON_SCHEMA: dict[str, Any] = {
                 {"type": "null"},
             ]
         },
+        "mobility": {"type": "string", "enum": ["Walking"]},
         "consumptions": {
             "type": "array",
             "items": {
@@ -113,6 +114,7 @@ DEFAULT_ACTION_JSON_SCHEMA: dict[str, Any] = {
     "required": [
         "sleep_duration",
         "move",
+        "mobility",
         "consumptions",
         "orders",
         "proposals",
@@ -143,12 +145,10 @@ DEFAULT_OBS_DESCRIPTION: dict[str, str] = {
     "self_init_pos": "Your home in the grid space, represented as a list of integers [x, y]. "
     + "You may feel relaxed when you are at home, "
     + "while staying away from home for a long time may gradually cause stress to build up.",
-    "self_is_moving": "A boolean indicating whether you are currently moving. "
-    + "If True, you will automatically be moved to the target coordinates in the next time step. "
-    + "If False, you can choose whether to move elsewhere or stay in the same place in the next time step.",
-    "self_destination": "If you are currently moving (if self_is_moving is True), "
-    + "this is the target you will be moved to in the next time step. "
-    + "If you are not currently moving, this will be null.",
+    "movement_state": "Your current movement state with is_moving, destination, and mobility_name fields. "
+    + "A non-walking journey continues automatically until arrival or resource depletion.",
+    "available_mobility": "Mobility modes that you can currently use. Each entry includes current velocity, "
+    + "maximum velocity, and per-cell resource consumption. Only choose mobility values listed here.",
     "others_pos": "A list of dictionaries representing the positions of other agents in the grid space. "
     + "Each dictionary has 'agent_id', 'agent_name', 'is_household', and 'pos' (coordinates) of the other agent.",
     "nearby_agents": "A list of dictionaries representing the nearby agents in the neighboring grid cells. "
@@ -198,6 +198,8 @@ DEFAULT_ACTION_DESCRIPTION: dict[str, str] = {
     + "Therefore, you do not need to manually specify intermediate positions; simply choose the location you ultimately want to reach. "
     + "You can refer to the others_pos field in the observation to decide where to go if you want to visit a store. "
     + "You can also refer to the self_init_pos field in the observation to go back home.",
+    "mobility": "The mobility action selects how to execute move. Choose one name from available_mobility. "
+    + "If not specified, Walking is used.",
     "consumptions": "The consumptions action is a list of items that you want to consume. "
     + "Each item is represented as an object with 'item_name' and 'item_amount'. "
     + "If you do not want to consume anything, it can set this to an empty list. "
