@@ -51,6 +51,71 @@ def _policy(
     )
 
 
+def test_mobility_model_defaults_to_walking_without_mobility_observation() -> None:
+    model = MobilityModel()
+
+    assert model.select_mobility(_context()) == "Walking"
+
+
+def test_mobility_model_selects_highest_effective_velocity() -> None:
+    model = MobilityModel()
+    context = _context(
+        available_mobility={
+            "Walking": {"velocity": 1, "max_velocity": 1},
+            "GasolineCar": {"velocity": 7, "max_velocity": 10},
+            "ElectricCar": {"velocity": 10, "max_velocity": 10},
+        }
+    )
+
+    assert model.select_mobility(context) == "ElectricCar"
+
+
+def test_mobility_model_keeps_active_available_mobility() -> None:
+    model = MobilityModel()
+    context = _context(
+        movement_state={
+            "is_moving": True,
+            "destination": (5, 5),
+            "mobility_name": "GasolineCar",
+        },
+        available_mobility={
+            "Walking": {"velocity": 1},
+            "GasolineCar": {"velocity": 7},
+            "ElectricCar": {"velocity": 10},
+        },
+    )
+
+    assert model.select_mobility(context) == "GasolineCar"
+
+
+def test_mobility_model_generates_move_with_selected_mobility() -> None:
+    model = MobilityModel()
+    state = HouseholdState(
+        sleep_pressure=0.4,
+        hunger=0.2,
+        last_meal_elapsed=1.0,
+        has_been_sleeping=True,
+    )
+    context = _context(
+        available_mobility={
+            "Walking": {"velocity": 1},
+            "ElectricCar": {"velocity": 10},
+        }
+    )
+
+    action = model.generate_move_action(
+        context,
+        state,
+        destination=(4, 2),
+        mode="TRAVEL_STORE",
+    )
+
+    assert action == {"move": (4, 2), "mobility": "ElectricCar"}
+    assert state.destination == (4, 2)
+    assert state.mode == "TRAVEL_STORE"
+    assert not state.has_been_sleeping
+
+
 def test_physiology_updates_awake_and_asleep_stocks() -> None:
     model = PhysiologyModel({}, ("Rice",), step_hours=1.0)
     state = model.initialize_state()
@@ -124,6 +189,67 @@ def test_shopping_basket_obeys_target_stock_seller_stock_and_budget() -> None:
                 "counterparty_id": 9,
                 "item_name": "Rice",
                 "item_amount": 2,
+                "ttl": 2,
+            },
+        )
+    }
+
+
+def test_household_can_purchase_mobility_items_without_treating_them_as_food() -> None:
+    household = RuleBasedHousehold(
+        agent_id=0,
+        agent_name="Household0",
+        env_service_dic={},
+        config={
+            "foodItems": ("Rice",),
+            "shoppingItems": ("Rice", "GasolineCar", "Gasoline"),
+            "sSinventoryRule": {
+                "reorderPoints": {
+                    "Rice": 1.0,
+                    "GasolineCar": 0.49,
+                    "Gasoline": 5.0,
+                },
+                "targetStocks": {
+                    "Rice": 4.0,
+                    "GasolineCar": 1.5,
+                    "Gasoline": 20.0,
+                },
+            },
+            "budgetRule": {"maxBasketShare": 1.0},
+            "pricePriors": {
+                "Rice": 500.0,
+                "GasolineCar": 8000.0,
+                "Gasoline": 180.0,
+            },
+        },
+    )
+    shopping = household.decision_policy.shopping
+    context = _context(
+        inventory={
+            "Yen": 100000.0,
+            "Rice": 2.0,
+            "GasolineCar": 0.2,
+            "Gasoline": 10.0,
+        },
+        others_inventory=(
+            {
+                "agent_id": 9,
+                "is_household": False,
+                "GasolineCar": {"price": 8000.0, "amount": 20.0},
+            },
+        ),
+    )
+
+    action = shopping.generate_order_action(context)
+
+    assert household.decision_policy.physiology.food_items == ("Rice",)
+    assert shopping.shopping_items == ("Rice", "GasolineCar", "Gasoline")
+    assert action == {
+        "orders": (
+            {
+                "counterparty_id": 9,
+                "item_name": "GasolineCar",
+                "item_amount": 1,
                 "ttl": 2,
             },
         )

@@ -355,6 +355,7 @@ class ShoppingModel:
         food_items: tuple[str, ...],
         cash_name: str,
         prng: Random,
+        shopping_items: Optional[tuple[str, ...]] = None,
     ) -> None:
         """Initialization.
 
@@ -363,15 +364,24 @@ class ShoppingModel:
             It may include:
                 - ``sSinventoryRule``: reorder points and target stocks.
                 - ``budgetRule``: cash reserve and maximum basket share.
-                - ``pricePriors``: prior prices for each food item.
+                - ``pricePriors``: prior prices for each purchase target.
                 - ``itemImportance``: relative replenishment importance by item.
                 - ``storeChoice``: utility coefficients, initial availability,
                   and belief-learning rates.
             food_items: Ordered configured food names.
             cash_name: Inventory key used as currency.
             prng: Pseudo-random generator used by multinomial logit sampling.
+            shopping_items: Optional ordered purchase targets. When omitted,
+                ``food_items`` preserves the existing behavior.
+
+        Returns:
+            None.
+
+        Note:
+            Food and purchase targets are accepted separately so durable and
+            consumable mobility items are never treated as meal ingredients.
         """
-        self.food_items = food_items
+        self.shopping_items = food_items if shopping_items is None else shopping_items
         self.cash_name = cash_name
         self.prng = prng
 
@@ -380,22 +390,22 @@ class ShoppingModel:
         )
         self.reorder_points: dict[str, float] = {
             item: float(ss_inventory_rule.get("reorderPoints", {}).get(item, 1.0))
-            for item in food_items
+            for item in self.shopping_items
         }
         self.target_stocks: dict[str, float] = {
             item: float(ss_inventory_rule.get("targetStocks", {}).get(item, 4.0))
-            for item in food_items
+            for item in self.shopping_items
         }
         budget_rule: dict[str, float] = config.get("budgetRule", {})
         self.cash_reserve: float = float(budget_rule.get("cashReserve", 0.0))
         self.max_basket_share: float = float(budget_rule.get("maxBasketShare", 0.35))
         self.price_priors: dict[str, float] = {
             item: float(config.get("pricePriors", {}).get(item, 1.0))
-            for item in food_items
+            for item in self.shopping_items
         }
         self.item_importance: dict[str, float] = {
             item: max(0.0, float(config.get("itemImportance", {}).get(item, 1.0)))
-            for item in food_items
+            for item in self.shopping_items
         }
 
         store: dict[str, Any] = config.get("storeChoice", {})
@@ -427,18 +437,19 @@ class ShoppingModel:
             inventory: Current self-inventory keyed by item name.
 
         Returns:
-            Whether at least one food has reached its reorder point.
+            Whether at least one purchase target has reached its reorder point.
 
-        For foods :math:`\mathcal{F}` and configured reorder point :math:`s_i`,
+        For purchase targets :math:`\mathcal{I}` and configured reorder point
+        :math:`s_i`,
 
         .. math::
 
            D_t^{\mathrm{shop}}=
-           \mathbf{1}\{\exists i\in\mathcal{F}:I_t(i)\leq s_i\}.
+           \mathbf{1}\{\exists i\in\mathcal{I}:I_t(i)\leq s_i\}.
         """
         return any(
             inventory.get(item, 0.0) <= self.reorder_points[item]
-            for item in self.food_items
+            for item in self.shopping_items
         )
 
     def get_budget(self, inventory: dict[str, float]) -> float:
@@ -532,7 +543,7 @@ class ShoppingModel:
                 continue
             seller_id = int(seller["agent_id"])
             self._ensure_store_beliefs(seller_id)
-            for item in self.food_items:
+            for item in self.shopping_items:
                 offer = seller.get(item)
                 is_offer = isinstance(offer, dict)
                 if is_offer:
@@ -559,7 +570,7 @@ class ShoppingModel:
             return
         self.expected_price[seller_id] = dict(self.price_priors)
         self.expected_availability[seller_id] = {
-            item: self.initial_availability for item in self.food_items
+            item: self.initial_availability for item in self.shopping_items
         }
 
     def choose_store(
@@ -635,10 +646,11 @@ class ShoppingModel:
             return None
         desired = {
             item: max(0.0, self.target_stocks[item] - inventory.get(item, 0.0))
-            for item in self.food_items
+            for item in self.shopping_items
         }
         need_weights = {
-            item: self.item_importance[item] * desired[item] for item in self.food_items
+            item: self.item_importance[item] * desired[item]
+            for item in self.shopping_items
         }
         total_need_weight = sum(need_weights.values())
         if total_need_weight <= 0.0:
@@ -650,7 +662,7 @@ class ShoppingModel:
             coverage = (
                 sum(
                     need_weights[item] * self.expected_availability[seller_id][item]
-                    for item in self.food_items
+                    for item in self.shopping_items
                 )
                 / total_need_weight
             )
@@ -664,7 +676,7 @@ class ShoppingModel:
                         if self.price_priors[item] > 0.0
                         else 0.0
                     )
-                    for item in self.food_items
+                    for item in self.shopping_items
                 )
                 / total_need_weight
             )
@@ -672,7 +684,7 @@ class ShoppingModel:
                 desired[item]
                 * self.expected_availability[seller_id][item]
                 * max(0.0, self.expected_price[seller_id][item])
-                for item in self.food_items
+                for item in self.shopping_items
             )
             budget_pressure = expected_expenditure / budget
             destination = tuple(store["pos"])
@@ -709,7 +721,7 @@ class ShoppingModel:
         Returns:
             Order records, or an empty mapping when no order is feasible.
 
-        The first matching seller in ``others_inventory`` is used. Foods are
+        The first matching seller in ``others_inventory`` is used. Items are
         processed by descending ``itemImportance`` with configured order as
         the stable tie break, so a tight budget fills necessities first. Let
         :math:`p_i>0` be observed price (zero or negative price removes the
@@ -745,7 +757,7 @@ class ShoppingModel:
         remaining_budget = self.get_budget(context.inventory)
         orders: list[dict[str, Any]] = []
         items_by_importance = sorted(
-            self.food_items,
+            self.shopping_items,
             key=self.item_importance.__getitem__,
             reverse=True,
         )
@@ -788,8 +800,44 @@ class MobilityModel:
     persistence changes.
     """
 
+    def select_mobility(self, context: DecisionContext) -> str:
+        """Select a mobility mode from the current observation.
+
+        Args:
+            context: Normalized current observation.
+
+        Returns:
+            Name of the mobility mode to use.
+
+        Note:
+            An active journey retains its current mode when that mode remains
+            available. A new journey uses the mode with the highest effective
+            velocity. Walking preserves compatibility when mobility observations
+            are absent.
+        """
+        available_mobility = context.obs.get("available_mobility")
+        if not isinstance(available_mobility, dict) or not available_mobility:
+            return "Walking"
+
+        movement_state = context.obs.get("movement_state")
+        if isinstance(movement_state, dict) and movement_state.get("is_moving", False):
+            current_mobility = movement_state.get("mobility_name")
+            if (
+                isinstance(current_mobility, str)
+                and current_mobility in available_mobility
+            ):
+                return current_mobility
+
+        return max(
+            available_mobility,
+            key=lambda mobility_name: available_mobility[mobility_name].get(
+                "velocity", 0
+            ),
+        )
+
     def generate_move_action(
         self,
+        context: DecisionContext,
         state: HouseholdState,
         destination: tuple[int, ...],
         mode: MODE,
@@ -797,12 +845,17 @@ class MobilityModel:
         r"""Persist intent and reissue the destination for this step.
 
         Args:
+            context: Normalized current observation used to select mobility.
             state: Mutable household state in which to persist movement intent.
             destination: Target grid position.
             mode: Activity-mode label associated with the trip.
 
         Returns:
-            ``move`` action targeting ``destination``.
+            ``move`` action targeting ``destination`` with its mobility mode.
+
+        Note:
+            Availability and effective velocity are supplied by the environment;
+            ownership and fuel requirements are not recalculated here.
 
         For selected destination :math:`d` and activity label :math:`z`, the
         state transition and action are
@@ -810,12 +863,15 @@ class MobilityModel:
         .. math::
 
            (d_t,z_t,\sigma_t)\leftarrow(d,z,0),\qquad
-           a_t=\{\mathtt{move}:d\}.
+           a_t=\{\mathtt{move}:d,\mathtt{mobility}:m\}.
         """
         state.destination = destination
         state.mode = mode
         state.has_been_sleeping = False
-        return {"move": destination}
+        return {
+            "move": destination,
+            "mobility": self.select_mobility(context),
+        }
 
 
 class ProposalReactionModel:

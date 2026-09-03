@@ -86,6 +86,7 @@ class RuleBasedHousehold(Agent[dict[str, Any]]):
         )
         self.cash_name = self.config.get("cashName", "Yen")
         self.food_items = tuple(self.config.get("foodItems", ()))
+        self.shopping_items = tuple(self.config.get("shoppingItems", self.food_items))
         self.start_hour = float(self.config.get("startHour", 6.0))
         self.step_hours = float(self.config.get("stepHours", 1.0))
         self.decision_policy = decision_policy or self.build_decision_policy()
@@ -145,6 +146,7 @@ class RuleBasedHousehold(Agent[dict[str, Any]]):
                 self.food_items,
                 self.cash_name,
                 self.prng,
+                shopping_items=self.shopping_items,
             ),
             capabilities=ActionCapabilities.from_config(self.config),
         )

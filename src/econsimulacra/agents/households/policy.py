@@ -319,29 +319,34 @@ class HouseholdDecisionPolicy:
             and context.current_pos != state.home
             and signals.can_move
         ):
-            return self._return_home(state, "RETURN_HOME_SLEEP")
+            return self._return_home(context, state, "RETURN_HOME_SLEEP")
         return None
 
     def _return_home(
         self,
+        context: DecisionContext,
         state: HouseholdState,
         mode: MODE,
     ) -> dict[str, Any]:
         """Construct a homeward movement action.
 
         Args:
+            context: Normalized current observation used to select mobility.
             state: Mutable household state with initialized home position.
             mode: Return-home activity label to persist.
 
         Returns:
             Movement action targeting home.
 
+        Note:
+            Mobility selection is delegated to the configured mobility model.
+
         Raises:
             ValueError: If home has not been initialized.
         """
         if state.home is None:
             raise ValueError("Household home is not initialized.")
-        return self.mobility.generate_move_action(state, state.home, mode)
+        return self.mobility.generate_move_action(context, state, state.home, mode)
 
     def _continue_return_action(
         self,
@@ -364,7 +369,7 @@ class HouseholdDecisionPolicy:
             and context.current_pos != state.home
             and signals.can_move
         ):
-            return self._return_home(state, state.mode)
+            return self._return_home(context, state, state.mode)
         return None
 
     def _scheduled_meal_action(
@@ -466,7 +471,7 @@ class HouseholdDecisionPolicy:
         if context.current_pos != state.destination:
             if signals.can_move:
                 return self.mobility.generate_move_action(
-                    state, state.destination, "TRAVEL_STORE"
+                    context, state, state.destination, "TRAVEL_STORE"
                 )
             state.mode = "HOME" if context.current_pos == state.home else "AWAY"
             state.destination = None
@@ -475,7 +480,7 @@ class HouseholdDecisionPolicy:
         if action:
             state.has_been_sleeping = False
             if signals.can_move and context.current_pos != state.home:
-                movement = self._return_home(state, "RETURN_HOME")
+                movement = self._return_home(context, state, "RETURN_HOME")
                 return action | movement
             state.mode = "HOME" if context.current_pos == state.home else "AWAY"
             state.destination = None
@@ -501,7 +506,7 @@ class HouseholdDecisionPolicy:
             Homeward move when away and mobile, otherwise ``None``.
         """
         if context.current_pos != state.home and signals.can_move:
-            return self._return_home(state, "RETURN_HOME")
+            return self._return_home(context, state, "RETURN_HOME")
         return None
 
     def _idle_action(
