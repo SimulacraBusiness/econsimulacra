@@ -52,6 +52,23 @@ class TestGridSpace:
         attrs["kind"] = "road"
         assert grid_space.get_cell_attrs((0, 1))["kind"] == "house"
 
+    def test_cell_configuration_accepts_simulator_normalized_tuple(self) -> None:
+        grid_space = self.make_grid_space(
+            config={
+                "gridSize": (2, 2),
+                "cells": (
+                    {
+                        "pos": (1, 1),
+                        "access": {"spawnable": False},
+                        "attrs": {"kind": "common_space"},
+                    },
+                ),
+            }
+        )
+
+        assert not grid_space.get_cell((1, 1)).access.spawnable
+        assert grid_space.get_cell_attrs((1, 1)) == {"kind": "common_space"}
+
     def test_update_cell_information(self) -> None:
         grid_space = self.make_grid_space(config={"gridSize": (2, 2)})
 
@@ -230,6 +247,25 @@ class TestGridSpace:
         assert (
             grid_space.calc_next_pos(current_pos=(0, 0), destination_pos=(2, 0)) is None
         )
+
+    def test_calc_next_path_preserves_endpoint_and_reports_distance(self) -> None:
+        """Test path-segment output used for mobility resource accounting.
+
+        Args:
+            None.
+
+        Returns:
+            None.
+
+        Note:
+            ``calc_next_pos`` remains equal to the final segment position.
+        """
+        grid_space = self.make_grid_space(config={"gridSize": [6, 1]})
+
+        path = grid_space.calc_next_path((0, 0), (5, 0), velocity=3)
+
+        assert path == [(0, 0), (1, 0), (2, 0), (3, 0)]
+        assert grid_space.calc_next_pos((0, 0), (5, 0), velocity=3) == path[-1]
 
     @pytest.mark.parametrize("velocity", [0, -1, 1.5, True])
     def test_calc_next_pos_rejects_invalid_velocity(self, velocity: object) -> None:

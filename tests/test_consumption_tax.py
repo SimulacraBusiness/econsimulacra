@@ -14,9 +14,10 @@ Provider = Callable[[int], Any]
 class DummyHousehold(Agent):
     async def act(self, obs: dict[str, Any]) -> dict[str, Any]:
         action_dic: dict[str, Any] = {}
-        is_moving: bool = obs["self_is_moving"]
+        movement_state: dict[str, Any] = obs["movement_state"]
+        is_moving: bool = movement_state["is_moving"]
         if is_moving:
-            action_dic["move"] = obs["self_destination"]
+            action_dic["move"] = movement_state["destination"]
         else:
             pos: tuple[int, int] = obs["self_pos"]
             retailer_pos: tuple[int, int] = obs["others_pos"][0]["pos"]

@@ -280,13 +280,41 @@ class VLLMClient(LLMClient):
                     await asyncio.to_thread(self._restart_server)
 
     async def generate_response(self, prompt: str) -> dict[str, Any]:
+        """Generate a response with the client's configured action schema.
+
+        Args:
+            prompt (str): Input prompt sent to the vLLM server.
+
+        Returns:
+            dict[str, Any]: Parsed JSON response.
+
+        Note:
+            This compatibility method delegates to the request-specific path.
+        """
+        return await self.generate_response_with_schema(prompt, self.json_schema)
+
+    async def generate_response_with_schema(
+        self, prompt: str, json_schema: dict[str, Any]
+    ) -> dict[str, Any]:
+        """Generate a response using a request-specific JSON schema.
+
+        Args:
+            prompt (str): Input prompt sent to the vLLM server.
+            json_schema (dict[str, Any]): Schema for this individual request.
+
+        Returns:
+            dict[str, Any]: Parsed JSON response.
+
+        Note:
+            The schema is copied to keep concurrent agent requests isolated.
+        """
         prompt = re.sub(r"<\|[^|>]*\|>", "", prompt)
         prompt = re.sub(r"<<[^>]*>>", "", prompt)
         prompt = re.sub(r"\[/?INST\]", "", prompt)
         prompt = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]", "", prompt)
         prompt = unicodedata.normalize("NFKC", prompt)
         prompt = prompt.encode("utf-8", errors="replace").decode("utf-8")
-        schema = copy.deepcopy(self.json_schema)
+        schema = copy.deepcopy(json_schema)
         last_error: Optional[Exception] = None
         for attempt in range(self.max_retries):
             try:

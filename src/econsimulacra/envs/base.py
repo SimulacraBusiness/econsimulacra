@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import random
 from random import Random
 from typing import Any, Generic, Literal, Optional, Type, TypeVar
@@ -19,7 +21,9 @@ from ..logs import (
     ItemGenerationLog,
     Log,
     Logger,
+    MobilityConsumptionLog,
     MoveLog,
+    MovementInterruptedLog,
     ObsLog,
     OrderExpirationLog,
     OrderLog,
@@ -35,15 +39,18 @@ from ..logs import (
     UnfollowLog,
 )
 from ..memory import MemoryHandler
+from ..mobility import MobilityManager, MovementState
 from ..sim_utils import find_class
 from ..social_networks import SocialNetwork
 from ..spaces import GridSpace
 from .obs_providers import (
+    AvailableMobilityProvider,
     FollowCapProvider,
     IncomingOrdersProvider,
     IncomingSwapProposalsProvider,
     ItemName2PriceProvider,
     MemoryProvider,
+    MovementStateProvider,
     NearbyAgentsProvider,
     NearbyInfoProvider,
     NumFollowersProvider,
@@ -103,6 +110,9 @@ class Environment(Generic[ObsT]):
                 and other detailed settings for each component specified in "environment" entry.
             logger (Logger, optional): Logger instance for logging environment events.
                 If None, no logging will be performed. Defaults to None.
+
+        Returns:
+            None.
 
         Note:
             config example:
@@ -240,6 +250,23 @@ class Environment(Generic[ObsT]):
         """Get the SleepManager service provider from the environment's service dictionary, if it exists."""
         return self.get_service(SleepManager)
 
+    def get_mobility_manager(self) -> MobilityManager:
+        """Get the mobility manager used by this environment.
+
+        Args:
+            None.
+
+        Returns:
+            MobilityManager: Configured or automatically supplied manager.
+
+        Note:
+            ``reset`` guarantees that the manager exists before agents are generated.
+        """
+        manager = self.get_service(MobilityManager)
+        if manager is None:
+            raise RuntimeError("MobilityManager has not been initialized.")
+        return manager
+
     def get_time(self) -> int | str:
         """Get the current time in the environment.
 
@@ -286,7 +313,10 @@ class Environment(Generic[ObsT]):
         """Reset the environment to the initial state.
 
         Args:
-            seed (Optional[int]): random seed for environment initialization. If None, no specific seed is set.
+            seed (int, optional): random seed for environment initialization. If None, no specific seed is set.
+
+        Returns:
+            None.
 
         Note:
             This method
@@ -328,11 +358,13 @@ class Environment(Generic[ObsT]):
             self.config["environment"].get("service", [])
         )
         self._generate_service_providers(service_provider_keys=service_provider_keys)
+        self._ensure_mobility_manager()
         assert "items" in self.config["environment"], (
             "Environment config must include 'items' key."
         )
         item_keys: list[str] = list(self.config["environment"]["items"])
         self._generate_items(item_keys=item_keys)
+        self.get_mobility_manager().validate_item_names(set(self.item_name2item))
         assert "agents" in self.config["environment"], (
             "Environment config must include 'agents' key."
         )
@@ -445,6 +477,25 @@ class Environment(Generic[ObsT]):
             )
             self.service_dic[service_provider_key] = service_provider_instance
 
+    def _ensure_mobility_manager(self) -> None:
+        """Install a walking-only mobility manager when none is configured.
+
+        Args:
+            None.
+
+        Returns:
+            None.
+
+        Note:
+            This preserves existing simulations that do not mention mobility config.
+        """
+        if self.get_service(MobilityManager) is None:
+            self.service_dic["mobilityManager"] = MobilityManager(
+                config={},
+                prng=self.prng,
+                registered_classes=self.registered_classes,
+            )
+
     def remember_log(self, log: Log) -> None:
         """Call MemoryHandler.update(log) to update the memory with the given log, if MemoryHandler is available in the environment services.
 
@@ -503,6 +554,7 @@ class Environment(Generic[ObsT]):
         self.agent_id2initial_coords: dict[int, tuple[int, ...]] = {}
         self.agent_id2is_moving: dict[int, bool] = {}
         self.agent_id2destination: dict[int, Optional[tuple[int, ...]]] = {}
+        self.agent_id2movement_state: dict[int, Optional[MovementState]] = {}
         self.agent_id2initial_inventory: dict[int, dict[str, int | float]] = {}
         self.agent_id2wealth: dict[int, float | int] = {}
         agent_keys.sort(
@@ -562,8 +614,7 @@ class Environment(Generic[ObsT]):
                     agent_id=current_agent_id,
                     coords=agent_config.get("initialCoords", None),
                 )
-                self.agent_id2is_moving[current_agent_id] = False
-                self.agent_id2destination[current_agent_id] = None
+                self._set_movement_state(agent_id=current_agent_id, movement_state=None)
                 self.social_network.add_agent(
                     agent_id=current_agent_id, agent_name=agent_name
                 )
@@ -674,6 +725,9 @@ class Environment(Generic[ObsT]):
             agent_id (int): the ID of the agent whose action is to be applied.
             action_dic (dict[str, Any]): the action dictionary of the agent for this step.
 
+        Returns:
+            None.
+
         Note:
             This method processes the action dictionary of a single agent by
 
@@ -737,6 +791,7 @@ class Environment(Generic[ObsT]):
                     log.read_and_write(logger=self.logger)
             is_sleeping: bool = sleep_manager.get_sleep_status(agent_id=agent_id)
             if is_sleeping:
+                self._set_movement_state(agent_id=agent_id, movement_state=None)
                 return
         consumptions: list[dict[str, Any]] = action_dic.get("consumptions", [])
         valid_consumptions: list[dict[str, Any]] = self._check_consumptions(
@@ -807,20 +862,119 @@ class Environment(Generic[ObsT]):
             follow_agent_id=valid_follow_agent_id,
             unfollow_agent_id=valid_unfollow_agent_id,
         )
-        where_to_move: Optional[tuple[int, ...] | str] = self._get_where_to_move(
-            agent_id=agent_id, where_to_move=action_dic.get("move", None)
+        requested_destination: Optional[tuple[int, ...] | str] = action_dic.get(
+            "move", None
         )
+        movement_state = self.agent_id2movement_state.get(agent_id)
+        where_to_move: Optional[tuple[int, ...] | str] = self._get_where_to_move(
+            agent_id=agent_id, where_to_move=requested_destination
+        )
+        if requested_destination is None and movement_state is not None:
+            mobility_name = movement_state.mobility_name
+        else:
+            mobility_name = action_dic.get("mobility", "Walking")
         move_allowed: bool = self._check_move(
-            agent_id=agent_id, where_to_move=where_to_move
+            agent_id=agent_id,
+            where_to_move=where_to_move,
+            mobility_name=mobility_name,
         )
         if not move_allowed:
             self.invalid_action_dic["move"] += 1
             where_to_move = None
+            if requested_destination is not None:
+                self._set_movement_state(agent_id=agent_id, movement_state=None)
         if agent_id in self.household_ids:
             self._move(
                 agent_id=agent_id,
                 where_to_move=where_to_move,
+                mobility_name=mobility_name,
             )
+
+    def _set_movement_state(
+        self,
+        agent_id: int,
+        movement_state: Optional[MovementState],
+    ) -> None:
+        """Update canonical and legacy movement state atomically.
+
+        Args:
+            agent_id (int): ID of the agent whose state is updated.
+            movement_state (MovementState, optional): Active journey or ``None``.
+
+        Returns:
+            None.
+
+        Note:
+            This is the only method that writes the three movement state mappings.
+        """
+        self.agent_id2movement_state[agent_id] = movement_state
+        self.agent_id2is_moving[agent_id] = movement_state is not None
+        self.agent_id2destination[agent_id] = (
+            movement_state.destination if movement_state is not None else None
+        )
+
+    def prepare_agent_decision(self, agent_id: int) -> None:
+        """Stop an active journey that can no longer consume required resources.
+
+        Args:
+            agent_id (int): ID of the agent about to make a decision.
+
+        Returns:
+            None.
+
+        Note:
+            Running this before observation lets an interrupted agent choose another
+            action in the same step and exposes the interruption through memory.
+        """
+        movement_state = self.agent_id2movement_state.get(agent_id)
+        if movement_state is None:
+            return
+        manager = self.get_mobility_manager()
+        inventory = self.agent_id2agent[agent_id].get_inventory()
+        if manager.can_use_mode(inventory, movement_state.mobility_name):
+            return
+        missing_items = manager.get_missing_required_items(
+            inventory, movement_state.mobility_name
+        )
+        one_cell_consumption = manager.calculate_consumption(
+            movement_state.mobility_name, 1
+        )
+        missing_items.update(
+            manager.get_consumption_shortfall(inventory, one_cell_consumption)
+        )
+        self._set_movement_state(agent_id=agent_id, movement_state=None)
+        log = MovementInterruptedLog(
+            time=self.get_time(),
+            time_step=self.get_time_step(),
+            agent_id=agent_id,
+            destination=movement_state.destination,
+            mobility_name=movement_state.mobility_name,
+            reason="mobility_unavailable",
+            missing_items=missing_items,
+        )
+        self.remember_log(log)
+        self.event_manager.trigger_events_after_log(log=log, env=self)
+        if self.logger is not None:
+            log.read_and_write(logger=self.logger)
+
+    def should_skip_decision(self, agent_id: int) -> bool:
+        """Determine whether an agent should skip active decision-making.
+
+        Args:
+            agent_id (int): ID of the agent being scheduled.
+
+        Returns:
+            bool: Whether the simulator should supply an empty action.
+
+        Note:
+            Sleeping agents and active non-walking travelers are skipped. Walking
+            travelers retain the existing opportunity to decide every step.
+        """
+        sleep_manager = self.get_sleep_manager()
+        if sleep_manager is not None and sleep_manager.get_sleep_status(agent_id):
+            return True
+        movement_state = self.agent_id2movement_state.get(agent_id)
+        return movement_state is not None and movement_state.mobility_name != "Walking"
 
     def _process_inner_thought(self, agent_id: int, inner_thought: str) -> None:
         """Process the inner thought of the agent for this step.
@@ -962,7 +1116,7 @@ class Environment(Generic[ObsT]):
 
         Args:
             agent_id (int): the id of the agent who wants to move.
-            where_to_move (Optional[tuple[int, ...] | str]): the target position or agent name the agent intended to move to.
+            where_to_move (tuple[int, ...] | str, optional): the target position or agent name the agent intended to move to.
 
         Note:
             If where_to_move is None, check if the agent is currently moving.
@@ -971,26 +1125,30 @@ class Environment(Generic[ObsT]):
             If the agent is not sleeping, continue moving to the previously set destination.
         """
         if where_to_move is None:
-            is_moving: bool = self.agent_id2is_moving.get(agent_id, False)
+            movement_state = self.agent_id2movement_state.get(agent_id)
             sleep_manager: Optional[SleepManager] = self.get_sleep_manager()
-            if sleep_manager is not None:
-                is_sleeping: bool = sleep_manager.get_sleep_status(agent_id=agent_id)
-            if is_moving:
+            is_sleeping = sleep_manager is not None and sleep_manager.get_sleep_status(
+                agent_id=agent_id
+            )
+            if movement_state is not None:
                 if is_sleeping:
-                    self.agent_id2is_moving[agent_id] = False
-                    self.agent_id2destination[agent_id] = None
+                    self._set_movement_state(agent_id=agent_id, movement_state=None)
                 else:
-                    where_to_move = self.agent_id2destination.get(agent_id, None)
+                    where_to_move = movement_state.destination
         return where_to_move
 
     def _check_move(
-        self, agent_id: int, where_to_move: Optional[tuple[int, ...] | str]
+        self,
+        agent_id: int,
+        where_to_move: Optional[tuple[int, ...] | str],
+        mobility_name: str = "Walking",
     ) -> bool:
         """Check whether the move is valid.
 
         Args:
             agent_id (int): the id of the agent who wants to move.
-            where_to_move (Optional[tuple[int, ...] | str]): the target position or agent name to move to.
+            where_to_move (tuple[int, ...] | str, optional): the target position or agent name to move to.
+            mobility_name (str, optional): Mobility mode requested for the move.
 
         Returns:
             bool: whether the move is valid.
@@ -1000,9 +1158,49 @@ class Environment(Generic[ObsT]):
             - If where_to_move is None, the move is valid (agent stays in the current position).
             - If where_to_move is a string, it must be the name of an existing agent.
             - If where_to_move is a tuple, it must be within the bounds of the environment.
+            - The mobility mode must be currently available from the agent inventory.
         """
         if where_to_move is None:
             return True
+        if not isinstance(mobility_name, str):
+            self.generate_invalid_action_log(
+                agent_id=agent_id,
+                action_type="move",
+                description="The mobility field must be a string.",
+            )
+            return False
+        manager = self.get_mobility_manager()
+        try:
+            can_use_mobility = manager.can_use_mode(
+                self.agent_id2agent[agent_id].get_inventory(), mobility_name
+            )
+        except ValueError:
+            self.generate_invalid_action_log(
+                agent_id=agent_id,
+                action_type="move",
+                description=f"Unknown mobility mode '{mobility_name}'.",
+            )
+            return False
+        if not can_use_mobility:
+            missing_items = manager.get_missing_required_items(
+                self.agent_id2agent[agent_id].get_inventory(), mobility_name
+            )
+            one_cell_consumption = manager.calculate_consumption(mobility_name, 1)
+            missing_items.update(
+                manager.get_consumption_shortfall(
+                    self.agent_id2agent[agent_id].get_inventory(),
+                    one_cell_consumption,
+                )
+            )
+            self.generate_invalid_action_log(
+                agent_id=agent_id,
+                action_type="move",
+                description=(
+                    f"Mobility mode '{mobility_name}' is unavailable. "
+                    f"Missing items: {missing_items}."
+                ),
+            )
+            return False
         destination_pos: Optional[tuple[int, ...]] = self._calc_destination_pos(
             where_to_move=where_to_move
         )
@@ -1558,14 +1756,18 @@ class Environment(Generic[ObsT]):
         return valid_set_prices
 
     def _move(
-        self, agent_id: int, where_to_move: Optional[tuple[int, ...] | str] = None
+        self,
+        agent_id: int,
+        where_to_move: Optional[tuple[int, ...] | str] = None,
+        mobility_name: str = "Walking",
     ) -> None:
         """Apply move action to the environment by moving the agent one step towards the destination.
 
         Args:
             agent_id (int): the ID of the agent to move.
-            where_to_move (Optional[tuple[int, ...] | str]): the target position or agent name to move to.
+            where_to_move (tuple[int, ...] | str, optional): the target position or agent name to move to.
                 If None, the agent will stay in the current position.
+            mobility_name (str, optional): Mobility mode used for this movement.
 
         Returns:
             None.
@@ -1575,8 +1777,8 @@ class Environment(Generic[ObsT]):
             {
                 "move": tuple[int, ...] | str # <- corresponds to the where_to_move argument
             }
-            Currently, the agent can only move one step (i.e., to an adjacent cell)
-            towards the destination in one step of the environment.
+            Walking preserves one-cell movement. Other configured modes may traverse
+            several path edges and consume inventory resources in one step.
         """
         current_pos: tuple[int, ...] = self.grid_space.get_pos(agent_id=agent_id)
         if where_to_move is None:
@@ -1586,20 +1788,52 @@ class Environment(Generic[ObsT]):
         )
         if destination_pos is None:
             raise ValueError(f"Invalid move destination: {where_to_move}")
-        next_pos: Optional[tuple[int, ...]] = self.grid_space.calc_next_pos(
+        manager = self.get_mobility_manager()
+        inventory = self.agent_id2agent[agent_id].get_inventory()
+        velocity = manager.get_effective_velocity(inventory, mobility_name)
+        if velocity <= 0:
+            self._set_movement_state(agent_id=agent_id, movement_state=None)
+            return
+        path: Optional[list[tuple[int, ...]]] = self.grid_space.calc_next_path(
             current_pos=current_pos,
             destination_pos=destination_pos,
-            velocity=1,
+            velocity=velocity,
             agent_id=agent_id,
         )
-        if next_pos is None:
-            self.agent_id2is_moving[agent_id] = True
-            self.agent_id2destination[agent_id] = destination_pos
+        if path is None:
+            self._set_movement_state(
+                agent_id=agent_id,
+                movement_state=MovementState(
+                    is_moving=True,
+                    destination=destination_pos,
+                    mobility_name=mobility_name,
+                ),
+            )
             return
+        next_pos = path[-1]
+        moved_cells = len(path) - 1
         new_pos_description: Optional[str] = self.get_pos_description(
             agent_id=agent_id, pos=next_pos
         )
         self.grid_space.move_agent(agent_id=agent_id, new_pos=next_pos)
+        mobility_consumption = manager.calculate_consumption(mobility_name, moved_cells)
+        for item_name, item_amount in mobility_consumption.items():
+            self.agent_id2agent[agent_id].exchange_goods(
+                give_item_name=item_name,
+                give_item_amount=item_amount,
+            )
+        if mobility_consumption:
+            consumption_log = MobilityConsumptionLog(
+                time=self.get_time(),
+                time_step=self.get_time_step(),
+                agent_id=agent_id,
+                mobility_name=mobility_name,
+                consumption=mobility_consumption,
+            )
+            self.remember_log(consumption_log)
+            self.event_manager.trigger_events_after_log(log=consumption_log, env=self)
+            if self.logger is not None:
+                consumption_log.read_and_write(logger=self.logger)
         log: MoveLog = MoveLog(
             time=self.get_time(),
             time_step=self.get_time_step(),
@@ -1608,17 +1842,24 @@ class Environment(Generic[ObsT]):
             new_pos=next_pos,
             new_pos_description=new_pos_description,
             init_pos=self.agent_id2initial_coords[agent_id],
+            mobility_name=mobility_name,
+            moved_cells=moved_cells,
         )
         self.remember_log(log)
         self.event_manager.trigger_events_after_log(log=log, env=self)
         if self.logger is not None:
             log.read_and_write(logger=self.logger)
         if next_pos == destination_pos:
-            self.agent_id2is_moving[agent_id] = False
-            self.agent_id2destination[agent_id] = None
+            self._set_movement_state(agent_id=agent_id, movement_state=None)
         else:
-            self.agent_id2is_moving[agent_id] = True
-            self.agent_id2destination[agent_id] = destination_pos
+            self._set_movement_state(
+                agent_id=agent_id,
+                movement_state=MovementState(
+                    is_moving=True,
+                    destination=destination_pos,
+                    mobility_name=mobility_name,
+                ),
+            )
 
     def _calc_destination_pos(
         self, where_to_move: tuple[int, ...] | str
@@ -2322,7 +2563,14 @@ class Environment(Generic[ObsT]):
             obs_providers.update(self._obs4co_located_agents_providers)
         keys_to_request: list[str] = agent.request_obs()
         if "all" in keys_to_request:
-            keys_to_request = list(obs_providers.keys())
+            explicitly_requested_keys = [key for key in keys_to_request if key != "all"]
+            legacy_movement_keys = {"self_is_moving", "self_destination"}
+            keys_to_request = [
+                key for key in obs_providers if key not in legacy_movement_keys
+            ]
+            keys_to_request.extend(
+                key for key in explicitly_requested_keys if key not in keys_to_request
+            )
         observation: dict[str, Any] = {}
         for key in keys_to_request:
             if key not in obs_providers:
@@ -2366,6 +2614,8 @@ class Environment(Generic[ObsT]):
             "self_init_pos": SelfInitPosProvider(env=self),
             "self_is_moving": SelfIsMovingProvider(env=self),
             "self_destination": SelfDestinationProvider(env=self),
+            "movement_state": MovementStateProvider(env=self),
+            "available_mobility": AvailableMobilityProvider(env=self),
             "others_pos": OthersPosProvider(env=self),
             "nearby_agents": NearbyAgentsProvider(env=self),
             "nearby_info": NearbyInfoProvider(env=self),

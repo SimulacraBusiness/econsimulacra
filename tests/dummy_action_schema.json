@@ -12,13 +12,11 @@
         },
         "move": {
             "anyOf": [
-                {
-                    "type": "array",
-                    "items": {"type": "integer"}
-                },
+                {"type": "array", "items": {"type": "integer"}},
                 {"type": "null"}
             ]
         },
+        "mobility": {"type": "string", "enum": ["Walking"]},
         "consumptions": {
             "type": "array",
             "items": {
@@ -96,22 +94,13 @@
         },
         "inner_thought": {"type": "string"},
         "tweet": {"anyOf": [{"type": "string"}, {"type": "null"}]},
-        "follow": {
-            "anyOf": [
-                {"type": "integer", "minimum": 0},
-                {"type": "null"}
-            ]
-        },
-        "unfollow": {
-            "anyOf": [
-                {"type": "integer", "minimum": 0},
-                {"type": "null"}
-            ]
-        }
+        "follow": {"anyOf": [{"type": "integer", "minimum": 0}, {"type": "null"}]},
+        "unfollow": {"anyOf": [{"type": "integer", "minimum": 0}, {"type": "null"}]}
     },
     "required": [
         "sleep_duration",
         "move",
+        "mobility",
         "consumptions",
         "orders",
         "proposals",

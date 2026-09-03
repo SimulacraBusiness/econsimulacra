@@ -1,4 +1,10 @@
-from econsimulacra.logs import AgentGenerationLog, DictLogger, MoveLog
+from econsimulacra.logs import (
+    AgentGenerationLog,
+    DictLogger,
+    MobilityConsumptionLog,
+    MoveLog,
+    MovementInterruptedLog,
+)
 
 
 class DummyLogger(DictLogger):
@@ -88,3 +94,46 @@ class TestDictLogger:
                 "tag": "movement",
             },
         ]
+
+    def test_mobility_logs_serialize_isolated_values(self) -> None:
+        """Test movement metadata and dedicated mobility event serialization.
+
+        Args:
+            None.
+
+        Returns:
+            None.
+
+        Note:
+            Mutating constructor dictionaries after logging does not alter events.
+        """
+        consumption = {"Electricity": 1.0}
+        missing_items = {"Electricity": 0.1}
+        move_log = MoveLog(
+            time=1,
+            time_step=1,
+            agent_id=1,
+            old_pos=(0, 0),
+            new_pos=(10, 0),
+            new_pos_description=None,
+            init_pos=(0, 0),
+            mobility_name="ElectricCar",
+            moved_cells=10,
+        )
+        consumption_log = MobilityConsumptionLog(1, 1, 1, "ElectricCar", consumption)
+        interruption_log = MovementInterruptedLog(
+            2,
+            2,
+            1,
+            (15, 0),
+            "ElectricCar",
+            "mobility_unavailable",
+            missing_items,
+        )
+        consumption["Electricity"] = 5
+        missing_items["Electricity"] = 5
+
+        assert move_log.to_dict()["mobility_name"] == "ElectricCar"
+        assert move_log.to_dict()["moved_cells"] == 10
+        assert consumption_log.consumption == {"Electricity": 1.0}
+        assert interruption_log.missing_items == {"Electricity": 0.1}
