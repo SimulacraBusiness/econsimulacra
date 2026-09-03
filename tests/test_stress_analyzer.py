@@ -114,9 +114,7 @@ def test_high_stress_metrics_use_configured_scale_and_threshold() -> None:
     """
     analyzer = StressAnalyzer(max_stress=10.0, high_stress_threshold=0.5)
 
-    exposure, persistence = analyzer._calc_high_stress_metrics(
-        {0: 6.0, 1: 7.0}
-    )
+    exposure, persistence = analyzer._calc_high_stress_metrics({0: 6.0, 1: 7.0})
 
     assert exposure == pytest.approx(0.15)
     assert persistence == pytest.approx(5.0 / 3.0)
@@ -136,9 +134,7 @@ def test_high_stress_metrics_clamp_normalized_values() -> None:
     """
     analyzer = StressAnalyzer(max_stress=100.0, high_stress_threshold=0.7)
 
-    exposure, persistence = analyzer._calc_high_stress_metrics(
-        {0: -10.0, 1: 120.0}
-    )
+    exposure, persistence = analyzer._calc_high_stress_metrics({0: -10.0, 1: 120.0})
 
     assert exposure == pytest.approx(0.15)
     assert persistence == pytest.approx(1.0)
