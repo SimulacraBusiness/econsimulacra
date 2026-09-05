@@ -101,6 +101,15 @@ class VLLMClient(LLMClient):
                     Python module used to launch the vLLM server.
                 - vllmArgs (list[str]):
                     Additional command-line arguments passed directly to vLLM.
+                - vllmEnv (dict[str, str]):
+                    Environment variables passed only to the vLLM server process.
+                    This is useful for hardware-specific backend selection, e.g.
+                    {"VLLM_USE_V1": "0", "VLLM_ATTENTION_BACKEND": "XFORMERS"}
+                    for Volta GPUs with vLLM 0.10.x.
+                - hfOverrides (dict[str, Any]):
+                    Hugging Face model configuration overrides serialized for
+                    vLLM's --hf-overrides option. This can expose the language
+                    decoder of a multimodal checkpoint as a causal LM.
                 # Client-side configuration
                 - "llmRecordSavePath": path to save the generated prompts (optional, for debugging purposes).
                 - "saveNumTokens": whether to save the number of tokens in the generated response (optional, default is False).
@@ -168,6 +177,10 @@ class VLLMClient(LLMClient):
             raise FileNotFoundError(f"vllmPython not found: {self.vllm_python!r}")
         env: dict[str, str] = os.environ.copy()
         env["CUDA_VISIBLE_DEVICES"] = ",".join(str(gid) for gid in self.gpu_ids)
+        vllm_env = self.config.get("vllmEnv", {})
+        if not isinstance(vllm_env, dict):
+            raise TypeError("VLLMClient 'vllmEnv' must be a dictionary.")
+        env.update({str(key): str(value) for key, value in vllm_env.items()})
         cmd: list[str] = [
             self.vllm_python,
             "-m",
@@ -200,6 +213,12 @@ class VLLMClient(LLMClient):
             cmd.extend(["--served-model-name", self.served_model_name])
         if self.quantization is not None:
             cmd.extend(["--quantization", self.quantization])
+
+        hf_overrides = self.config.get("hfOverrides")
+        if hf_overrides is not None:
+            if not isinstance(hf_overrides, dict):
+                raise TypeError("VLLMClient 'hfOverrides' must be a dictionary.")
+            cmd.extend(["--hf-overrides", json.dumps(hf_overrides)])
 
         cmd.extend(list(self.config.get("vllmArgs", [])))
         return cmd, env
@@ -257,11 +276,16 @@ class VLLMClient(LLMClient):
                     except Exception:
                         pass
                 self.close()
+                error_details = (
+                    f"Server log: {os.path.abspath(self.server_log_path)}\n"
+                    if self.server_log_path is not None
+                    else f"stderr:\n{stderr_text}"
+                )
                 raise RuntimeError(
                     "Failed to start vLLM server.\n"
                     f"Command: {' '.join(cmd)}\n"
                     f"Return code: {retcode}\n"
-                    f"stderr:\n{stderr_text}"
+                    f"{error_details}"
                 )
             time.sleep(1.0)
 
