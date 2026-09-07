@@ -40,7 +40,8 @@ class ConstantSalary(Event):
                             "with": ["AgentGenerationLog"],
                             "every": 60
                         },
-                        "unpaidAgentNames": ["Retailer", "Restaurant", "Government"]
+                        "unpaidAgentNames": ["Retailer", "Restaurant", "Government"],
+                        "salaryRatio": 0.1
                     }
 
         Note:
@@ -50,6 +51,10 @@ class ConstantSalary(Event):
         self._validate_trigger(trigger)
         if "unpaidAgentNames" not in config:
             raise ValueError("unpaidAgentNames not found in config.")
+        if "salaryRatio" in config:
+            self.salary_ratio: float = config["salaryRatio"]
+        else:
+            self.salary_ratio: float = 1.0
         self.unpaid_agent_names: list[str] = config["unpaidAgentNames"]
         self.agent_id2salary: dict[int, float] = {}
 
@@ -103,4 +108,4 @@ class ConstantSalary(Event):
                         is_unpaid = True
                         break
                 if not is_unpaid:
-                    agent.inventory_dic[cash_name] += salary
+                    agent.inventory_dic[cash_name] += salary * self.salary_ratio

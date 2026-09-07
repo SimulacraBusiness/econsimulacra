@@ -40,7 +40,8 @@ class ConstantSupply(Event):
                             "with": ["AgentGenerationLog"],
                             "every": 60
                         },
-                        "suppliedAgentNames": ["Daily Mart", "QuickBite"]
+                        "suppliedAgentNames": ["Daily Mart", "QuickBite"],
+                        "supplyRatio": 0.1
                     }
 
         Note:
@@ -50,6 +51,10 @@ class ConstantSupply(Event):
         self._validate_trigger(trigger)
         if "suppliedAgentNames" not in config:
             raise ValueError("suppliedAgentNames not found in config.")
+        if "supplyRatio" in config:
+            self.supply_ratio: float = config["supplyRatio"]
+        else:
+            self.supply_ratio: float = 1.0
         self.supplied_agent_names: list[str] = config["suppliedAgentNames"]
         self.agent_id2supply_dic: dict[int, dict[str, float]] = {}
 
@@ -106,5 +111,6 @@ class ConstantSupply(Event):
                 agent = env.agent_id2agent[agent_id]
                 for item_name, supply_amount in supply_dic.items():
                     agent.inventory_dic[item_name] = (
-                        agent.inventory_dic.get(item_name, 0.0) + supply_amount
+                        agent.inventory_dic.get(item_name, 0.0)
+                        + supply_amount * self.supply_ratio
                     )
