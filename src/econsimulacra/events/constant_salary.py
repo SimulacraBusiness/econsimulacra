@@ -51,10 +51,11 @@ class ConstantSalary(Event):
         self._validate_trigger(trigger)
         if "unpaidAgentNames" not in config:
             raise ValueError("unpaidAgentNames not found in config.")
+        self.salary_ratio: float
         if "salaryRatio" in config:
-            self.salary_ratio: float = config["salaryRatio"]
+            self.salary_ratio = float(config["salaryRatio"])
         else:
-            self.salary_ratio: float = 1.0
+            self.salary_ratio = 1.0
         self.unpaid_agent_names: list[str] = config["unpaidAgentNames"]
         self.agent_id2salary: dict[int, float] = {}
 

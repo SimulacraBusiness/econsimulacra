@@ -51,10 +51,11 @@ class ConstantSupply(Event):
         self._validate_trigger(trigger)
         if "suppliedAgentNames" not in config:
             raise ValueError("suppliedAgentNames not found in config.")
+        self.supply_ratio: float
         if "supplyRatio" in config:
-            self.supply_ratio: float = config["supplyRatio"]
+            self.supply_ratio = float(config["supplyRatio"])
         else:
-            self.supply_ratio: float = 1.0
+            self.supply_ratio = 1.0
         self.supplied_agent_names: list[str] = config["suppliedAgentNames"]
         self.agent_id2supply_dic: dict[int, dict[str, float]] = {}
 
