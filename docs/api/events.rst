@@ -22,6 +22,16 @@ Built-in Events
    :undoc-members:
    :show-inheritance:
 
+.. automodule:: econsimulacra.events.dynamic_supply
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: econsimulacra.events.keep_out
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 .. automodule:: econsimulacra.events.consumption_tax
    :members:
    :undoc-members:

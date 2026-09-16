@@ -27,6 +27,7 @@ of agents.
    guide/quickstart
    guide/configuration
    guide/rule_based_household
+   guide/behavioral_coherence_interventions
    guide/architecture
    guide/demo
 

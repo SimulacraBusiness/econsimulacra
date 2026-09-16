@@ -169,6 +169,30 @@ raises ``ValueError`` if the model exceeds ``maxModelParameters``. Setting that
 limit to ``1000000000`` enforces the intended maximum of one billion
 parameters. The baseline uses ``SmolLM2-360M-Instruct``.
 
+Candidate tweet interventions
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+An experiment may replace ordinarily generated tweet text with a line from a
+plain-text candidate file during a configured step range:
+
+.. code-block:: json
+
+   "candidateTweetIntervention": {
+       "path": "tweet_candidates/positive_information.txt",
+       "startStep": 144,
+       "endStep": 720,
+       "probability": 0.5
+   }
+
+The path is read when the household is initialized. Blank lines and lines
+starting with ``#`` are ignored; every remaining line must fit the configured
+``tweet.maxCharacters`` limit. The active interval is half-open. The
+probability is conditional on the normal Hawkes process already deciding to
+tweet, so this option changes content without increasing posting frequency.
+The immediately preceding exact tweet is excluded when another candidate is
+available. Candidate tweets are recorded normally and contribute the same
+Hawkes self-excitation as generated tweets.
+
 Memory used by SNS rules
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
