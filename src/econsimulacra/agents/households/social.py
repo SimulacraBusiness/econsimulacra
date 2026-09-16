@@ -3,6 +3,7 @@ from __future__ import annotations
 import math
 import re
 from dataclasses import dataclass
+from pathlib import Path
 from random import Random
 from typing import TYPE_CHECKING, Any, Literal, Optional, TypeAlias
 
@@ -147,6 +148,7 @@ class _SocialMediaPolicyRules:
         self.max_memory_excerpt_characters = int(
             tweet_rule.get("maxMemoryExcerptCharacters", 320)
         )
+        self.max_tweet_characters = int(tweet_rule.get("maxCharacters", 140))
         if self.base_intensity < 0 or self.self_excitation < 0:
             raise ValueError("Hawkes intensities must be nonnegative.")
         if self.memory_excitation < 0 or self.stress_excitation_scale < 0:
@@ -155,6 +157,16 @@ class _SocialMediaPolicyRules:
             raise ValueError("Hawkes decayRate must be positive.")
         if self.max_memory_excerpt_characters <= 0:
             raise ValueError("maxMemoryExcerptCharacters must be positive.")
+        if self.max_tweet_characters <= 0:
+            raise ValueError("maxCharacters must be positive.")
+
+        self.candidate_tweets: tuple[str, ...] = ()
+        self.candidate_tweet_start_step = 0
+        self.candidate_tweet_end_step = 0
+        self.candidate_tweet_probability = 0.0
+        candidate_config = config.get("candidateTweetIntervention")
+        if candidate_config is not None:
+            self._configure_candidate_tweets(candidate_config)
 
         self.topic_priority: tuple[TweetTopic, ...] = tuple(
             config.get(
@@ -183,6 +195,98 @@ class _SocialMediaPolicyRules:
                 "negativeKeywords", ("hate", "scam", "spam", "嫌い", "詐欺")
             )
         )
+
+    def _configure_candidate_tweets(self, config: Any) -> None:
+        """Load and validate an optional candidate-tweet intervention.
+
+        Args:
+            config: Mapping with ``path``, ``startStep``, ``endStep``, and
+                ``probability``.
+
+        Returns:
+            None.
+
+        Note:
+            Candidate text is loaded once per household. Empty lines and lines
+            beginning with ``#`` are ignored.
+        """
+        if not isinstance(config, dict):
+            raise TypeError("candidateTweetIntervention must be a mapping.")
+        required_keys = ("path", "startStep", "endStep", "probability")
+        for key in required_keys:
+            if key not in config:
+                raise ValueError(f"candidateTweetIntervention requires {key!r}.")
+        start_step = config["startStep"]
+        end_step = config["endStep"]
+        probability = config["probability"]
+        if (
+            not isinstance(start_step, int)
+            or isinstance(start_step, bool)
+            or start_step < 0
+        ):
+            raise ValueError("candidate tweet startStep must be nonnegative integer.")
+        if (
+            not isinstance(end_step, int)
+            or isinstance(end_step, bool)
+            or end_step <= start_step
+        ):
+            raise ValueError("candidate tweet endStep must be greater than startStep.")
+        if isinstance(probability, bool) or not isinstance(probability, (int, float)):
+            raise TypeError("candidate tweet probability must be numeric.")
+        probability = float(probability)
+        if not 0.0 <= probability <= 1.0:
+            raise ValueError("candidate tweet probability must be between 0 and 1.")
+        path = Path(config["path"])
+        candidates = tuple(
+            line
+            for raw_line in path.read_text(encoding="utf-8").splitlines()
+            if (line := raw_line.strip()) and not line.startswith("#")
+        )
+        if not candidates:
+            raise ValueError(f"Candidate tweet file {path} has no usable lines.")
+        if any(len(candidate) > self.max_tweet_characters for candidate in candidates):
+            raise ValueError(
+                "Candidate tweets must not exceed configured maxCharacters."
+            )
+        self.candidate_tweets = candidates
+        self.candidate_tweet_start_step = start_step
+        self.candidate_tweet_end_step = end_step
+        self.candidate_tweet_probability = probability
+
+    def select_candidate_tweet(
+        self,
+        context: DecisionContext,
+        previous_tweet: Optional[str],
+    ) -> Optional[str]:
+        """Select an intervention candidate for an occurring tweet event.
+
+        Args:
+            context: Current decision context containing the simulation step.
+            previous_tweet: Agent's latest tweet, used to avoid exact repetition.
+
+        Returns:
+            Selected candidate, or ``None`` when normal rendering should be used.
+
+        Note:
+            The probability is conditional on the ordinary Hawkes process having
+            already produced a tweet event. It does not increase tweet frequency.
+        """
+        if not (
+            self.candidate_tweet_start_step
+            <= context.time_step
+            < self.candidate_tweet_end_step
+        ):
+            return None
+        if self.prng.random() >= self.candidate_tweet_probability:
+            return None
+        candidates = tuple(
+            candidate
+            for candidate in self.candidate_tweets
+            if candidate != (previous_tweet or "").strip()
+        )
+        if not candidates:
+            return None
+        return self.prng.choice(candidates)
 
     def generate_social_decision(
         self,

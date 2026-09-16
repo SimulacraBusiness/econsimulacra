@@ -648,11 +648,17 @@ class SocialMediaPolicy(_SocialMediaPolicyRules, SupplementalPolicy):
             fragment["follow"] = decision.follow_agent_id
         if decision.unfollow_agent_id is not None:
             fragment["unfollow"] = decision.unfollow_agent_id
-        if decision.tweet_intent is not None and self.tweet_renderer is not None:
-            tweet = await self.tweet_renderer.generate_tweet(
-                intent=decision.tweet_intent,
-                previous_tweet=context.obs.get("self_tweet"),
+        if decision.tweet_intent is not None:
+            previous_tweet = context.obs.get("self_tweet")
+            tweet = self.select_candidate_tweet(
+                context=context,
+                previous_tweet=previous_tweet,
             )
+            if tweet is None and self.tweet_renderer is not None:
+                tweet = await self.tweet_renderer.generate_tweet(
+                    intent=decision.tweet_intent,
+                    previous_tweet=previous_tweet,
+                )
             if tweet is not None:
                 fragment["tweet"] = tweet
                 self.record_generated_tweet(decision.tweet_intent)

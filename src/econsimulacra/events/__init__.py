@@ -6,6 +6,8 @@ from .base import (
 from .constant_salary import ConstantSalary
 from .constant_supply import ConstantSupply
 from .consumption_tax import ConsumptionTax
+from .dynamic_supply import DynamicSupply
+from .keep_out import KeepOut
 from .subsidy4specific_order import Subsidy4SpecificOrder
 
 __all__ = [
@@ -15,5 +17,7 @@ __all__ = [
     "ConstantSalary",
     "ConstantSupply",
     "ConsumptionTax",
+    "DynamicSupply",
+    "KeepOut",
     "Subsidy4SpecificOrder",
 ]

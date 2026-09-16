@@ -281,12 +281,32 @@ policies.
      - built-in tuple
      - Case-insensitive substrings that make a visible followee eligible for
        unfollowing.
+   * - ``candidateTweetIntervention.path``
+     - —
+     - Plain-text file containing one candidate tweet per non-empty,
+       non-comment line.
+   * - ``candidateTweetIntervention.startStep``
+     - —
+     - Inclusive first step at which candidate replacement is active.
+   * - ``candidateTweetIntervention.endStep``
+     - —
+     - Exclusive step at which candidate replacement stops.
+   * - ``candidateTweetIntervention.probability``
+     - —
+     - Conditional probability of replacing an ordinarily generated tweet
+       with a candidate, in the inclusive range ``[0, 1]``.
 
 Tweet timing has no minimum-interval option. It is governed by a Hawkes
 process, so adjacent-step posts and bursts remain possible. The policy consumes
 the existing recommender's ``recommended_follows`` output and does not alter
 ``recSys`` or its temperature behavior. See :doc:`rule_based_household` for the
 equations and a complete configuration.
+
+Candidate replacement does not create an additional tweet opportunity. The
+Hawkes process first decides whether a tweet occurs, then the configured
+probability selects either a candidate line or normal text generation. A
+successfully selected candidate is recorded like any other tweet and therefore
+retains normal self-excitation behavior.
 
 Plain-text Transformers service
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -365,3 +385,71 @@ Event Configuration
      -
      - Probability :math:`p \in [0, 1]` with which the event fires on
        each eligible step.  Defaults to ``1.0``.
+
+Dynamic supply
+~~~~~~~~~~~~~~
+
+``DynamicSupply`` changes replenishment by simulation time while retaining the
+initial-inventory semantics of ``ConstantSupply``. Each ``supplies`` interval
+is half-open (``start <= time < end``), and intervals must not overlap.
+
+.. code-block:: json
+
+   "dynamicSupply": {
+       "type": "DynamicSupply",
+       "trigger": {
+           "with": ["AgentGenerationLog"],
+           "every": 24
+       },
+       "suppliedAgentNames": ["Daily Mart"],
+       "supplies": [
+           {
+               "start": "2025-03-01 07:00:00",
+               "end": "2025-03-07 07:00:00",
+               "supplyRatio": 0.5
+           },
+           {
+               "start": "2025-03-07 07:00:00",
+               "end": "2025-03-31 07:00:00",
+               "supplyRatio": 0.25
+           }
+       ]
+   }
+
+Each interval requires exactly one supply mode:
+
+* ``supplyRatio`` adds that fraction of the targeted agent's captured initial
+  non-cash inventory; or
+* ``itemAmounts`` adds fixed quantities and can introduce an item whose initial
+  inventory was zero or absent.
+
+The trigger must include ``AgentGenerationLog`` in ``with`` and at least one of
+``every`` or ``at``. ``at`` and ``every`` may be combined for an exact product
+launch followed by periodic replenishment. Do not specify ``between`` because
+``supplies`` controls activation.
+
+Scheduled keep-out areas
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+``KeepOut`` makes configured grid cells non-traversable during half-open time
+intervals and restores each cell's original state afterward.
+
+.. code-block:: json
+
+   "keepOutCommonSpace": {
+       "type": "KeepOut",
+       "trigger": {"every": 1},
+       "positions": [[4, 5], [4, 6], [5, 5], [5, 6]],
+       "keepOuts": [
+           {
+               "start": "2025-03-07 07:00:00",
+               "end": "2025-03-31 07:00:00"
+           }
+       ]
+   }
+
+The event changes only traversal access: it preserves spawnability and custom
+cell attributes. An agent already in a cell when it closes may leave, but it
+cannot re-enter while the interval is active. ``every: 1`` is recommended so
+both interval boundaries take effect at the intended step. Log triggers and
+``between`` are not supported.
