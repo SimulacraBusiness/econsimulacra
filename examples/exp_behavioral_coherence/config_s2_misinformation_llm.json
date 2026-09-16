@@ -1,0 +1,722 @@
+{
+    "simulation": {
+        "numSteps": 720,
+        "parallelBatchSize": 32,
+        "events": ["constantSalary", "constantSupply"]
+    },
+    "environment": {
+        "space": "gridSpace",
+        "socialNetwork": "socialNetwork",
+        "cashName": "Yen",
+        "agents": [
+            "Retailer",
+            "lowRestaurant",
+            "medRestaurant",
+            "highRestaurant",
+            "carDealer",
+            "gasStation",
+            "Household",
+            "LLMHousehold"
+        ],
+        "items": [
+            "Yen",
+            "Rice",
+            "Eggs",
+            "Milk",
+            "Bread",
+            "Ramen",
+            "Curry rice",
+            "Bento",
+            "Pasta",
+            "Casual dinner set",
+            "Sushi",
+            "Course meals",
+            "Wagyu beef steak",
+            "Wine",
+            "GasolineCar",
+            "Gasoline"
+        ],
+        "service": [
+            "timeTranslator",
+            "sleepManager",
+            "memoryHandler",
+            "tweetTextClient",
+            "mobilityManager",
+            "promptBuilder",
+            "llmClient"
+        ]
+    },
+    "gridSpace": {
+        "type": "GridSpace",
+        "gridSize": [9, 15],
+        "cells": [
+            {
+                "pos": [4, 5],
+                "access": {"spawnable": false},
+                "attrs": {"kind": "common_space"}
+            },
+            {
+                "pos": [4, 6],
+                "access": {"spawnable": false},
+                "attrs": {"kind": "common_space"}
+            },
+            {
+                "pos": [5, 5],
+                "access": {"spawnable": false},
+                "attrs": {"kind": "common_space"}
+            },
+            {
+                "pos": [5, 6],
+                "access": {"spawnable": false},
+                "attrs": {"kind": "common_space"}
+            }
+        ]
+    },
+    "socialNetwork": {
+        "type": "SocialNetwork",
+        "followCap": 5,
+        "recSys": {
+            "type": "TwoHopRecommenderSystem",
+            "maxRecommendations": 2,
+            "isRandomized": true,
+            "temperature": 0.4
+        }
+    },
+    "Household": {
+        "type": "RuleBasedHousehold",
+        "name": "Household",
+        "isRichInfoAllowed": false,
+        "isHousehold": true,
+        "numAgents": 58,
+        "inventory": {
+            "Yen": {"expon": [100000]},
+            "Rice": {"expon": [1]},
+            "Eggs": {"expon": [1]},
+            "Milk": {"expon": [1]},
+            "Bread": {"expon": [1]},
+            "Ramen": {"expon": [1]},
+            "Curry rice": {"expon": [1]},
+            "Bento": {"expon": [1]},
+            "Pasta": {"expon": [1]},
+            "Casual dinner set": {"expon": [1]},
+            "Sushi": {"expon": [1]},
+            "Course meals": {"expon": [1]},
+            "Wagyu beef steak": {"expon": [1]},
+            "Wine": {"expon": [1]},
+            "GasolineCar": {"uniform": [0, 1]},
+            "Gasoline": {"uniform": [5, 20]}
+        },
+        "disabledActions": [],
+        "requestObs": ["all"],
+        "provideInfo4AllAgents": [],
+        "provideInfo4CoLocatedAgents": [],
+        "provideInfo4AllowedAgents": [],
+        "personaConfig": {},
+        "socialRule": {
+            "enabled": true,
+            "tweet": {
+                "textGeneratorService": "tweetTextClient",
+                "baseIntensity": 0.003,
+                "selfExcitation": 0.15,
+                "decayRate": 0.8,
+                "memoryExcitation": 0.001,
+                "stressExcitationScale": 5e-06,
+                "maxMemoryExcerptCharacters": 320,
+                "language": "English",
+                "maxCharacters": 280
+            },
+            "follow": {
+                "probability": 0.001,
+                "cooldownSteps": 24
+            },
+            "unfollow": {
+                "probability": 0.0002,
+                "cooldownSteps": 48,
+                "emptyTweetSteps": 168
+            },
+            "topicPriority": [
+                "health",
+                "finances",
+                "shopping",
+                "social",
+                "consumption",
+                "mobility",
+                "daily_life"
+            ],
+            "candidateTweetIntervention": {
+                "path": "tweet_candidates/s2_retailer_stockout.txt",
+                "startStep": 144,
+                "endStep": 720,
+                "probability": 0.5
+            }
+        },
+        "cashName": "Yen",
+        "foodItems": [
+            "Rice",
+            "Eggs",
+            "Milk",
+            "Bread",
+            "Ramen",
+            "Curry rice",
+            "Bento",
+            "Pasta",
+            "Casual dinner set",
+            "Sushi",
+            "Course meals",
+            "Wagyu beef steak",
+            "Wine"
+        ],
+        "shoppingItems": [
+            "Rice",
+            "Eggs",
+            "Milk",
+            "Bread",
+            "Ramen",
+            "Curry rice",
+            "Bento",
+            "Pasta",
+            "Casual dinner set",
+            "Sushi",
+            "Course meals",
+            "Wagyu beef steak",
+            "Wine",
+            "GasolineCar",
+            "Gasoline"
+        ],
+        "startHour": 7,
+        "stepHours": 1,
+        "sleepRule": {
+            "initialPressure": 0.35,
+            "lowerAsymptote": 0.05,
+            "upperAsymptote": 1,
+            "tauWakeHours": 18,
+            "tauSleepHours": 4,
+            "circadianAmplitude": 0.26,
+            "circadianPhaseHour": 2,
+            "onsetThreshold": 0.78,
+            "wakeThreshold": 0.3,
+            "maxSleepSteps": 10
+        },
+        "mealRule": {
+            "initialHunger": 0.25,
+            "awakeHungerRate": 0.04,
+            "sleepHungerRate": 0.015,
+            "mealCenters": [8, 13, 19],
+            "mealSignalWidthHours": 1.0,
+            "mealSignalWeight": 0.6,
+            "mealThreshold": 0.68,
+            "criticalHunger": 0.95,
+            "minMealIntervalHours": 3,
+            "composition": {
+                "Rice": 0.3,
+                "Eggs": 0.15,
+                "Milk": 0.15,
+                "Bread": 0.2,
+                "Ramen": 0.04,
+                "Curry rice": 0.04,
+                "Bento": 0.04,
+                "Pasta": 0.02,
+                "Casual dinner set": 0.02,
+                "Sushi": 0.01,
+                "Course meals": 0.005,
+                "Wagyu beef steak": 0.005,
+                "Wine": 0.02
+            },
+            "energyPerUnit": {
+                "Rice": 1,
+                "Eggs": 1,
+                "Milk": 1,
+                "Bread": 1,
+                "Ramen": 1,
+                "Curry rice": 1,
+                "Bento": 1,
+                "Pasta": 1,
+                "Casual dinner set": 1,
+                "Sushi": 1,
+                "Course meals": 1,
+                "Wagyu beef steak": 1,
+                "Wine": 1
+            }
+        },
+        "sSinventoryRule": {
+            "reorderPoints": {
+                "Rice": 1,
+                "Eggs": 1,
+                "Milk": 1,
+                "Bread": 1,
+                "Ramen": 1,
+                "Curry rice": 1,
+                "Bento": 1,
+                "Pasta": 1,
+                "Casual dinner set": 1,
+                "Sushi": 0,
+                "Course meals": 0,
+                "Wagyu beef steak": 0,
+                "Wine": 0,
+                "GasolineCar": 0.49,
+                "Gasoline": 5
+            },
+            "targetStocks": {
+                "Rice": 4,
+                "Eggs": 4,
+                "Milk": 4,
+                "Bread": 4,
+                "Ramen": 2,
+                "Curry rice": 2,
+                "Bento": 2,
+                "Pasta": 2,
+                "Casual dinner set": 2,
+                "Sushi": 1,
+                "Course meals": 1,
+                "Wagyu beef steak": 1,
+                "Wine": 1,
+                "GasolineCar": 1.5,
+                "Gasoline": 20
+            }
+        },
+        "budgetRule": {
+            "cashReserve": 20000,
+            "maxBasketShare": 0.15
+        },
+        "pricePriors": {
+            "Rice": 500,
+            "Eggs": 250,
+            "Milk": 220,
+            "Bread": 180,
+            "Ramen": 800,
+            "Curry rice": 850,
+            "Bento": 850,
+            "Pasta": 2000,
+            "Casual dinner set": 2500,
+            "Sushi": 5000,
+            "Course meals": 15000,
+            "Wagyu beef steak": 20000,
+            "Wine": 4000,
+            "GasolineCar": 8000,
+            "Gasoline": 180
+        },
+        "itemImportance": {
+            "Rice": 3,
+            "Eggs": 3,
+            "Milk": 3,
+            "Bread": 3,
+            "Ramen": 1,
+            "Curry rice": 1,
+            "Bento": 1,
+            "Pasta": 0.75,
+            "Casual dinner set": 0.75,
+            "Sushi": 0.25,
+            "Course meals": 0.25,
+            "Wagyu beef steak": 0.25,
+            "Wine": 0.25,
+            "GasolineCar": 1.5,
+            "Gasoline": 2
+        },
+        "storeChoice": {
+            "betaPrice": 10,
+            "betaAvailability": 6,
+            "betaBudgetPressure": 1,
+            "betaDistance": 0.2,
+            "initialAvailability": 0.5,
+            "beliefLearningRate": 0.5,
+            "priceLearningRate": 0.5,
+            "availabilityLearningRate": 1.0
+        }
+    },
+    "LLMHousehold": {
+        "type": "LLMAgent",
+        "name": "LLM Household",
+        "isRichInfoAllowed": false,
+        "isHousehold": true,
+        "numAgents": 1,
+        "inventory": {
+            "Yen": 300000,
+            "Rice": 1,
+            "Eggs": 1,
+            "Milk": 1,
+            "Bread": 1,
+            "Ramen": 0,
+            "Curry rice": 0,
+            "Bento": 0,
+            "Pasta": 0,
+            "Casual dinner set": 0,
+            "Sushi": 0,
+            "Course meals": 0,
+            "Wagyu beef steak": 0,
+            "Wine": 0,
+            "GasolineCar": 0,
+            "Gasoline": 0
+        },
+        "requestObs": ["all"],
+        "provideInfo4AllAgents": [],
+        "provideInfo4CoLocatedAgents": [],
+        "provideInfo4AllowedAgents": []
+    },
+    "Retailer": {
+        "type": "RuleBasedRetailer",
+        "name": "Daily Mart",
+        "isRichInfoAllowed": true,
+        "isHousehold": false,
+        "initialCoords": [5, 8],
+        "numAgents": 1,
+        "inventory": {
+            "Yen": 0,
+            "Rice": 36,
+            "Eggs": 26,
+            "Milk": 26,
+            "Bread": 30
+        },
+        "disabledActions": [],
+        "requestObs": ["self_inventory", "incoming_orders"],
+        "provideInfo4CoLocatedAgents": ["inventory"],
+        "provideInfo4AllAgents": ["self_pos"],
+        "provideInfo4AllowedAgents": [],
+        "personaConfig": {}
+    },
+    "lowRestaurant": {
+        "type": "RuleBasedRetailer",
+        "name": "QuickBite",
+        "isRichInfoAllowed": true,
+        "isHousehold": false,
+        "initialCoords": [5, 3],
+        "numAgents": 1,
+        "inventory": {
+            "Yen": 0,
+            "Ramen": 4,
+            "Curry rice": 4,
+            "Bento": 4
+        },
+        "disabledActions": [],
+        "requestObs": ["self_inventory", "incoming_orders"],
+        "provideInfo4CoLocatedAgents": ["inventory"],
+        "provideInfo4AllAgents": ["self_pos"],
+        "provideInfo4AllowedAgents": [],
+        "personaConfig": {}
+    },
+    "medRestaurant": {
+        "type": "RuleBasedRetailer",
+        "name": "TableHouse",
+        "isRichInfoAllowed": true,
+        "isHousehold": false,
+        "initialCoords": [5, 11],
+        "numAgents": 1,
+        "inventory": {
+            "Yen": 0,
+            "Pasta": 4,
+            "Casual dinner set": 4
+        },
+        "disabledActions": [],
+        "requestObs": ["self_inventory", "incoming_orders"],
+        "provideInfo4CoLocatedAgents": ["inventory"],
+        "provideInfo4AllAgents": ["self_pos"],
+        "provideInfo4AllowedAgents": [],
+        "personaConfig": {}
+    },
+    "highRestaurant": {
+        "type": "RuleBasedRetailer",
+        "name": "PrimeDiner",
+        "isRichInfoAllowed": true,
+        "isHousehold": false,
+        "initialCoords": [8, 14],
+        "numAgents": 1,
+        "inventory": {
+            "Yen": 0,
+            "Sushi": 2,
+            "Course meals": 2,
+            "Wagyu beef steak": 2,
+            "Wine": 2
+        },
+        "disabledActions": [],
+        "requestObs": ["self_inventory", "incoming_orders"],
+        "provideInfo4CoLocatedAgents": ["inventory"],
+        "provideInfo4AllAgents": ["self_pos"],
+        "provideInfo4AllowedAgents": [],
+        "personaConfig": {}
+    },
+    "carDealer": {
+        "type": "RuleBasedRetailer",
+        "name": "Car Dealer",
+        "isRichInfoAllowed": true,
+        "isHousehold": false,
+        "initialCoords": [3, 13],
+        "numAgents": 1,
+        "inventory": {
+            "Yen": 0,
+            "GasolineCar": 2
+        },
+        "disabledActions": [],
+        "requestObs": ["self_inventory", "incoming_orders"],
+        "provideInfo4CoLocatedAgents": ["inventory"],
+        "provideInfo4AllAgents": ["self_pos"],
+        "provideInfo4AllowedAgents": [],
+        "personaConfig": {}
+    },
+    "gasStation": {
+        "type": "RuleBasedRetailer",
+        "name": "Gas Station",
+        "isRichInfoAllowed": true,
+        "isHousehold": false,
+        "initialCoords": [3, 14],
+        "numAgents": 1,
+        "inventory": {
+            "Yen": 0,
+            "Gasoline": 500
+        },
+        "disabledActions": [],
+        "requestObs": ["self_inventory", "incoming_orders"],
+        "provideInfo4CoLocatedAgents": ["inventory"],
+        "provideInfo4AllAgents": ["self_pos"],
+        "provideInfo4AllowedAgents": [],
+        "personaConfig": {}
+    },
+    "tweetTextClient": {
+        "type": "TransformersTextClient",
+        "modelName": "HuggingFaceTB/SmolLM2-360M-Instruct",
+        "device": "cpu",
+        "dtype": "float32",
+        "maxModelParameters": 1000000000,
+        "maxPromptTokens": 384,
+        "maxNewTokens": 32,
+        "temperature": 0.4,
+        "topP": 0.9,
+        "repetitionPenalty": 1.1,
+        "numThreads": 4,
+        "maxConcurrentGenerations": 1,
+        "ignoreGenerationErrors": false
+    },
+    "promptBuilder": {
+        "type": "NameBasedPromptBuilder",
+        "name2SimulationDescriptionPath": {
+            "others": "simulation_description_retailers.txt",
+            "Household": "simulation_description_households.txt"
+        },
+        "disabledActions": ["set_prices"]
+    },
+    "llmClient": {
+        "type": "VLLMClient",
+        "disabledActions": ["set_prices"],
+        "modelName": "openai/gpt-oss-120b",
+        "vllmPython": "/home/m2023rhashimoto/econsimulacra/.venv-vllm/bin/python",
+        "useGpu": true,
+        "gpuIds": [0, 1],
+        "isDataParallel": false,
+        "host": "127.0.0.1",
+        "port": 8000,
+        "timeOut": 600,
+        "maxRetries": 5,
+        "serverStartTimeout": 1200,
+        "maxConcurrentGenerations": 1,
+        "trustRemoteCode": false,
+        "gpuMemoryUtilization": 0.9,
+        "maxModelLen": 131072,
+        "gridSpace": [9, 15],
+        "items": [
+            "Yen",
+            "Rice",
+            "Eggs",
+            "Milk",
+            "Bread",
+            "Ramen",
+            "Curry rice",
+            "Bento",
+            "Pasta",
+            "Casual dinner set",
+            "Sushi",
+            "Course meals",
+            "Wagyu beef steak",
+            "Wine",
+            "GasolineCar",
+            "Gasoline"
+        ],
+        "numAgents": 65
+    },
+    "timeTranslator": {
+        "type": "TimeTranslator",
+        "numSteps": 720,
+        "startDatetime": "2025-03-01 07:00:00",
+        "endDatetime": "2025-03-31 07:00:00",
+        "revealTimeOfDay": true,
+        "activeTimeRanges": []
+    },
+    "sleepManager": {"type": "SleepManager"},
+    "memoryHandler": {
+        "type": "MemoryHandler",
+        "memoryLength": 24,
+        "numObs": 24,
+        "memorySummarizer": {
+            "type": "StressAwareSummarizer",
+            "relativeThresholdForPriceChange": 0.01,
+            "stressCalculator": {
+                "type": "StressCalculator",
+                "stressTypes": [
+                    "sleep_history",
+                    "consumption_history",
+                    "move_history",
+                    "state_evaluation_history",
+                    "obs_history"
+                ],
+                "item2Weight": {
+                    "Yen": 0,
+                    "Rice": 10,
+                    "Eggs": 3,
+                    "Milk": 1,
+                    "Bread": 5,
+                    "Ramen": 10,
+                    "Curry rice": 10,
+                    "Bento": 8,
+                    "Pasta": 10,
+                    "Casual dinner set": 15,
+                    "Sushi": 15,
+                    "Course meals": 20,
+                    "Wagyu beef steak": 30,
+                    "Wine": 3,
+                    "GasolineCar": 0,
+                    "Gasoline": 0
+                },
+                "maxMagnitude": 100,
+                "targetSleepDuration": 8,
+                "windowSizeForSleep": 48,
+                "durationWeightForSleep": 0.5,
+                "regularityWeightForSleep": 0.5,
+                "targetConsumptionQuantity": 10,
+                "windowSizeForConsumption": 24,
+                "timeDecayForConsumption": 0.9,
+                "targetMoveDistance": 8,
+                "windowSizeForMove": 24,
+                "timeDecayForMove": 0.95,
+                "homeComfortWeight": 0.4,
+                "windowSizeForStateEvaluation": 24,
+                "buyingPowerWeight": 1.5,
+                "relativeWealthWeight": 0.9,
+                "wealthDrawdownWeight": 0.3,
+                "targetNumNearby": 4,
+                "toleranceThresholdForStress": 50
+            }
+        }
+    },
+    "mobilityManager": {
+        "type": "MobilityManager",
+        "defaultMode": "Walking",
+        "modes": {
+            "Walking": {"velocity": 1},
+            "GasolineCar": {
+                "velocity": 3,
+                "itemName": null,
+                "requiredItems": {"GasolineCar": 0.5},
+                "consumptionPerCell": {"Gasoline": 0.5}
+            }
+        }
+    },
+    "constantSalary": {
+        "type": "ConstantSalary",
+        "trigger": {
+            "with": ["AgentGenerationLog"],
+            "every": 168
+        },
+        "salaryRatio": 0.1,
+        "unpaidAgentNames": [
+            "Daily Mart",
+            "QuickBite",
+            "TableHouse",
+            "PrimeDiner",
+            "Car Dealer",
+            "Gas Station"
+        ]
+    },
+    "constantSupply": {
+        "type": "ConstantSupply",
+        "trigger": {
+            "with": ["AgentGenerationLog"],
+            "every": 24
+        },
+        "supplyRatio": 0.5,
+        "suppliedAgentNames": [
+            "Daily Mart",
+            "QuickBite",
+            "TableHouse",
+            "PrimeDiner",
+            "Car Dealer",
+            "Gas Station"
+        ]
+    },
+    "Yen": {
+        "type": "Item",
+        "initialPrice": 1,
+        "comment": "cash"
+    },
+    "Rice": {
+        "type": "Item",
+        "initialPrice": 500,
+        "comment": "necessity"
+    },
+    "Eggs": {
+        "type": "Item",
+        "initialPrice": 250,
+        "comment": "necessity"
+    },
+    "Milk": {
+        "type": "Item",
+        "initialPrice": 220,
+        "comment": "necessity"
+    },
+    "Bread": {
+        "type": "Item",
+        "initialPrice": 180,
+        "comment": "necessity"
+    },
+    "Ramen": {
+        "type": "Item",
+        "initialPrice": 800,
+        "comment": "cheap meal"
+    },
+    "Curry rice": {
+        "type": "Item",
+        "initialPrice": 850,
+        "comment": "cheap meal"
+    },
+    "Bento": {
+        "type": "Item",
+        "initialPrice": 850,
+        "comment": "cheap meal"
+    },
+    "Pasta": {
+        "type": "Item",
+        "initialPrice": 2000,
+        "comment": "mid-range meal"
+    },
+    "Casual dinner set": {
+        "type": "Item",
+        "initialPrice": 2500,
+        "comment": "mid-range meal"
+    },
+    "Sushi": {
+        "type": "Item",
+        "initialPrice": 5000,
+        "comment": "luxury meal"
+    },
+    "Course meals": {
+        "type": "Item",
+        "initialPrice": 15000,
+        "comment": "luxury meal"
+    },
+    "Wagyu beef steak": {
+        "type": "Item",
+        "initialPrice": 20000,
+        "comment": "luxury meal"
+    },
+    "Wine": {
+        "type": "Item",
+        "initialPrice": 4000,
+        "comment": "luxury meal"
+    },
+    "GasolineCar": {
+        "type": "Item",
+        "initialPrice": 8000,
+        "comment": "mobility"
+    },
+    "Gasoline": {
+        "type": "Item",
+        "initialPrice": 150,
+        "comment": "fuel"
+    }
+}
