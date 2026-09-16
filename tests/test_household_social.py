@@ -1,5 +1,6 @@
 import asyncio
 import math
+from pathlib import Path
 from random import Random
 from typing import Any
 
@@ -78,6 +79,36 @@ def test_hawkes_intensity_decays_and_tweet_adds_self_excitation() -> None:
 
     policy.generate_social_decision(_context(step=2), _state(), ActionCapabilities())
     assert policy.get_hawkes_intensity() == pytest.approx(0.01 + 0.4 * math.exp(-1.0))
+
+
+def test_candidate_tweet_replaces_content_but_not_event_timing(
+    tmp_path: Path,
+) -> None:
+    """Verify configured candidates apply only to an occurring in-window tweet."""
+    candidate_path = tmp_path / "candidates.txt"
+    candidate_path.write_text(
+        "# intervention candidates\nDaily Mart has no inventory.\n",
+        encoding="utf-8",
+    )
+    policy = SocialMediaPolicy(
+        {
+            "tweet": {"baseIntensity": 100.0, "maxCharacters": 280},
+            "candidateTweetIntervention": {
+                "path": str(candidate_path),
+                "startStep": 10,
+                "endStep": 20,
+                "probability": 1.0,
+            },
+        },
+        Random(11),
+    )
+
+    before = asyncio.run(policy.decide(_context(step=9), _state()))
+    active = asyncio.run(policy.decide(_context(step=10), _state()))
+
+    assert "tweet" not in before
+    assert active["tweet"] == "Daily Mart has no inventory."
+    assert policy.state.last_tweet_intent is not None
 
 
 def test_changed_stressed_memory_selects_topic_sentiment_and_style() -> None:
