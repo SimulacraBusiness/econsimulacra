@@ -9,11 +9,12 @@ from econsimulacra.date_utils import get_corresponding_value
 
 
 class DiscountRetailer(RuleBasedRetailer):
-    """Accept orders and set scheduled discounts or markups.
+    """Accept orders, post scheduled tweets, and change scheduled prices.
 
     The configuration intentionally follows the ``DiscountRestaurant`` example:
     each ``discounts`` entry has ``start``, ``end``, ``discountRate``, and
-    ``items``. A negative discount rate represents a markup.
+    ``items``; each ``tweets`` entry has ``start``, ``end``, and ``tweet``.
+    A negative discount rate represents a markup.
     """
 
     def __init__(
@@ -24,14 +25,15 @@ class DiscountRetailer(RuleBasedRetailer):
         prng: Optional[Random] = None,
         config: Optional[dict[str, Any]] = None,
     ) -> None:
-        """Initialize order handling and scheduled price changes.
+        """Initialize order handling, scheduled tweets, and price changes.
 
         Args:
             agent_id: Environment-assigned unique agent identifier.
             agent_name: Base name configured for the retailer.
             env_service_dic: Environment services available to the agent.
             prng: Optional seeded pseudo-random number generator.
-            config: Retailer configuration containing optional ``discounts``.
+            config: Retailer configuration containing optional ``tweets`` and
+                ``discounts``.
 
         Returns:
             None.
@@ -47,8 +49,38 @@ class DiscountRetailer(RuleBasedRetailer):
             prng=prng,
             config=config,
         )
+        self.time_span2tweet = self._parse_tweets(self.config)
         self.time_span2discount = self._parse_discounts(self.config)
         self.item_name2initial_price: dict[str, float] = {}
+
+    def _parse_tweets(
+        self, config: dict[str, Any]
+    ) -> dict[tuple[int | str, int | str], str]:
+        """Parse scheduled tweets using the vLLM example's config shape."""
+        result: dict[tuple[int | str, int | str], str] = {}
+        raw_tweets = config.get("tweets", ())
+        if not isinstance(raw_tweets, (list, tuple)):
+            raise TypeError("tweets must be a list or tuple.")
+        for entry in raw_tweets:
+            if not isinstance(entry, dict):
+                raise TypeError("Each tweets entry must be a mapping.")
+            for key in ("start", "end", "tweet"):
+                if key not in entry:
+                    raise ValueError(f"Tweet entry requires {key!r}.")
+            start = entry["start"]
+            end = entry["end"]
+            if not isinstance(start, (int, str)) or isinstance(start, bool):
+                raise TypeError("Tweet start must be an integer or ISO time.")
+            if not isinstance(end, (int, str)) or isinstance(end, bool):
+                raise TypeError("Tweet end must be an integer or ISO time.")
+            tweet = entry["tweet"]
+            if not isinstance(tweet, str) or not tweet.strip():
+                raise ValueError("Tweet text must be a non-empty string.")
+            span = (start, end)
+            if span in result:
+                raise ValueError(f"Duplicate tweet interval: {span}.")
+            result[span] = tweet
+        return result
 
     def _parse_discounts(
         self, config: dict[str, Any]
@@ -120,14 +152,22 @@ class DiscountRetailer(RuleBasedRetailer):
             default_value=(0.0, ()),
         )
 
+    def time_to_tweet(self, current_time: int | str) -> str:
+        """Return the tweet active at the supplied time, if any."""
+        return get_corresponding_value(
+            current_time=current_time,
+            time_span2value=self.time_span2tweet,
+            default_value="",
+        )
+
     async def act(self, obs: dict[str, Any]) -> dict[str, Any]:
-        """Accept feasible orders and request scheduled price changes.
+        """Accept feasible orders, post tweets, and request price changes.
 
         Args:
             obs: Observation containing time, inventory, orders, and item prices.
 
         Returns:
-            Combined reaction and ``set_prices`` action mapping.
+            Combined reaction, ``tweet``, and ``set_prices`` action mapping.
 
         Note:
             Target prices are always computed from a cached initial price, so
@@ -137,7 +177,11 @@ class DiscountRetailer(RuleBasedRetailer):
         action = await super().act(obs)
         if "time" not in obs:
             raise KeyError("DiscountRetailer requires the 'time' observation.")
-        discount_rate, discounted_items = self.time_to_discount(obs["time"])
+        current_time = obs["time"]
+        tweet = self.time_to_tweet(current_time)
+        if tweet:
+            action["tweet"] = tweet
+        discount_rate, discounted_items = self.time_to_discount(current_time)
         if not discounted_items:
             return action
         current_prices = self._get_current_prices(obs)
