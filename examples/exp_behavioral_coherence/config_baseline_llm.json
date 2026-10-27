@@ -327,7 +327,7 @@
         "isHousehold": true,
         "numAgents": 1,
         "inventory": {
-            "Yen": 100000,
+            "Yen": 300000,
             "Rice": 1,
             "Eggs": 1,
             "Milk": 1,
@@ -358,10 +358,10 @@
         "numAgents": 1,
         "inventory": {
             "Yen": 0,
-            "Rice": 50,
-            "Eggs": 50,
-            "Milk": 50,
-            "Bread": 50
+            "Rice": 36,
+            "Eggs": 26,
+            "Milk": 26,
+            "Bread": 30
         },
         "disabledActions": [],
         "requestObs": [
@@ -386,9 +386,9 @@
         "numAgents": 1,
         "inventory": {
             "Yen": 0,
-            "Ramen": 50,
-            "Curry rice": 50,
-            "Bento": 50
+            "Ramen": 4,
+            "Curry rice": 4,
+            "Bento": 4
         },
         "disabledActions": [],
         "requestObs": [
@@ -409,8 +409,8 @@
         "numAgents": 1,
         "inventory": {
             "Yen": 0,
-            "Pasta": 50,
-            "Casual dinner set": 50
+            "Pasta": 4,
+            "Casual dinner set": 4
         },
         "disabledActions": [],
         "requestObs": [
@@ -431,10 +431,10 @@
         "numAgents": 1,
         "inventory": {
             "Yen": 0,
-            "Sushi": 50,
-            "Course meals": 50,
-            "Wagyu beef steak": 50,
-            "Wine": 50
+            "Sushi": 2,
+            "Course meals": 2,
+            "Wagyu beef steak": 2,
+            "Wine": 2
         },
         "disabledActions": [],
         "requestObs": [
@@ -455,7 +455,7 @@
         "numAgents": 1,
         "inventory": {
             "Yen": 0,
-            "GasolineCar": 20
+            "GasolineCar": 2
         },
         "disabledActions": [],
         "requestObs": [
@@ -476,7 +476,7 @@
         "numAgents": 1,
         "inventory": {
             "Yen": 0,
-            "Gasoline": 1000
+            "Gasoline": 500
         },
         "disabledActions": [],
         "requestObs": [
@@ -514,10 +514,10 @@
     "llmClient": {
         "type": "VLLMClient",
         "disabledActions": ["set_prices"],
-        "modelName": "openai/gpt-oss-20b",
+        "modelName": "openai/gpt-oss-120b",
         "vllmPython": "/home/m2023rhashimoto/econsimulacra/.venv-vllm/bin/python",
         "useGpu": true,
-        "gpuIds": [1],
+        "gpuIds": [0, 1],
         "isDataParallel": false,
         "host": "127.0.0.1",
         "port": 8000,
@@ -527,7 +527,7 @@
         "maxConcurrentGenerations": 1,
         "trustRemoteCode": false,
         "gpuMemoryUtilization": 0.9,
-        "maxModelLen": 65536,
+        "maxModelLen": 131072,
         "gridSpace": [9, 15],
         "items": [
             "Yen",
@@ -563,7 +563,7 @@
     "memoryHandler": {
         "type": "MemoryHandler",
         "memoryLength": 24,
-        "numObs": 24,
+        "numObs": 96,
         "memorySummarizer": {
             "type": "StressAwareSummarizer",
             "relativeThresholdForPriceChange": 0.01,
@@ -606,7 +606,7 @@
                 "windowSizeForMove": 24,
                 "timeDecayForMove": 0.95,
                 "homeComfortWeight": 0.4,
-                "windowSizeForStateEvaluation": 5,
+                "windowSizeForStateEvaluation": 24,
                 "buyingPowerWeight": 1.5,
                 "relativeWealthWeight": 0.9,
                 "wealthDrawdownWeight": 0.3,
@@ -642,6 +642,7 @@
             ],
             "every": 168
         },
+        "salaryRatio": 0.1,
         "unpaidAgentNames": [
             "Daily Mart",
             "QuickBite",
@@ -659,6 +660,7 @@
             ],
             "every": 24
         },
+        "supplyRatio": 0.5,
         "suppliedAgentNames": [
             "Daily Mart",
             "QuickBite",

@@ -370,13 +370,13 @@
             {
                 "start": "2025-03-07 07:00:00",
                 "end": "2025-03-31 07:00:00",
-                "discountRate": -0.1,
-                "items": ["Rice", "Eggs", "Milk", "Bread"]
+                "discountRate": -1.0,
+                "items": ["Rice"]
             }
         ]
     },
     "lowRestaurant": {
-        "type": "RuleBasedRetailer",
+        "type": "DiscountRetailer",
         "name": "QuickBite",
         "isRichInfoAllowed": true,
         "isHousehold": false,
@@ -389,11 +389,19 @@
             "Bento": 4
         },
         "disabledActions": [],
-        "requestObs": ["self_inventory", "incoming_orders"],
+        "requestObs": ["time", "self_inventory", "incoming_orders", "item_name2price"],
         "provideInfo4CoLocatedAgents": ["inventory"],
         "provideInfo4AllAgents": ["self_pos"],
         "provideInfo4AllowedAgents": [],
-        "personaConfig": {}
+        "personaConfig": {},
+        "discounts": [
+            {
+                "start": "2025-03-07 07:00:00",
+                "end": "2025-03-31 07:00:00",
+                "discountRate": -0.5,
+                "items": ["Curry rice"]
+            }
+        ]
     },
     "medRestaurant": {
         "type": "RuleBasedRetailer",
@@ -415,7 +423,7 @@
         "personaConfig": {}
     },
     "highRestaurant": {
-        "type": "RuleBasedRetailer",
+        "type": "DiscountRetailer",
         "name": "PrimeDiner",
         "isRichInfoAllowed": true,
         "isHousehold": false,
@@ -429,11 +437,19 @@
             "Wine": 2
         },
         "disabledActions": [],
-        "requestObs": ["self_inventory", "incoming_orders"],
+        "requestObs": ["time", "self_inventory", "incoming_orders", "item_name2price"],
         "provideInfo4CoLocatedAgents": ["inventory"],
         "provideInfo4AllAgents": ["self_pos"],
         "provideInfo4AllowedAgents": [],
-        "personaConfig": {}
+        "personaConfig": {},
+        "discounts": [
+            {
+                "start": "2025-03-07 07:00:00",
+                "end": "2025-03-31 07:00:00",
+                "discountRate": -0.1,
+                "items": ["Sushi"]
+            }
+        ]
     },
     "carDealer": {
         "type": "RuleBasedRetailer",
@@ -497,7 +513,7 @@
     "llmClient": {
         "type": "VLLMClient",
         "disabledActions": ["set_prices"],
-        "modelName": "openai/gpt-oss-120b",
+        "modelName": "mistralai/Mistral-Small-3.2-24B-Instruct-2506",
         "vllmPython": "/home/m2023rhashimoto/econsimulacra/.venv-vllm/bin/python",
         "useGpu": true,
         "gpuIds": [0, 1],
@@ -510,7 +526,7 @@
         "maxConcurrentGenerations": 1,
         "trustRemoteCode": false,
         "gpuMemoryUtilization": 0.9,
-        "maxModelLen": 131072,
+        "maxModelLen": 32168,
         "gridSpace": [9, 15],
         "items": [
             "Yen",
@@ -544,7 +560,7 @@
     "memoryHandler": {
         "type": "MemoryHandler",
         "memoryLength": 24,
-        "numObs": 24,
+        "numObs": 96,
         "memorySummarizer": {
             "type": "StressAwareSummarizer",
             "relativeThresholdForPriceChange": 0.01,

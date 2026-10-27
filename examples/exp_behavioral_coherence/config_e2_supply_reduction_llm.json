@@ -489,7 +489,7 @@
     "llmClient": {
         "type": "VLLMClient",
         "disabledActions": ["set_prices"],
-        "modelName": "openai/gpt-oss-120b",
+        "modelName": "mistralai/Mistral-Small-3.2-24B-Instruct-2506",
         "vllmPython": "/home/m2023rhashimoto/econsimulacra/.venv-vllm/bin/python",
         "useGpu": true,
         "gpuIds": [0, 1],
@@ -502,7 +502,7 @@
         "maxConcurrentGenerations": 1,
         "trustRemoteCode": false,
         "gpuMemoryUtilization": 0.9,
-        "maxModelLen": 131072,
+        "maxModelLen": 32096,
         "gridSpace": [9, 15],
         "items": [
             "Yen",
@@ -536,7 +536,7 @@
     "memoryHandler": {
         "type": "MemoryHandler",
         "memoryLength": 24,
-        "numObs": 24,
+        "numObs": 96,
         "memorySummarizer": {
             "type": "StressAwareSummarizer",
             "relativeThresholdForPriceChange": 0.01,

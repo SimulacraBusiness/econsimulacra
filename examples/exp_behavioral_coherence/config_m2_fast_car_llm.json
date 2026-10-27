@@ -436,7 +436,7 @@
         "personaConfig": {}
     },
     "carDealer": {
-        "type": "RuleBasedRetailer",
+        "type": "DiscountRetailer",
         "name": "Car Dealer",
         "isRichInfoAllowed": true,
         "isHousehold": false,
@@ -448,11 +448,23 @@
             "HighPerformanceCar": 0
         },
         "disabledActions": [],
-        "requestObs": ["self_inventory", "incoming_orders"],
+        "requestObs": ["time", "self_inventory", "incoming_orders"],
         "provideInfo4CoLocatedAgents": ["inventory"],
         "provideInfo4AllAgents": ["self_pos"],
         "provideInfo4AllowedAgents": [],
-        "personaConfig": {}
+        "personaConfig": {},
+        "tweets": [
+            {
+                "start": "2025-03-01 07:00:00",
+                "end": "2025-03-07 07:00:00",
+                "tweet": "🚗 New car coming March 7 🚗 The HighPerformanceCar launches on 03/07 at 07:00. It travels 4 cells per step—33% faster than the GasolineCar at 3 cells per step—and will cost ¥8,000. Gasoline is required. Stay tuned!"
+            },
+            {
+                "start": "2025-03-07 07:00:00",
+                "end": "2025-03-31 07:00:00",
+                "tweet": "🚗 HighPerformanceCar ON SALE NOW 🚗 Travel 4 cells per step—33% faster than the GasolineCar at 3 cells per step—for ¥8,000 at Car Dealer. Gasoline is required. Upgrade your mobility today!"
+            }
+        ]
     },
     "gasStation": {
         "type": "RuleBasedRetailer",
@@ -498,10 +510,10 @@
     "llmClient": {
         "type": "VLLMClient",
         "disabledActions": ["set_prices"],
-        "modelName": "openai/gpt-oss-120b",
+        "modelName": "casperhansen/llama-3.3-70b-instruct-awq",
         "vllmPython": "/home/m2023rhashimoto/econsimulacra/.venv-vllm/bin/python",
         "useGpu": true,
-        "gpuIds": [0, 1],
+        "gpuIds": [0,1],
         "isDataParallel": false,
         "host": "127.0.0.1",
         "port": 8000,
@@ -511,7 +523,7 @@
         "maxConcurrentGenerations": 1,
         "trustRemoteCode": false,
         "gpuMemoryUtilization": 0.9,
-        "maxModelLen": 131072,
+        "maxModelLen": 32168,
         "gridSpace": [9, 15],
         "items": [
             "Yen",
@@ -546,7 +558,7 @@
     "memoryHandler": {
         "type": "MemoryHandler",
         "memoryLength": 24,
-        "numObs": 24,
+        "numObs": 96,
         "memorySummarizer": {
             "type": "StressAwareSummarizer",
             "relativeThresholdForPriceChange": 0.01,

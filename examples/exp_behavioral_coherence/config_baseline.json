@@ -324,10 +324,10 @@
         "numAgents": 1,
         "inventory": {
             "Yen": 0,
-            "Rice": 200,
-            "Eggs": 200,
-            "Milk": 200,
-            "Bread": 200
+            "Rice": 36,
+            "Eggs": 26,
+            "Milk": 26,
+            "Bread": 30
         },
         "disabledActions": [],
         "requestObs": [
@@ -352,9 +352,9 @@
         "numAgents": 1,
         "inventory": {
             "Yen": 0,
-            "Ramen": 200,
-            "Curry rice": 200,
-            "Bento": 200
+            "Ramen": 5,
+            "Curry rice": 5,
+            "Bento": 5
         },
         "disabledActions": [],
         "requestObs": [
@@ -375,8 +375,8 @@
         "numAgents": 1,
         "inventory": {
             "Yen": 0,
-            "Pasta": 200,
-            "Casual dinner set": 200
+            "Pasta": 4,
+            "Casual dinner set": 4
         },
         "disabledActions": [],
         "requestObs": [
@@ -397,10 +397,10 @@
         "numAgents": 1,
         "inventory": {
             "Yen": 0,
-            "Sushi": 100,
-            "Course meals": 100,
-            "Wagyu beef steak": 100,
-            "Wine": 100
+            "Sushi": 1,
+            "Course meals": 1,
+            "Wagyu beef steak": 1,
+            "Wine": 1
         },
         "disabledActions": [],
         "requestObs": [
@@ -421,7 +421,7 @@
         "numAgents": 1,
         "inventory": {
             "Yen": 0,
-            "GasolineCar": 20
+            "GasolineCar": 2
         },
         "disabledActions": [],
         "requestObs": [
@@ -442,7 +442,7 @@
         "numAgents": 1,
         "inventory": {
             "Yen": 0,
-            "Gasoline": 1000
+            "Gasoline": 500
         },
         "disabledActions": [],
         "requestObs": [
@@ -483,7 +483,7 @@
     "memoryHandler": {
         "type": "MemoryHandler",
         "memoryLength": 24,
-        "numObs": 24,
+        "numObs": 96,
         "memorySummarizer": {
             "type": "StressAwareSummarizer",
             "relativeThresholdForPriceChange": 0.01,
@@ -526,7 +526,7 @@
                 "windowSizeForMove": 24,
                 "timeDecayForMove": 0.95,
                 "homeComfortWeight": 0.4,
-                "windowSizeForStateEvaluation": 5,
+                "windowSizeForStateEvaluation": 24,
                 "buyingPowerWeight": 1.5,
                 "relativeWealthWeight": 0.9,
                 "wealthDrawdownWeight": 0.3,
@@ -543,7 +543,7 @@
                 "velocity": 1
             },
             "GasolineCar": {
-                "velocity": 10,
+                "velocity": 3,
                 "itemName": null,
                 "requiredItems": {
                     "GasolineCar": 0.5
@@ -586,7 +586,8 @@
             "PrimeDiner",
             "Car Dealer",
             "Gas Station"
-        ]
+        ],
+        "supplyRatio": 0.5
     },
     "Yen": {
         "type": "Item",
